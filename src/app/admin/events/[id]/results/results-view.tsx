@@ -1,0 +1,145 @@
+"use client";
+
+import { useState } from "react";
+import useSWR from "swr";
+import { ResultsSnapshot } from "@/lib/results";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { setRevealAction } from "./actions";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
+
+export default function ResultsView({
+  eventId,
+  eventName,
+  initial,
+}: {
+  eventId: string;
+  eventName: string;
+  initial: ResultsSnapshot | null;
+}) {
+  const { data } = useSWR<ResultsSnapshot>(`/api/admin/events/${eventId}/results`, fetcher, {
+    fallbackData: initial ?? undefined,
+    refreshInterval: 3000,
+  });
+  const [confirmKind, setConfirmKind] = useState<"reveal" | "hide" | null>(null);
+
+  if (!data) return null;
+  const revealed = data.revealed;
+
+  const kind =
+    confirmKind === "reveal"
+      ? {
+          title: "Unlock candidate identities?",
+          body: "Names are hidden on the shared screen until you unlock them. Everyone in the hall will see who each bar belongs to — this is recorded in the audit trail.",
+          word: "REVEAL",
+          cta: "Unlock names",
+        }
+      : {
+          title: "Hide candidate identities again?",
+          body: "The shared screen returns to percentages only. Bars keep their position and colour.",
+          word: "HIDE",
+          cta: "Hide names",
+        };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-3 bg-card border border-border-1 rounded-[11px] px-4 py-3">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6C6A64" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M3 4.5h18v12H3zM9 20.5h6"></path>
+        </svg>
+        <span className="flex-1 text-[13px] text-ink-soft">Projector output — participants never see results on their own device.</span>
+        <button
+          onClick={() => setConfirmKind(revealed ? "hide" : "reveal")}
+          className={`flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border cursor-pointer ${
+            revealed ? "bg-brand-soft text-brand border-border-1" : "bg-white text-ink-soft border-border-1"
+          }`}
+        >
+          {revealed ? "Lock names" : "Unlock names"}
+        </button>
+      </div>
+
+      <div className="bg-stage-dark rounded-[14px] px-13 py-11 text-[#F4F2EE] relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
+        />
+        <div className="relative">
+          <div className="flex items-baseline gap-3 mb-7.5">
+            <span className="font-mono text-[11px] tracking-[.12em] text-brand-accent-2 uppercase">
+              {data.stageName ?? "No stage"} {data.live ? "· Live" : ""}
+            </span>
+            <span className="flex-1" />
+            <span className="font-mono text-xs text-stage-dimmer">
+              {data.totalVotes} / {data.denom} votes · live
+            </span>
+          </div>
+          <div className="flex items-baseline gap-3.5 mb-8.5">
+            <h2 className="m-0 text-[34px] font-semibold tracking-tight">{eventName}</h2>
+            {!revealed && (
+              <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-2.5 py-1.5">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
+                  <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path>
+                </svg>
+                Names locked
+              </span>
+            )}
+          </div>
+          <div className="flex flex-col gap-5.5">
+            {data.results.map((r, i) => (
+              <div key={r.id}>
+                <div className="flex items-baseline gap-3.5 mb-2.5">
+                  <span
+                    className={`w-8.5 h-8.5 rounded-full text-stage-dim text-xs font-semibold flex items-center justify-center flex-none bg-stage-dark-3 ${
+                      revealed ? "" : "border border-dashed border-stage-dark-4"
+                    }`}
+                  >
+                    {revealed ? r.initials : ""}
+                  </span>
+                  <span
+                    className={
+                      revealed
+                        ? "text-[19px] font-semibold tracking-tight text-[#F4F2EE]"
+                        : "text-stage-dim font-mono text-base tracking-[.04em]"
+                    }
+                  >
+                    {revealed ? r.name : `Candidate ${String.fromCharCode(65 + i)}`}
+                  </span>
+                  <span className="flex-1" />
+                  <span className="font-mono text-[13px] text-stage-dim">{r.votes} votes</span>
+                  <span className="text-[22px] font-semibold tracking-tight w-[78px] text-right">{r.pct}%</span>
+                </div>
+                <div className="h-3.5 rounded-lg bg-stage-dark-2 overflow-hidden">
+                  <div
+                    className="h-full rounded-lg transition-all duration-700"
+                    style={{
+                      width: `${r.pct}%`,
+                      background: i === 0 ? "linear-gradient(90deg,#2E9E7B,#7FBFA6)" : "#3C4340",
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          {revealed && data.winnerName && (
+            <div className="mt-8.5 pt-6.5 border-t border-stage-dark-3 flex items-center gap-4 animate-rise-in">
+              <span className="font-mono text-[11px] tracking-[.12em] text-brand-accent-2 uppercase">Elected</span>
+              <span className="text-[26px] font-semibold tracking-tight">{data.winnerName}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ConfirmDialog
+        open={confirmKind !== null}
+        onClose={() => setConfirmKind(null)}
+        title={kind.title}
+        body={kind.body}
+        confirmWord={kind.word}
+        ctaLabel={kind.cta}
+        danger={false}
+        action={async () => setRevealAction(eventId, confirmKind === "reveal")}
+      />
+    </div>
+  );
+}

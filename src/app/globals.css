@@ -1,26 +1,176 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F1EFEA;
+  --foreground: #15171B;
+
+  --color-ink: #15171B;
+  --color-ink-soft: #3A3833;
+  --color-ink-mute: #4A4842;
+  --color-body: #6C6A64;
+  --color-faint: #8B8880;
+  --color-fainter: #A3A099;
+  --color-hairline: #CFCAC0;
+
+  --color-paper: #FDFCFA;
+  --color-paper-2: #FBFAF8;
+  --color-card: #ffffff;
+  --color-app-bg: #F1EFEA;
+  --color-border: #E4E1DA;
+  --color-border-2: #DFDCD4;
+  --color-border-3: #E9E6DF;
+  --color-border-4: #EFECE5;
+  --color-border-5: #F4F2EE;
+  --color-border-6: #F1EEE8;
+
+  --color-brand: #1F5F4E;
+  --color-brand-hover: #17493C;
+  --color-brand-soft: #E8F0EC;
+  --color-brand-soft-border: #D3E3DA;
+  --color-brand-soft-border-2: #CFE3D8;
+  --color-brand-accent: #2E9E7B;
+  --color-brand-accent-2: #7FBFA6;
+  --color-brand-accent-3: #3E9C7F;
+  --color-brand-muted: #9CBDB0;
+
+  --color-amber-bg: #FDF8EF;
+  --color-amber-border: #E0C48A;
+  --color-amber-icon: #B5761F;
+  --color-amber-text: #7A5312;
+  --color-amber-chip: #F3E5CB;
+  --color-amber-sub: #8B7448;
+
+  --color-danger: #A5342B;
+  --color-danger-hover: #8C2A22;
+  --color-danger-bg: #FDF6F5;
+  --color-danger-border: #E7CFCB;
+  --color-danger-bg-hover: #FBEDEB;
+
+  --color-stage-dark: #111311;
+  --color-stage-dark-2: #1E211F;
+  --color-stage-dark-3: #26292A;
+  --color-stage-dark-4: #2C302E;
+  --color-stage-dim: #9C9A93;
+  --color-stage-dimmer: #77756E;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-instrument-sans);
+  --font-mono: var(--font-ibm-plex-mono);
+
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-ink-mute: var(--color-ink-mute);
+  --color-body: var(--color-body);
+  --color-faint: var(--color-faint);
+  --color-fainter: var(--color-fainter);
+  --color-hairline: var(--color-hairline);
+
+  --color-paper: var(--color-paper);
+  --color-paper-2: var(--color-paper-2);
+  --color-card: var(--color-card);
+  --color-app-bg: var(--color-app-bg);
+  --color-border-1: var(--color-border);
+  --color-border-2: var(--color-border-2);
+  --color-border-3: var(--color-border-3);
+  --color-border-4: var(--color-border-4);
+  --color-border-5: var(--color-border-5);
+  --color-border-6: var(--color-border-6);
+
+  --color-brand: var(--color-brand);
+  --color-brand-hover: var(--color-brand-hover);
+  --color-brand-soft: var(--color-brand-soft);
+  --color-brand-soft-border: var(--color-brand-soft-border);
+  --color-brand-soft-border-2: var(--color-brand-soft-border-2);
+  --color-brand-accent: var(--color-brand-accent);
+  --color-brand-accent-2: var(--color-brand-accent-2);
+  --color-brand-accent-3: var(--color-brand-accent-3);
+  --color-brand-muted: var(--color-brand-muted);
+
+  --color-amber-bg: var(--color-amber-bg);
+  --color-amber-border: var(--color-amber-border);
+  --color-amber-icon: var(--color-amber-icon);
+  --color-amber-text: var(--color-amber-text);
+  --color-amber-chip: var(--color-amber-chip);
+  --color-amber-sub: var(--color-amber-sub);
+
+  --color-danger: var(--color-danger);
+  --color-danger-hover: var(--color-danger-hover);
+  --color-danger-bg: var(--color-danger-bg);
+  --color-danger-border: var(--color-danger-border);
+  --color-danger-bg-hover: var(--color-danger-bg-hover);
+
+  --color-stage-dark: var(--color-stage-dark);
+  --color-stage-dark-2: var(--color-stage-dark-2);
+  --color-stage-dark-3: var(--color-stage-dark-3);
+  --color-stage-dark-4: var(--color-stage-dark-4);
+  --color-stage-dim: var(--color-stage-dim);
+  --color-stage-dimmer: var(--color-stage-dimmer);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-app-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-brand);
+}
+a:hover {
+  color: var(--color-brand-hover);
+}
+
+input,
+button,
+textarea {
+  font-family: inherit;
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+}
+@keyframes ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-pulse-dot {
+  animation: pulseDot 1.6s ease-in-out infinite;
+}
+.animate-ring {
+  animation: ring 2.4s ease-out infinite;
+}
+.animate-rise-in {
+  animation: riseIn 0.3s ease both;
 }

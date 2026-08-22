@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum StageStatus {
+  NOT_STARTED
+  LIVE
+  COMPLETED
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+}
+
+model Event {
+  id                String      @id @default(cuid())
+  publicId          String      @unique
+  name              String
+  description       String      @default("")
+  status            EventStatus @default(INACTIVE)
+  expectedParticipants Int      @default(0)
+  resultsRevealed   Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  stages       Stage[]
+  participants Participant[]
+  auditLogs    AuditLog[]
+}
+
+model Stage {
+  id             String      @id @default(cuid())
+  eventId        String
+  event          Event       @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  order          Int
+  name           String
+  status         StageStatus @default(NOT_STARTED)
+  thresholdMin   Int         @default(1)
+  autoAdvance    Boolean     @default(true)
+  allowAbstain   Boolean     @default(false)
+  requireFingerprint Boolean @default(true)
+  notifyOnQuorum Boolean     @default(true)
+  startedAt      DateTime?
+  completedAt    DateTime?
+
+  candidates Candidate[]
+  votes      Vote[]
+
+  @@unique([eventId, order])
+}
+
+model Candidate {
+  id      String @id @default(cuid())
+  stageId String
+  stage   Stage  @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  name    String
+  note    String @default("")
+  order   Int
+
+  votes Vote[]
+}
+
+model Participant {
+  id           String    @id @default(cuid())
+  eventId      String
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name         String?
+  token        String    @unique
+  photo        String?
+  deviceId     String?
+  registeredAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  votes Vote[]
+
+  @@index([eventId])
+}
+
+model Vote {
+  id            String      @id @default(cuid())
+  stageId       String
+  stage         Stage       @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  candidateId   String?
+  candidate     Candidate?  @relation(fields: [candidateId], references: [id], onDelete: SetNull)
+  isAbstain     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+
+  @@unique([stageId, participantId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  message   String
+  actor     String
+  createdAt DateTime @default(now())
+
+  @@index([eventId])
+}
