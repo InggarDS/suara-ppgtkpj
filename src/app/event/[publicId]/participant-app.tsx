@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { compressImage } from "@/lib/compress-image";
 import { initials } from "@/lib/ids";
+import { parseDeviceLabel } from "@/lib/device";
 
 type StateResp = {
   eventName: string;
@@ -192,6 +193,7 @@ function RegisterScreen({
           jemaat: useCredentials ? undefined : jemaat.trim(),
           photo,
           deviceId,
+          deviceLabel: parseDeviceLabel(navigator.userAgent),
         }),
       });
       const json = await res.json();

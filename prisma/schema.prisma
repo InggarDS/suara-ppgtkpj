@@ -106,6 +106,7 @@ model Participant {
   token        String    @unique
   photo        String?
   deviceId     String?
+  deviceLabel  String?
   registeredAt DateTime?
   createdAt    DateTime  @default(now())
 

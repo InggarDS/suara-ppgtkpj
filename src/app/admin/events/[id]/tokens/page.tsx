@@ -77,6 +77,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[130px]">Jemaat</span>
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[110px]">Token</span>
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[110px]">Status</span>
+              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[140px]">Device</span>
               <span className="w-[64px]" />
             </div>
             {event.participants.length === 0 && (
@@ -100,6 +101,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
                   <span className="w-[110px]">
                     <Pill kind={status} />
                   </span>
+                  <span className="text-xs text-body w-[140px] overflow-hidden text-ellipsis whitespace-nowrap">{p.deviceLabel ?? "—"}</span>
                   <span className="w-[64px] flex justify-end">
                     <DeleteParticipantButton eventId={event.id} participantId={p.id} />
                   </span>

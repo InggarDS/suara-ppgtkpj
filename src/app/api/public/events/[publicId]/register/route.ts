@@ -9,6 +9,7 @@ const schema = z.object({
   jemaat: z.string().max(120).optional(),
   photo: z.string().nullable().optional(),
   deviceId: z.string().min(1),
+  deviceLabel: z.string().max(80).optional(),
 });
 
 async function uniqueToken(prefix: string, suffix: string) {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
   const { publicId } = await params;
   const body = schema.safeParse(await req.json());
   if (!body.success) return NextResponse.json({ ok: false, error: "Invalid input." }, { status: 400 });
-  const { name, photo, deviceId } = body.data;
+  const { name, photo, deviceId, deviceLabel } = body.data;
 
   const event = await prisma.event.findUnique({ where: { publicId } });
   if (!event) return NextResponse.json({ ok: false, error: "Event not found." }, { status: 404 });
@@ -44,7 +45,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
         }
         await prisma.participant.update({
           where: { id: participant.id },
-          data: { photo: photo ?? participant.photo, deviceId, registeredAt: participant.registeredAt ?? new Date() },
+          data: {
+            photo: photo ?? participant.photo,
+            deviceId,
+            deviceLabel: deviceLabel ?? participant.deviceLabel,
+            registeredAt: participant.registeredAt ?? new Date(),
+          },
         });
         return NextResponse.json({ ok: true, token: participant.token });
       }
@@ -59,6 +65,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
         token,
         photo: photo ?? null,
         deviceId,
+        deviceLabel: deviceLabel ?? null,
         registeredAt: new Date(),
       },
     });
@@ -88,6 +95,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
       jemaat,
       photo: photo ?? participant.photo,
       deviceId,
+      deviceLabel: deviceLabel ?? participant.deviceLabel,
       registeredAt: participant.registeredAt ?? new Date(),
     },
   });
