@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createEventAction } from "../actions";
 import { compressImage } from "@/lib/compress-image";
-import { parseCredentialsCsv } from "@/lib/csv";
+import { parseCredentialsFile } from "@/lib/credentials-file";
 
 const defaultStages = ["Pemilihan Bakal Calon", "Pemilihan Calon Tetap", ""];
 
@@ -32,8 +32,7 @@ export default function NewEventCardClient() {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const text = await file.text();
-      const rows = parseCredentialsCsv(text);
+      const rows = await parseCredentialsFile(file);
       setCredentials(rows);
       setCredentialFileName(file.name);
       setError(undefined);
@@ -177,13 +176,18 @@ export default function NewEventCardClient() {
                 </div>
                 {useCredentials && (
                   <label className="flex items-center w-full rounded-[10px] p-3 cursor-pointer bg-white border-[1.5px] border-dashed border-border-2">
-                    <input type="file" accept=".csv,text/csv" className="hidden" onChange={onCredentialFile} />
+                    <input
+                      type="file"
+                      accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                      className="hidden"
+                      onChange={onCredentialFile}
+                    />
                     {credentialFileName ? (
                       <span className="text-[12.5px] text-ink mx-auto">
                         <strong className="font-semibold text-brand">{credentials.length} rows</strong> loaded from {credentialFileName}
                       </span>
                     ) : (
-                      <span className="text-[12.5px] text-faint mx-auto">Upload a CSV with &quot;Nama&quot; and &quot;Jemaat&quot; columns</span>
+                      <span className="text-[12.5px] text-faint mx-auto">Upload a CSV or Excel file with &quot;Nama&quot; and &quot;Jemaat&quot; columns</span>
                     )}
                   </label>
                 )}

@@ -39,19 +39,22 @@ export function parseCsv(text: string): string[][] {
   return rows.filter((r) => r.some((cell) => cell.trim().length > 0));
 }
 
-export function parseCredentialsCsv(text: string): { name: string; jemaat: string }[] {
-  const rows = parseCsv(text);
+export function rowsToCredentials(rows: unknown[][]): { name: string; jemaat: string }[] {
   if (rows.length === 0) return [];
 
-  const header = rows[0].map((h) => h.trim().toLowerCase());
+  const header = rows[0].map((h) => String(h ?? "").trim().toLowerCase());
   const nameIdx = header.findIndex((h) => h === "nama" || h === "name");
   const jemaatIdx = header.findIndex((h) => h === "jemaat");
   if (nameIdx === -1 || jemaatIdx === -1) {
-    throw new Error('CSV must have "Nama" and "Jemaat" columns.');
+    throw new Error('File must have "Nama" and "Jemaat" columns.');
   }
 
   return rows
     .slice(1)
-    .map((r) => ({ name: (r[nameIdx] ?? "").trim(), jemaat: (r[jemaatIdx] ?? "").trim() }))
+    .map((r) => ({ name: String(r[nameIdx] ?? "").trim(), jemaat: String(r[jemaatIdx] ?? "").trim() }))
     .filter((r) => r.name.length > 0);
+}
+
+export function parseCredentialsCsv(text: string): { name: string; jemaat: string }[] {
+  return rowsToCredentials(parseCsv(text));
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { parseCredentialsCsv } from "@/lib/csv";
+import { parseCredentialsFile } from "@/lib/credentials-file";
 import { addCredentialsAction, deleteCredentialAction } from "./actions";
 import { Pill } from "@/components/ui/pill";
 
@@ -16,8 +16,7 @@ export default function CredentialsPanel({ eventId, credentials }: { eventId: st
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      const text = await file.text();
-      const rows = parseCredentialsCsv(text);
+      const rows = await parseCredentialsFile(file);
       setError(undefined);
       startTransition(() => { void addCredentialsAction(eventId, rows); });
     } catch (err) {
@@ -37,8 +36,13 @@ export default function CredentialsPanel({ eventId, credentials }: { eventId: st
         Participants register with their name, matched against this list. Jemaat is filled in automatically from a match.
       </p>
       <label className="inline-flex items-center text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[#EAE7E0]">
-        <input type="file" accept=".csv,text/csv" className="hidden" onChange={onFile} />
-        {pending ? "Uploading…" : "Upload more (CSV: Nama, Jemaat)"}
+        <input
+          type="file"
+          accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+          className="hidden"
+          onChange={onFile}
+        />
+        {pending ? "Uploading…" : "Upload more (CSV or Excel: Nama, Jemaat)"}
       </label>
       {error && <p className="text-xs text-danger mt-2">{error}</p>}
 
