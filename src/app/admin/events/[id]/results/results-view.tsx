@@ -44,7 +44,7 @@ export default function ResultsView({
 
   function presentFullscreen() {
     const w = window.open(
-      `/admin/events/${eventId}/results/present`,
+      `/present/${eventId}`,
       "suara-present",
       `popup=yes,width=${screen.width},height=${screen.height},left=0,top=0`
     );
