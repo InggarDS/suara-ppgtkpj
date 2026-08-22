@@ -5,6 +5,7 @@ import { z } from "zod";
 const schema = z.object({
   token: z.string().min(1),
   name: z.string().min(1).max(120),
+  jemaat: z.string().min(1).max(120),
   photo: z.string().nullable().optional(),
   deviceId: z.string().min(1),
 });
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
   const { publicId } = await params;
   const body = schema.safeParse(await req.json());
   if (!body.success) return NextResponse.json({ ok: false, error: "Invalid input." }, { status: 400 });
-  const { token, name, photo, deviceId } = body.data;
+  const { token, name, jemaat, photo, deviceId } = body.data;
 
   const event = await prisma.event.findUnique({ where: { publicId } });
   if (!event) return NextResponse.json({ ok: false, error: "Event not found." }, { status: 404 });
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
     where: { id: participant.id },
     data: {
       name: name.trim(),
+      jemaat: jemaat.trim(),
       photo: photo ?? participant.photo,
       deviceId,
       registeredAt: participant.registeredAt ?? new Date(),

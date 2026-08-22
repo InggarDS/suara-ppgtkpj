@@ -109,6 +109,26 @@ export async function addCandidateAction(eventId: string, stageId: string, name:
   return { ok: true };
 }
 
+export async function addCandidateFromParticipantAction(eventId: string, stageId: string, participantId: string) {
+  await requireSession();
+  const participant = await prisma.participant.findUnique({ where: { id: participantId } });
+  if (!participant || !participant.name) return { ok: false, error: "Participant not found." };
+
+  const count = await prisma.candidate.count({ where: { stageId } });
+  await prisma.candidate.create({
+    data: {
+      stageId,
+      name: participant.name,
+      note: participant.jemaat ? `Jemaat ${participant.jemaat}` : "",
+      photo: participant.photo,
+      participantId: participant.id,
+      order: count + 1,
+    },
+  });
+  revalidatePath(`/admin/events/${eventId}/flow`);
+  return { ok: true };
+}
+
 export async function removeCandidateAction(eventId: string, candidateId: string) {
   await requireSession();
   await prisma.candidate.delete({ where: { id: candidateId } });

@@ -5,6 +5,7 @@ import { Pill } from "@/components/ui/pill";
 import { CopyButton } from "@/components/ui/copy-button";
 import { pct } from "@/lib/format";
 import EventHeader from "./event-header";
+import BannerEditor from "./banner-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -48,6 +49,8 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
             <span className="font-mono text-[11px] text-faint">{event.publicId}</span>
             <Pill kind={event.status} />
           </div>
+
+          <BannerEditor eventId={event.id} bannerImage={event.bannerImage} />
 
           <div className="grid grid-cols-4 gap-3.5">
             <Stat label="Participants" value={event._count.participants} unit="registered" />

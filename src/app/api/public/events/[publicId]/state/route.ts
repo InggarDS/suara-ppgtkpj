@@ -21,6 +21,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
   const base = {
     eventName: event.name,
     eventStatus: event.status,
+    bannerImage: event.bannerImage,
     closed: event.status !== "ACTIVE",
     totalStages: event.stages.length,
     liveStage: liveStage
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
           order: liveStage.order,
           name: liveStage.name,
           allowAbstain: liveStage.allowAbstain,
-          candidates: liveStage.candidates.map((c) => ({ id: c.id, name: c.name, note: c.note })),
+          candidates: liveStage.candidates.map((c) => ({ id: c.id, name: c.name, note: c.note, photo: c.photo })),
         }
       : null,
   };

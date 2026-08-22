@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import useSWR from "swr";
 import { ResultsSnapshot } from "@/lib/results";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -22,6 +22,22 @@ export default function ResultsView({
     refreshInterval: 3000,
   });
   const [confirmKind, setConfirmKind] = useState<"reveal" | "hide" | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      stageRef.current?.requestFullscreen();
+    }
+  }
 
   if (!data) return null;
   const revealed = data.revealed;
@@ -56,14 +72,23 @@ export default function ResultsView({
         >
           {revealed ? "Lock names" : "Unlock names"}
         </button>
+        <button
+          onClick={toggleFullscreen}
+          className="flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border border-border-1 bg-ink text-white cursor-pointer"
+        >
+          {isFullscreen ? "Exit fullscreen" : "Present fullscreen"}
+        </button>
       </div>
 
-      <div className="bg-stage-dark rounded-[14px] px-13 py-11 text-[#F4F2EE] relative overflow-hidden">
+      <div
+        ref={stageRef}
+        className="bg-stage-dark rounded-[14px] px-13 py-11 text-[#F4F2EE] relative overflow-hidden [&:fullscreen]:rounded-none [&:fullscreen]:flex [&:fullscreen]:items-center [&:fullscreen]:justify-center"
+      >
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
         />
-        <div className="relative">
+        <div className="relative w-full max-w-[900px]">
           <div className="flex items-baseline gap-3 mb-7.5">
             <span className="font-mono text-[11px] tracking-[.12em] text-brand-accent-2 uppercase">
               {data.stageName ?? "No stage"} {data.live ? "· Live" : ""}

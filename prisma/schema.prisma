@@ -32,9 +32,12 @@ model Event {
   publicId          String      @unique
   name              String
   description       String      @default("")
+  bannerImage       String?
   status            EventStatus @default(INACTIVE)
   expectedParticipants Int      @default(0)
   resultsRevealed   Boolean     @default(false)
+  tokenPrefix       String      @default("TOK-")
+  tokenSuffix       String      @default("")
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
@@ -65,12 +68,15 @@ model Stage {
 }
 
 model Candidate {
-  id      String @id @default(cuid())
-  stageId String
-  stage   Stage  @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  name    String
-  note    String @default("")
-  order   Int
+  id            String       @id @default(cuid())
+  stageId       String
+  stage         Stage        @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  name          String
+  note          String       @default("")
+  photo         String?
+  order         Int
+  participantId String?
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
 
   votes Vote[]
 }
@@ -80,13 +86,15 @@ model Participant {
   eventId      String
   event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   name         String?
+  jemaat       String?
   token        String    @unique
   photo        String?
   deviceId     String?
   registeredAt DateTime?
   createdAt    DateTime  @default(now())
 
-  votes Vote[]
+  votes      Vote[]
+  candidacies Candidate[]
 
   @@index([eventId])
 }

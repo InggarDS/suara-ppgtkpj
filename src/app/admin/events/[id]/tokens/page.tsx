@@ -5,6 +5,8 @@ import { Pill } from "@/components/ui/pill";
 import { CopyButton } from "@/components/ui/copy-button";
 import EventHeader from "../event-header";
 import GenerateTokensButton from "./generate-tokens-button";
+import TokenFormatSettings from "./token-format-settings";
+import DeleteParticipantButton from "./delete-participant-button";
 
 export const dynamic = "force-dynamic";
 
@@ -54,11 +56,15 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
             </div>
           </div>
 
+          <TokenFormatSettings eventId={event.id} tokenPrefix={event.tokenPrefix} tokenSuffix={event.tokenSuffix} />
+
           <div className="bg-card border border-border-1 rounded-xl overflow-hidden">
             <div className="flex items-center gap-3.5 px-4.5 py-3 border-b border-border-4 bg-paper-2">
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase flex-1">Participant</span>
+              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[130px]">Jemaat</span>
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[110px]">Token</span>
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[110px]">Status</span>
+              <span className="w-[64px]" />
             </div>
             {event.participants.length === 0 && <div className="p-5 text-sm text-faint">No tokens generated yet.</div>}
             {event.participants.map((p) => {
@@ -72,9 +78,13 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
                     </span>
                     <span className="text-[13px] text-ink font-medium">{p.name ?? <span className="text-faint font-normal">Not registered</span>}</span>
                   </span>
+                  <span className="text-xs text-body w-[130px] overflow-hidden text-ellipsis whitespace-nowrap">{p.jemaat ?? "—"}</span>
                   <span className="font-mono text-xs text-ink-soft w-[110px]">{p.token}</span>
                   <span className="w-[110px]">
                     <Pill kind={status} />
+                  </span>
+                  <span className="w-[64px] flex justify-end">
+                    <DeleteParticipantButton eventId={event.id} participantId={p.id} />
                   </span>
                 </div>
               );

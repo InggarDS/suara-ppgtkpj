@@ -24,6 +24,11 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
   const liveStage = event.stages.find((s) => s.status === "LIVE");
   const focusStage = liveStage ?? event.stages.find((s) => s.status === "NOT_STARTED");
   const participantCount = await prisma.participant.count({ where: { eventId: id } });
+  const registeredParticipants = await prisma.participant.findMany({
+    where: { eventId: id, registeredAt: { not: null } },
+    select: { id: true, name: true, jemaat: true },
+    orderBy: { name: "asc" },
+  });
 
   return (
     <>
@@ -112,7 +117,12 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                         ))}
                       </div>
                       {stage.status === "NOT_STARTED" && (
-                        <CandidateEditor eventId={event.id} stageId={stage.id} candidates={stage.candidates} />
+                        <CandidateEditor
+                          eventId={event.id}
+                          stageId={stage.id}
+                          candidates={stage.candidates}
+                          participants={registeredParticipants}
+                        />
                       )}
                     </div>
                   </div>

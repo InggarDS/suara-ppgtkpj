@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createEventAction } from "../actions";
+import { compressImage } from "@/lib/compress-image";
 
 const defaultStages = ["Pemilihan Bakal Calon", "Pemilihan Calon Tetap", ""];
 
@@ -15,11 +16,24 @@ export default function NewEventCardClient() {
   const [participants, setParticipants] = useState("300");
   const [threshold, setThreshold] = useState(10);
   const [openNow, setOpenNow] = useState(false);
+  const [banner, setBanner] = useState<string | null>(null);
+  const [bannerBusy, setBannerBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
   const valid = name.trim().length > 2;
+
+  async function onBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBannerBusy(true);
+    try {
+      setBanner(await compressImage(file, 1200, 700_000));
+    } finally {
+      setBannerBusy(false);
+    }
+  }
 
   function submit() {
     if (!valid) return;
@@ -31,6 +45,7 @@ export default function NewEventCardClient() {
         openNow,
         stageNames: stageNames.slice(0, stageCount),
         threshold,
+        bannerImage: banner,
       });
       if (res.ok) {
         setOpen(false);
@@ -85,6 +100,39 @@ export default function NewEventCardClient() {
                   placeholder="One line participants will see on the registration screen"
                   className="w-full border border-border-1 rounded-[10px] px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-body mb-1.5">
+                  Banner image <span className="text-fainter font-normal">optional, shown to participants</span>
+                </label>
+                <label
+                  className={`flex items-center w-full rounded-[10px] p-3 cursor-pointer transition-all ${
+                    banner ? "bg-[#F3F8F5] border-[1.5px] border-brand-soft-border-2" : "bg-paper border-[1.5px] border-dashed border-border-2"
+                  }`}
+                >
+                  <input type="file" accept="image/*" className="hidden" onChange={onBannerChange} />
+                  {banner ? (
+                    <span className="flex items-center gap-3 w-full">
+                      <img src={banner} alt="" className="w-20 h-12 rounded-md object-cover flex-none" />
+                      <span className="flex-1 text-left text-[12.5px] font-medium text-ink">Banner selected</span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setBanner(null);
+                        }}
+                        className="text-[11px] text-faint hover:text-danger"
+                      >
+                        Remove
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="text-[12.5px] text-faint mx-auto">
+                      {bannerBusy ? "Compressing…" : "Click to upload a banner (wide image works best)"}
+                    </span>
+                  )}
+                </label>
               </div>
 
               <div>

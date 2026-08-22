@@ -35,6 +35,16 @@ export async function fullResetAction(eventId: string) {
   return { ok: true };
 }
 
+export async function deleteEventAction(eventId: string) {
+  const session = await getAdminSession();
+  if (!session) return { ok: false, error: "Not authenticated" };
+
+  await prisma.event.delete({ where: { id: eventId } });
+
+  revalidatePath("/admin/events");
+  redirect("/admin/events");
+}
+
 export async function archiveEventAction(eventId: string) {
   const session = await getAdminSession();
   if (!session) throw new Error("Not authenticated");

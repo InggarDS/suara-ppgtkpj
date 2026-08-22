@@ -7,8 +7,8 @@ export async function nextPublicEventId(count: number) {
   return "evt_" + String(count + 1).padStart(3, "0");
 }
 
-export function generateToken() {
-  return "TOK-" + digits();
+export function generateToken(prefix = "TOK-", suffix = "") {
+  return `${prefix}${digits()}${suffix}`;
 }
 
 export function initials(name: string) {

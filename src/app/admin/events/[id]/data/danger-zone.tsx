@@ -2,25 +2,33 @@
 
 import { useState } from "react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { fullResetAction, resetVotesAction } from "./actions";
+import { deleteEventAction, fullResetAction, resetVotesAction } from "./actions";
 
 export default function DangerZone({ eventId }: { eventId: string }) {
-  const [kind, setKind] = useState<"votes" | "full" | null>(null);
+  const [kind, setKind] = useState<"votes" | "full" | "delete" | null>(null);
 
-  const config =
-    kind === "full"
-      ? {
-          title: "Permanently delete this event's data?",
-          body: "All votes, all participant records and their uploaded photos will be erased. This cannot be undone — export the audit log first.",
-          word: "DELETE",
-          cta: "Delete everything",
-        }
-      : {
-          title: "Reset all votes?",
-          body: "Every vote log for this event will be deleted. Participants stay registered and will be able to vote again from the current stage.",
-          word: "RESET",
-          cta: "Reset votes",
-        };
+  const configs = {
+    votes: {
+      title: "Reset all votes?",
+      body: "Every vote log for this event will be deleted. Participants stay registered and will be able to vote again from the current stage.",
+      word: "RESET",
+      cta: "Reset votes",
+    },
+    full: {
+      title: "Permanently delete this event's data?",
+      body: "All votes, all participant records and their uploaded photos will be erased. This cannot be undone — export the audit log first.",
+      word: "DELETE",
+      cta: "Delete everything",
+    },
+    delete: {
+      title: "Permanently delete this event?",
+      body: "The event, its stages, candidates, participants, votes and audit trail are all erased for good. There is no undo — export the audit log first if you need a record.",
+      word: "DELETE EVENT",
+      cta: "Delete event",
+    },
+  } as const;
+
+  const config = configs[kind ?? "votes"];
 
   return (
     <div className="border border-danger-border bg-danger-bg rounded-xl p-5">
@@ -37,7 +45,7 @@ export default function DangerZone({ eventId }: { eventId: string }) {
           Reset votes
         </button>
       </div>
-      <div className="flex items-center gap-4 pt-3.5">
+      <div className="flex items-center gap-4 py-3.5 border-b border-[#F0DEDB]">
         <div className="flex-1">
           <div className="text-[13px] font-semibold text-ink">Full reset</div>
           <div className="text-xs text-body leading-relaxed">Permanently deletes all votes, participants and uploaded photos for this event. Requires double confirmation.</div>
@@ -49,6 +57,18 @@ export default function DangerZone({ eventId }: { eventId: string }) {
           Full reset
         </button>
       </div>
+      <div className="flex items-center gap-4 pt-3.5">
+        <div className="flex-1">
+          <div className="text-[13px] font-semibold text-ink">Delete event</div>
+          <div className="text-xs text-body leading-relaxed">Removes the event entirely, including its history. Use this instead of archiving when the event should stop existing.</div>
+        </div>
+        <button
+          onClick={() => setKind("delete")}
+          className="text-[12.5px] font-medium text-white bg-danger border-none rounded-lg px-3.5 py-2.5 cursor-pointer flex-none hover:bg-danger-hover"
+        >
+          Delete event
+        </button>
+      </div>
 
       <ConfirmDialog
         open={kind !== null}
@@ -57,7 +77,11 @@ export default function DangerZone({ eventId }: { eventId: string }) {
         body={config.body}
         confirmWord={config.word}
         ctaLabel={config.cta}
-        action={async () => (kind === "full" ? fullResetAction(eventId) : resetVotesAction(eventId))}
+        action={async () => {
+          if (kind === "full") return fullResetAction(eventId);
+          if (kind === "delete") return deleteEventAction(eventId);
+          return resetVotesAction(eventId);
+        }}
       />
     </div>
   );

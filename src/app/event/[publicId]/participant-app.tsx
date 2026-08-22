@@ -8,8 +8,15 @@ import { initials } from "@/lib/ids";
 type StateResp = {
   eventName: string;
   eventStatus: string;
+  bannerImage: string | null;
   closed: boolean;
-  liveStage: { id: string; order: number; name: string; allowAbstain: boolean; candidates: { id: string; name: string; note: string }[] } | null;
+  liveStage: {
+    id: string;
+    order: number;
+    name: string;
+    allowAbstain: boolean;
+    candidates: { id: string; name: string; note: string; photo: string | null }[];
+  } | null;
   totalStages: number;
   valid?: boolean;
   registered?: boolean;
@@ -79,7 +86,13 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
 
         {screen === "loading" && <div className="flex-1 flex items-center justify-center text-sm text-faint">Loading…</div>}
         {screen === "register" && (
-          <RegisterScreen publicId={publicId} eventName={eventName} deviceId={deviceId} onDone={handleRegistered} />
+          <RegisterScreen
+            publicId={publicId}
+            eventName={eventName}
+            bannerImage={data?.bannerImage ?? null}
+            deviceId={deviceId}
+            onDone={handleRegistered}
+          />
         )}
         {screen === "closed" && <ClosedScreen eventName={eventName} publicId={publicId} />}
         {screen === "waiting" && data && (
@@ -97,15 +110,18 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
 function RegisterScreen({
   publicId,
   eventName,
+  bannerImage,
   deviceId,
   onDone,
 }: {
   publicId: string;
   eventName: string;
+  bannerImage: string | null;
   deviceId: string;
   onDone: (token: string) => void;
 }) {
   const [name, setName] = useState("");
+  const [jemaat, setJemaat] = useState("");
   const [tokenInput, setTokenInput] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -125,8 +141,8 @@ function RegisterScreen({
 
   async function submit() {
     setError(undefined);
-    if (!name.trim() || !tokenInput.trim()) {
-      setError("Enter your name and personal token.");
+    if (!name.trim() || !jemaat.trim() || !tokenInput.trim()) {
+      setError("Enter your name, jemaat and personal token.");
       return;
     }
     setBusy(true);
@@ -134,7 +150,7 @@ function RegisterScreen({
       const res = await fetch(`/api/public/events/${publicId}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: tokenInput.trim(), name: name.trim(), photo, deviceId }),
+        body: JSON.stringify({ token: tokenInput.trim(), name: name.trim(), jemaat: jemaat.trim(), photo, deviceId }),
       });
       const json = await res.json();
       if (!json.ok) {
@@ -148,20 +164,32 @@ function RegisterScreen({
   }
 
   return (
-    <div className="flex-1 overflow-auto px-6 pt-3.5 pb-6.5 flex flex-col gap-5">
-      <div>
+    <div className="flex-1 overflow-auto flex flex-col gap-5 pb-6.5">
+      {bannerImage && (
+        <img src={bannerImage} alt="" className="w-full h-36 object-cover flex-none" />
+      )}
+      <div className={bannerImage ? "px-6" : "px-6 pt-3.5"}>
         <div className="font-mono text-[10px] tracking-[.1em] text-faint uppercase mb-2">{publicId}</div>
         <h2 className="m-0 mb-1.5 text-2xl font-semibold tracking-tight text-ink leading-tight text-pretty">{eventName}</h2>
         <p className="m-0 text-[13.5px] leading-relaxed text-body">Register once to receive your ballot. Your token was sent with your invitation.</p>
       </div>
 
-      <div className="flex flex-col gap-3.5">
+      <div className="flex flex-col gap-3.5 px-6">
         <div>
           <label className="block text-xs font-medium text-body mb-1.5">Full name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Inggar Saputra"
+            className="w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink bg-white outline-none focus:border-brand"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-body mb-1.5">Jemaat</label>
+          <input
+            value={jemaat}
+            onChange={(e) => setJemaat(e.target.value)}
+            placeholder="e.g. Jemaat KPJ"
             className="w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink bg-white outline-none focus:border-brand"
           />
         </div>
@@ -206,9 +234,9 @@ function RegisterScreen({
         </div>
       </div>
 
-      {error && <p className="text-xs text-danger m-0">{error}</p>}
+      {error && <p className="text-xs text-danger m-0 px-6">{error}</p>}
 
-      <div className="mt-auto flex flex-col gap-2.5">
+      <div className="mt-auto flex flex-col gap-2.5 px-6">
         <button
           onClick={submit}
           disabled={busy}
@@ -257,7 +285,13 @@ function BoothScreen({
 }: {
   publicId: string;
   token: string;
-  stage: { id: string; order: number; name: string; allowAbstain: boolean; candidates: { id: string; name: string; note: string }[] };
+  stage: {
+    id: string;
+    order: number;
+    name: string;
+    allowAbstain: boolean;
+    candidates: { id: string; name: string; note: string; photo: string | null }[];
+  };
   totalStages: number;
   onVoted: () => void;
 }) {
@@ -310,13 +344,17 @@ function BoothScreen({
                 on ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(31,95,78,.1)]" : "border-[1.5px] border-border-1"
               }`}
             >
-              <span
-                className={`w-11.5 h-11.5 rounded-full flex-none flex items-center justify-center text-[13px] font-semibold ${
-                  on ? "bg-[#DCE8E1] text-brand" : "bg-border-4 text-faint"
-                }`}
-              >
-                {initials(c.name)}
-              </span>
+              {c.photo ? (
+                <img src={c.photo} alt="" className="w-11.5 h-11.5 rounded-full object-cover flex-none" />
+              ) : (
+                <span
+                  className={`w-11.5 h-11.5 rounded-full flex-none flex items-center justify-center text-[13px] font-semibold ${
+                    on ? "bg-[#DCE8E1] text-brand" : "bg-border-4 text-faint"
+                  }`}
+                >
+                  {initials(c.name)}
+                </span>
+              )}
               <span className="flex-1 text-left min-w-0">
                 <span className="block text-[15px] font-semibold text-ink tracking-tight">{c.name}</span>
                 {c.note && <span className="block text-xs leading-snug text-body">{c.note}</span>}

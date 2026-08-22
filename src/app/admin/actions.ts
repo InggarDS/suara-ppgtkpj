@@ -18,6 +18,7 @@ export type CreateEventInput = {
   openNow: boolean;
   stageNames: string[];
   threshold: number;
+  bannerImage?: string | null;
 };
 
 export async function createEventAction(input: CreateEventInput) {
@@ -35,6 +36,7 @@ export async function createEventAction(input: CreateEventInput) {
       publicId,
       name: input.name.trim(),
       description: input.description.trim(),
+      bannerImage: input.bannerImage || null,
       status: input.openNow ? "ACTIVE" : "INACTIVE",
       expectedParticipants: input.expectedParticipants,
       stages: {
@@ -51,6 +53,17 @@ export async function createEventAction(input: CreateEventInput) {
 
   revalidatePath("/admin/events");
   return { ok: true, id: event.id };
+}
+
+export async function updateBannerAction(eventId: string, bannerImage: string | null) {
+  const session = await getAdminSession();
+  if (!session) return { ok: false, error: "Not authenticated" };
+
+  await prisma.event.update({ where: { id: eventId }, data: { bannerImage } });
+  await logAudit(eventId, bannerImage ? "Banner image updated" : "Banner image removed", session.name);
+
+  revalidatePath(`/admin/events/${eventId}`);
+  return { ok: true };
 }
 
 export async function toggleEventStatusAction(eventId: string) {
