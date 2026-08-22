@@ -7,6 +7,7 @@ import EventHeader from "../event-header";
 import GenerateTokensButton from "./generate-tokens-button";
 import TokenFormatSettings from "./token-format-settings";
 import DeleteParticipantButton from "./delete-participant-button";
+import CredentialsPanel from "./credentials-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
     include: {
       stages: { where: { status: "LIVE" } },
       participants: { orderBy: { createdAt: "asc" }, include: { votes: true } },
+      credentials: { orderBy: { name: "asc" } },
     },
   });
   if (!event) notFound();
@@ -34,7 +36,9 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
             <div className="bg-card border border-border-1 rounded-xl p-5">
               <div className="text-sm font-semibold text-ink mb-1">Event invite link</div>
               <p className="m-0 mb-3.5 text-xs leading-relaxed text-body">
-                Share this once. Each participant still needs their personal token to register.
+                {event.useCredentials
+                  ? "Share this once. Participants register with their name — no personal token needed."
+                  : "Share this once. Each participant still needs their personal token to register."}
               </p>
               <div className="flex gap-2">
                 <div className="flex-1 border border-border-1 rounded-lg bg-paper-2 px-3.5 py-2.5 font-mono text-[12.5px] text-ink-soft overflow-hidden text-ellipsis whitespace-nowrap">
@@ -42,9 +46,11 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
                 </div>
                 <CopyButton text={inviteLink} className="text-[12.5px] font-medium text-white bg-brand rounded-lg px-4 flex-none cursor-pointer" />
               </div>
-              <div className="flex gap-2.5 mt-4 pt-4 border-t border-border-4">
-                <GenerateTokensButton eventId={event.id} />
-              </div>
+              {!event.useCredentials && (
+                <div className="flex gap-2.5 mt-4 pt-4 border-t border-border-4">
+                  <GenerateTokensButton eventId={event.id} />
+                </div>
+              )}
             </div>
             <div className="bg-card border border-border-1 rounded-xl p-5 flex flex-col items-center gap-2.5">
               <div className="w-[132px] h-[132px] rounded-lg bg-border-5 border border-dashed border-border-2 flex items-center justify-center text-[11px] text-fainter text-center leading-tight">
@@ -58,6 +64,13 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
 
           <TokenFormatSettings eventId={event.id} tokenPrefix={event.tokenPrefix} tokenSuffix={event.tokenSuffix} />
 
+          {event.useCredentials && (
+            <CredentialsPanel
+              eventId={event.id}
+              credentials={event.credentials.map((c) => ({ id: c.id, name: c.name, jemaat: c.jemaat, registered: Boolean(c.participantId) }))}
+            />
+          )}
+
           <div className="bg-card border border-border-1 rounded-xl overflow-hidden">
             <div className="flex items-center gap-3.5 px-4.5 py-3 border-b border-border-4 bg-paper-2">
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase flex-1">Participant</span>
@@ -66,7 +79,11 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
               <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[110px]">Status</span>
               <span className="w-[64px]" />
             </div>
-            {event.participants.length === 0 && <div className="p-5 text-sm text-faint">No tokens generated yet.</div>}
+            {event.participants.length === 0 && (
+              <div className="p-5 text-sm text-faint">
+                {event.useCredentials ? "No one has registered yet." : "No tokens generated yet."}
+              </div>
+            )}
             {event.participants.map((p) => {
               const voted = liveStageId ? p.votes.some((v) => v.stageId === liveStageId) : false;
               const status = voted ? "Voted" : p.registeredAt ? "Registered" : "Not sent";

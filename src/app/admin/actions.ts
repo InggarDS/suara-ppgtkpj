@@ -19,12 +19,17 @@ export type CreateEventInput = {
   stageNames: string[];
   threshold: number;
   bannerImage?: string | null;
+  useCredentials?: boolean;
+  credentials?: { name: string; jemaat: string }[];
 };
 
 export async function createEventAction(input: CreateEventInput) {
   const session = await getAdminSession();
   if (!session) throw new Error("Not authenticated");
   if (input.name.trim().length <= 2) return { ok: false, error: "Event name is too short." };
+  if (input.useCredentials && !(input.credentials && input.credentials.length)) {
+    return { ok: false, error: "Upload a credential sheet before creating the event." };
+  }
 
   const count = await prisma.event.count();
   const publicId = "evt_" + String(count + 1).padStart(3, "0");
@@ -39,6 +44,7 @@ export async function createEventAction(input: CreateEventInput) {
       bannerImage: input.bannerImage || null,
       status: input.openNow ? "ACTIVE" : "INACTIVE",
       expectedParticipants: input.expectedParticipants,
+      useCredentials: Boolean(input.useCredentials),
       stages: {
         create: (stageNames.length ? stageNames : ["Stage 1"]).map((name, i) => ({
           order: i + 1,
@@ -46,10 +52,17 @@ export async function createEventAction(input: CreateEventInput) {
           thresholdMin: input.threshold,
         })),
       },
+      credentials: input.useCredentials
+        ? { create: input.credentials!.map((c) => ({ name: c.name, jemaat: c.jemaat })) }
+        : undefined,
     },
   });
 
-  await logAudit(event.id, `Event ${event.publicId} created`, session.name);
+  await logAudit(
+    event.id,
+    `Event ${event.publicId} created${input.useCredentials ? ` with ${input.credentials!.length} credentials` : ""}`,
+    session.name
+  );
 
   revalidatePath("/admin/events");
   return { ok: true, id: event.id };

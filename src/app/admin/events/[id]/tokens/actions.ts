@@ -9,6 +9,7 @@ import { revalidatePath } from "next/cache";
 export async function generateTokensAction(eventId: string, count: number) {
   const session = await getAdminSession();
   if (!session) return { ok: false, error: "Not authenticated" };
+  count = Math.max(1, Math.min(1000, Math.floor(count) || 0));
 
   const event = await prisma.event.findUniqueOrThrow({ where: { id: eventId } });
   const { tokenPrefix, tokenSuffix } = event;
@@ -40,6 +41,34 @@ export async function updateTokenFormatAction(eventId: string, tokenPrefix: stri
 
   await prisma.event.update({ where: { id: eventId }, data: { tokenPrefix, tokenSuffix } });
   await logAudit(eventId, `Token format changed to "${tokenPrefix}____${tokenSuffix}"`, session.name);
+
+  revalidatePath(`/admin/events/${eventId}/tokens`);
+  return { ok: true };
+}
+
+export async function addCredentialsAction(eventId: string, credentials: { name: string; jemaat: string }[]) {
+  const session = await getAdminSession();
+  if (!session) return { ok: false, error: "Not authenticated" };
+  if (!credentials.length) return { ok: false, error: "No rows found in the file." };
+
+  await prisma.credential.createMany({
+    data: credentials.map((c) => ({ eventId, name: c.name, jemaat: c.jemaat })),
+  });
+  await logAudit(eventId, `${credentials.length} credentials uploaded`, session.name);
+
+  revalidatePath(`/admin/events/${eventId}/tokens`);
+  return { ok: true };
+}
+
+export async function deleteCredentialAction(eventId: string, credentialId: string) {
+  const session = await getAdminSession();
+  if (!session) return { ok: false, error: "Not authenticated" };
+
+  const credential = await prisma.credential.findUnique({ where: { id: credentialId } });
+  if (!credential || credential.eventId !== eventId) return { ok: false, error: "Not found" };
+
+  await prisma.credential.delete({ where: { id: credentialId } });
+  await logAudit(eventId, `Credential "${credential.name}" removed`, session.name);
 
   revalidatePath(`/admin/events/${eventId}/tokens`);
   return { ok: true };

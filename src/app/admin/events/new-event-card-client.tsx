@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createEventAction } from "../actions";
 import { compressImage } from "@/lib/compress-image";
+import { parseCredentialsCsv } from "@/lib/csv";
 
 const defaultStages = ["Pemilihan Bakal Calon", "Pemilihan Calon Tetap", ""];
 
@@ -18,11 +19,30 @@ export default function NewEventCardClient() {
   const [openNow, setOpenNow] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const [bannerBusy, setBannerBusy] = useState(false);
+  const [useCredentials, setUseCredentials] = useState(false);
+  const [credentials, setCredentials] = useState<{ name: string; jemaat: string }[]>([]);
+  const [credentialFileName, setCredentialFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
   const router = useRouter();
 
-  const valid = name.trim().length > 2;
+  const valid = name.trim().length > 2 && (!useCredentials || credentials.length > 0);
+
+  async function onCredentialFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const rows = parseCredentialsCsv(text);
+      setCredentials(rows);
+      setCredentialFileName(file.name);
+      setError(undefined);
+    } catch (err) {
+      setCredentials([]);
+      setCredentialFileName(null);
+      setError(err instanceof Error ? err.message : "Could not read that file.");
+    }
+  }
 
   async function onBannerChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -46,6 +66,8 @@ export default function NewEventCardClient() {
         stageNames: stageNames.slice(0, stageCount),
         threshold,
         bannerImage: banner,
+        useCredentials,
+        credentials: useCredentials ? credentials : undefined,
       });
       if (res.ok) {
         setOpen(false);
@@ -133,6 +155,38 @@ export default function NewEventCardClient() {
                     </span>
                   )}
                 </label>
+              </div>
+
+              <div className="flex flex-col gap-3 bg-paper-2 border border-border-3 rounded-xl px-3.5 py-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex-1">
+                    <span className="block text-[12.5px] font-medium text-ink">Menggunakan kredensial</span>
+                    <span className="block text-[11.5px] text-faint leading-snug">
+                      Verify participants against an uploaded Nama/Jemaat list instead of pre-issued tokens
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setUseCredentials((v) => !v)}
+                    className={`w-[34px] h-5 rounded-full border-none p-0.5 cursor-pointer flex flex-none ${
+                      useCredentials ? "bg-brand justify-end" : "bg-hairline justify-start"
+                    }`}
+                  >
+                    <span className="block w-4 h-4 rounded-full bg-white shadow" />
+                  </button>
+                </div>
+                {useCredentials && (
+                  <label className="flex items-center w-full rounded-[10px] p-3 cursor-pointer bg-white border-[1.5px] border-dashed border-border-2">
+                    <input type="file" accept=".csv,text/csv" className="hidden" onChange={onCredentialFile} />
+                    {credentialFileName ? (
+                      <span className="text-[12.5px] text-ink mx-auto">
+                        <strong className="font-semibold text-brand">{credentials.length} rows</strong> loaded from {credentialFileName}
+                      </span>
+                    ) : (
+                      <span className="text-[12.5px] text-faint mx-auto">Upload a CSV with &quot;Nama&quot; and &quot;Jemaat&quot; columns</span>
+                    )}
+                  </label>
+                )}
               </div>
 
               <div>

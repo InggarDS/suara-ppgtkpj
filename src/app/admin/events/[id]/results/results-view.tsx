@@ -88,20 +88,25 @@ export default function ResultsView({
           className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
         />
-        <div className="relative w-full max-w-[900px]">
-          <div className="flex items-baseline gap-3 mb-7.5">
-            <span className="font-mono text-[11px] tracking-[.12em] text-brand-accent-2 uppercase">
-              {data.stageName ?? "No stage"} {data.live ? "· Live" : ""}
-            </span>
+        <div className="relative w-full max-w-[900px] flex flex-col" style={{ maxHeight: "min(900px, 82vh)" }}>
+          <div className="flex items-baseline gap-3 mb-1.5 flex-none">
+            <span className="font-mono text-[11px] tracking-[.12em] text-stage-dimmer uppercase">{eventName}</span>
             <span className="flex-1" />
             <span className="font-mono text-xs text-stage-dimmer">
-              {data.totalVotes} / {data.denom} votes · live
+              {data.totalVotes} / {data.denom} votes {data.live && "· live"}
             </span>
           </div>
-          <div className="flex items-baseline gap-3.5 mb-8.5">
-            <h2 className="m-0 text-[34px] font-semibold tracking-tight">{eventName}</h2>
+          <div className="flex items-baseline gap-3.5 mb-6.5 flex-none">
+            <h2 className="m-0 text-[32px] font-semibold tracking-tight">{data.stageName ?? "No stage"}</h2>
+            {data.live && (
+              <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-brand-accent-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse-dot" />
+                Live
+              </span>
+            )}
+            <span className="flex-1" />
             {!revealed && (
-              <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-2.5 py-1.5">
+              <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-2.5 py-1.5 flex-none">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
                   <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path>
@@ -110,46 +115,40 @@ export default function ResultsView({
               </span>
             )}
           </div>
-          <div className="flex flex-col gap-5.5">
+          <div className="flex flex-col gap-1.5 overflow-y-auto pr-1">
             {data.results.map((r, i) => (
-              <div key={r.id}>
-                <div className="flex items-baseline gap-3.5 mb-2.5">
-                  <span
-                    className={`w-8.5 h-8.5 rounded-full text-stage-dim text-xs font-semibold flex items-center justify-center flex-none bg-stage-dark-3 ${
-                      revealed ? "" : "border border-dashed border-stage-dark-4"
-                    }`}
-                  >
-                    {revealed ? r.initials : ""}
+              <div key={r.id} className="flex items-center gap-3">
+                <span className="font-mono text-[11px] text-stage-dimmer w-5 flex-none text-right">{i + 1}</span>
+                {revealed && r.initials ? (
+                  <span className="w-7 h-7 rounded-full text-stage-dim text-[10px] font-semibold flex items-center justify-center flex-none bg-stage-dark-3">
+                    {r.initials}
                   </span>
+                ) : null}
+                <span
+                  className={`w-[180px] flex-none overflow-hidden text-ellipsis whitespace-nowrap ${
+                    revealed ? "text-[14px] font-semibold text-[#F4F2EE]" : "text-stage-dim font-mono text-[13px] tracking-[.03em]"
+                  }`}
+                >
+                  {revealed ? r.name : `Candidate ${i + 1}`}
+                </span>
+                <span className="flex-1 h-2.5 rounded bg-stage-dark-2 overflow-hidden">
                   <span
-                    className={
-                      revealed
-                        ? "text-[19px] font-semibold tracking-tight text-[#F4F2EE]"
-                        : "text-stage-dim font-mono text-base tracking-[.04em]"
-                    }
-                  >
-                    {revealed ? r.name : `Candidate ${String.fromCharCode(65 + i)}`}
-                  </span>
-                  <span className="flex-1" />
-                  <span className="font-mono text-[13px] text-stage-dim">{r.votes} votes</span>
-                  <span className="text-[22px] font-semibold tracking-tight w-[78px] text-right">{r.pct}%</span>
-                </div>
-                <div className="h-3.5 rounded-lg bg-stage-dark-2 overflow-hidden">
-                  <div
-                    className="h-full rounded-lg transition-all duration-700"
+                    className="block h-full rounded transition-all duration-700"
                     style={{
                       width: `${r.pct}%`,
                       background: i === 0 ? "linear-gradient(90deg,#2E9E7B,#7FBFA6)" : "#3C4340",
                     }}
                   />
-                </div>
+                </span>
+                <span className="font-mono text-[11.5px] text-stage-dim w-[64px] text-right flex-none">{r.votes} votes</span>
+                <span className="text-[15px] font-semibold tracking-tight w-[52px] text-right flex-none">{r.pct}%</span>
               </div>
             ))}
           </div>
           {revealed && data.winnerName && (
-            <div className="mt-8.5 pt-6.5 border-t border-stage-dark-3 flex items-center gap-4 animate-rise-in">
+            <div className="mt-5 pt-4 border-t border-stage-dark-3 flex items-center gap-4 animate-rise-in flex-none">
               <span className="font-mono text-[11px] tracking-[.12em] text-brand-accent-2 uppercase">Elected</span>
-              <span className="text-[26px] font-semibold tracking-tight">{data.winnerName}</span>
+              <span className="text-[22px] font-semibold tracking-tight">{data.winnerName}</span>
             </div>
           )}
         </div>

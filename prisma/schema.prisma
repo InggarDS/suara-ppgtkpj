@@ -38,12 +38,28 @@ model Event {
   resultsRevealed   Boolean     @default(false)
   tokenPrefix       String      @default("TOK-")
   tokenSuffix       String      @default("")
+  useCredentials    Boolean     @default(false)
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 
   stages       Stage[]
   participants Participant[]
   auditLogs    AuditLog[]
+  credentials  Credential[]
+}
+
+model Credential {
+  id            String       @id @default(cuid())
+  eventId       String
+  event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name          String
+  jemaat        String
+  participantId String?      @unique
+  participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  usedAt        DateTime?
+  createdAt     DateTime     @default(now())
+
+  @@index([eventId])
 }
 
 model Stage {
@@ -95,6 +111,7 @@ model Participant {
 
   votes      Vote[]
   candidacies Candidate[]
+  credential  Credential?
 
   @@index([eventId])
 }

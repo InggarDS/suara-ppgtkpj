@@ -22,6 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
     eventName: event.name,
     eventStatus: event.status,
     bannerImage: event.bannerImage,
+    useCredentials: event.useCredentials,
     closed: event.status !== "ACTIVE",
     totalStages: event.stages.length,
     liveStage: liveStage

@@ -9,6 +9,7 @@ type StateResp = {
   eventName: string;
   eventStatus: string;
   bannerImage: string | null;
+  useCredentials: boolean;
   closed: boolean;
   liveStage: {
     id: string;
@@ -90,6 +91,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             publicId={publicId}
             eventName={eventName}
             bannerImage={data?.bannerImage ?? null}
+            useCredentials={data?.useCredentials ?? false}
             deviceId={deviceId}
             onDone={handleRegistered}
           />
@@ -111,12 +113,14 @@ function RegisterScreen({
   publicId,
   eventName,
   bannerImage,
+  useCredentials,
   deviceId,
   onDone,
 }: {
   publicId: string;
   eventName: string;
   bannerImage: string | null;
+  useCredentials: boolean;
   deviceId: string;
   onDone: (token: string) => void;
 }) {
@@ -126,6 +130,29 @@ function RegisterScreen({
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const [credentialMatch, setCredentialMatch] = useState<"idle" | "checking" | "found" | "not-found">("idle");
+
+  useEffect(() => {
+    if (!useCredentials) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const handle = setTimeout(async () => {
+      setCredentialMatch("checking");
+      const res = await fetch(`/api/public/events/${publicId}/credential-lookup?name=${encodeURIComponent(trimmed)}`);
+      const json = await res.json();
+      if (json.found) {
+        setCredentialMatch("found");
+        setJemaat(json.jemaat);
+      } else {
+        setCredentialMatch("not-found");
+        setJemaat("");
+      }
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [name, publicId, useCredentials]);
+
+  const effectiveCredentialMatch = name.trim() ? credentialMatch : "idle";
+  const displayJemaat = name.trim() ? jemaat : "";
 
   async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -141,7 +168,16 @@ function RegisterScreen({
 
   async function submit() {
     setError(undefined);
-    if (!name.trim() || !jemaat.trim() || !tokenInput.trim()) {
+    if (useCredentials) {
+      if (!name.trim()) {
+        setError("Enter your name.");
+        return;
+      }
+      if (credentialMatch !== "found") {
+        setError("Nama tidak sesuai kredensi");
+        return;
+      }
+    } else if (!name.trim() || !jemaat.trim() || !tokenInput.trim()) {
       setError("Enter your name, jemaat and personal token.");
       return;
     }
@@ -150,7 +186,13 @@ function RegisterScreen({
       const res = await fetch(`/api/public/events/${publicId}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: tokenInput.trim(), name: name.trim(), jemaat: jemaat.trim(), photo, deviceId }),
+        body: JSON.stringify({
+          token: useCredentials ? undefined : tokenInput.trim(),
+          name: name.trim(),
+          jemaat: useCredentials ? undefined : jemaat.trim(),
+          photo,
+          deviceId,
+        }),
       });
       const json = await res.json();
       if (!json.ok) {
@@ -171,7 +213,11 @@ function RegisterScreen({
       <div className={bannerImage ? "px-6" : "px-6 pt-3.5"}>
         <div className="font-mono text-[10px] tracking-[.1em] text-faint uppercase mb-2">{publicId}</div>
         <h2 className="m-0 mb-1.5 text-2xl font-semibold tracking-tight text-ink leading-tight text-pretty">{eventName}</h2>
-        <p className="m-0 text-[13.5px] leading-relaxed text-body">Register once to receive your ballot. Your token was sent with your invitation.</p>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body">
+          {useCredentials
+            ? "Register once to receive your ballot. Enter your name exactly as registered with the committee."
+            : "Register once to receive your ballot. Your token was sent with your invitation."}
+        </p>
       </div>
 
       <div className="flex flex-col gap-3.5 px-6">
@@ -181,27 +227,44 @@ function RegisterScreen({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Inggar Saputra"
-            className="w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink bg-white outline-none focus:border-brand"
+            className={`w-full border rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink bg-white outline-none focus:border-brand ${
+              useCredentials && effectiveCredentialMatch === "not-found" ? "border-danger" : "border-border-1"
+            }`}
           />
+          {useCredentials && effectiveCredentialMatch === "not-found" && (
+            <p className="m-0 mt-1.5 text-xs text-danger">Nama tidak sesuai kredensi</p>
+          )}
         </div>
         <div>
           <label className="block text-xs font-medium text-body mb-1.5">Jemaat</label>
           <input
-            value={jemaat}
-            onChange={(e) => setJemaat(e.target.value)}
-            placeholder="e.g. Jemaat KPJ"
-            className="w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink bg-white outline-none focus:border-brand"
+            value={useCredentials ? displayJemaat : jemaat}
+            onChange={(e) => !useCredentials && setJemaat(e.target.value)}
+            readOnly={useCredentials}
+            placeholder={useCredentials ? "Auto-filled after name matches" : "e.g. Jemaat KPJ"}
+            className={`w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink outline-none focus:border-brand ${
+              useCredentials ? "bg-border-5 text-body" : "bg-white"
+            }`}
           />
         </div>
-        <div>
-          <label className="block text-xs font-medium text-body mb-1.5">Personal token</label>
-          <input
-            value={tokenInput}
-            onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
-            placeholder="TOK-0000"
-            className="w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 font-mono text-[15px] tracking-[.06em] text-ink bg-white outline-none focus:border-brand"
-          />
-        </div>
+        {useCredentials ? (
+          <div>
+            <label className="block text-xs font-medium text-body mb-1.5">Personal token</label>
+            <div className="w-full border border-dashed border-border-2 rounded-[11px] px-3.5 py-3.5 text-[13.5px] text-faint bg-border-5">
+              Token di generate otomatis
+            </div>
+          </div>
+        ) : (
+          <div>
+            <label className="block text-xs font-medium text-body mb-1.5">Personal token</label>
+            <input
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+              placeholder="TOK-0000"
+              className="w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 font-mono text-[15px] tracking-[.06em] text-ink bg-white outline-none focus:border-brand"
+            />
+          </div>
+        )}
         <div>
           <label className="block text-xs font-medium text-body mb-1.5">Profile photo</label>
           <label
