@@ -10,12 +10,29 @@ export async function getResultsSnapshot(eventId: string) {
         orderBy: { order: "desc" },
         include: { candidates: { orderBy: { order: "asc" } }, votes: true },
       },
+      _count: { select: { participants: true } },
     },
   });
   if (!event) return null;
 
+  const registered = await prisma.participant.count({ where: { eventId, registeredAt: { not: null } } });
+  const denom = event.expectedParticipants || event._count.participants || 1;
+  const registrationPct = pct(registered, denom);
+
   const targetStage = event.stages.find((s) => s.status === "LIVE") ?? event.stages.find((s) => s.status === "COMPLETED") ?? event.stages[0];
-  if (!targetStage) return { revealed: event.resultsRevealed, stageName: null, live: false, totalVotes: 0, results: [] };
+  if (!targetStage) {
+    return {
+      revealed: event.resultsRevealed,
+      stageName: null,
+      live: false,
+      totalVotes: 0,
+      denom,
+      registered,
+      registrationPct,
+      results: [],
+      winnerName: null,
+    };
+  }
 
   const votesByCandidate = new Map<string, number>();
   let abstainCount = 0;
@@ -43,7 +60,9 @@ export async function getResultsSnapshot(eventId: string) {
     stageName: targetStage.name,
     live: targetStage.status === "LIVE",
     totalVotes,
-    denom: event.expectedParticipants || 1,
+    denom,
+    registered,
+    registrationPct,
     results: results.map((r) => ({ ...r, initials: initials(r.name) })),
     winnerName: winner?.name ?? null,
   };

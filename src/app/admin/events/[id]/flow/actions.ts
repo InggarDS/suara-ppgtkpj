@@ -129,6 +129,30 @@ export async function addCandidateFromParticipantAction(eventId: string, stageId
   return { ok: true };
 }
 
+export async function addAllParticipantsAsCandidatesAction(eventId: string, stageId: string, participantIds: string[]) {
+  await requireSession();
+  if (!participantIds.length) return { ok: false, error: "No participants to add." };
+
+  const participants = await prisma.participant.findMany({
+    where: { id: { in: participantIds }, name: { not: null } },
+  });
+  if (!participants.length) return { ok: false, error: "No participants to add." };
+
+  const count = await prisma.candidate.count({ where: { stageId } });
+  await prisma.candidate.createMany({
+    data: participants.map((p, i) => ({
+      stageId,
+      name: p.name!,
+      note: p.jemaat ? `Jemaat ${p.jemaat}` : "",
+      photo: p.photo,
+      participantId: p.id,
+      order: count + i + 1,
+    })),
+  });
+  revalidatePath(`/admin/events/${eventId}/flow`);
+  return { ok: true, added: participants.length };
+}
+
 export async function removeCandidateAction(eventId: string, candidateId: string) {
   await requireSession();
   await prisma.candidate.delete({ where: { id: candidateId } });

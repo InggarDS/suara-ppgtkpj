@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { addCandidateAction, addCandidateFromParticipantAction, removeCandidateAction } from "./actions";
+import {
+  addAllParticipantsAsCandidatesAction,
+  addCandidateAction,
+  addCandidateFromParticipantAction,
+  removeCandidateAction,
+} from "./actions";
 
 type Candidate = { id: string; name: string };
 type Participant = { id: string; name: string | null; jemaat: string | null };
@@ -59,34 +64,53 @@ export default function CandidateEditor({
       </div>
 
       {mode === "participant" ? (
-        <div className="flex gap-2">
-          <select
-            value={selected}
-            onChange={(e) => setSelected(e.target.value)}
-            className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand bg-white"
-          >
-            <option value="">
-              {availableParticipants.length ? "Select a registered participant…" : "No registered participants left"}
-            </option>
-            {availableParticipants.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-                {p.jemaat ? ` · ${p.jemaat}` : ""}
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <select
+              value={selected}
+              onChange={(e) => setSelected(e.target.value)}
+              className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand bg-white"
+            >
+              <option value="">
+                {availableParticipants.length ? "Select a registered participant…" : "No registered participants left"}
               </option>
-            ))}
-          </select>
-          <button
-            disabled={!selected || pending}
-            onClick={() =>
-              startTransition(async () => {
-                const res = await addCandidateFromParticipantAction(eventId, stageId, selected);
-                if (res.ok) setSelected("");
-              })
-            }
-            className="text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 disabled:opacity-50"
-          >
-            Add
-          </button>
+              {availableParticipants.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                  {p.jemaat ? ` · ${p.jemaat}` : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              disabled={!selected || pending}
+              onClick={() =>
+                startTransition(async () => {
+                  const res = await addCandidateFromParticipantAction(eventId, stageId, selected);
+                  if (res.ok) setSelected("");
+                })
+              }
+              className="text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 disabled:opacity-50"
+            >
+              Add
+            </button>
+          </div>
+          {availableParticipants.length > 1 && (
+            <button
+              disabled={pending}
+              onClick={() =>
+                startTransition(() => {
+                  void addAllParticipantsAsCandidatesAction(
+                    eventId,
+                    stageId,
+                    availableParticipants.map((p) => p.id)
+                  );
+                })
+              }
+              className="self-start text-[11px] font-medium text-brand hover:underline disabled:opacity-50"
+            >
+              Add all {availableParticipants.length} registered participants
+            </button>
+          )}
         </div>
       ) : (
         <div className="flex gap-2">

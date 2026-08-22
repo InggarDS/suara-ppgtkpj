@@ -8,7 +8,7 @@ export async function proxy(req: NextRequest) {
 
   if (pathname === "/admin/login") return NextResponse.next();
 
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/present")) {
     const token = req.cookies.get(COOKIE_NAME)?.value;
     if (!token) return NextResponse.redirect(new URL("/admin/login", req.url));
     try {
@@ -22,5 +22,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/present/:path*"],
 };
