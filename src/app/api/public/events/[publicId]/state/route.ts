@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
       },
     },
   });
-  if (!event) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (!event) return NextResponse.json({ error: "tidak ditemukan" }, { status: 404 });
 
   const liveStage = event.stages.find((s) => s.status === "LIVE");
   const completedStages = event.stages.filter((s) => s.status === "COMPLETED");

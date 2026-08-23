@@ -96,7 +96,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
           <StageTrack stages={data.stages} currentOrder={data.liveStage?.order ?? data.lastCompletedStage?.order ?? null} />
         )}
 
-        {screen === "loading" && <div className="flex-1 flex items-center justify-center text-sm text-faint">Loading…</div>}
+        {screen === "loading" && <div className="flex-1 flex items-center justify-center text-sm text-faint">Memuat…</div>}
         {screen === "register" && (
           <RegisterScreen
             publicId={publicId}
@@ -188,7 +188,7 @@ function RegisterScreen({
     setError(undefined);
     if (useCredentials) {
       if (!name.trim()) {
-        setError("Enter your name.");
+        setError("Masukkan nama Anda.");
         return;
       }
       if (credentialMatch !== "found") {
@@ -196,7 +196,7 @@ function RegisterScreen({
         return;
       }
     } else if (!name.trim() || !jemaat.trim() || !tokenInput.trim()) {
-      setError("Enter your name, jemaat and personal token.");
+      setError("Masukkan nama, jemaat, dan token pribadi Anda.");
       return;
     }
     setBusy(true);
@@ -215,7 +215,7 @@ function RegisterScreen({
       });
       const json = await res.json();
       if (!json.ok) {
-        setError(json.error || "Registration failed.");
+        setError(json.error || "Registrasi gagal.");
         return;
       }
       onDone(json.token);
@@ -234,18 +234,18 @@ function RegisterScreen({
         <h2 className="m-0 mb-1.5 text-2xl font-semibold tracking-tight text-ink leading-tight text-pretty">{eventName}</h2>
         <p className="m-0 text-[13.5px] leading-relaxed text-body">
           {useCredentials
-            ? "Register once to receive your ballot. Enter your name exactly as registered with the committee."
-            : "Register once to receive your ballot. Your token was sent with your invitation."}
+            ? "Daftar sekali untuk menerima surat suara Anda. Masukkan nama persis seperti yang terdaftar di panitia."
+            : "Daftar sekali untuk menerima surat suara Anda. Token Anda telah dikirim bersama undangan."}
         </p>
       </div>
 
       <div className="flex flex-col gap-3.5 px-6">
         <div>
-          <label className="block text-xs font-medium text-body mb-1.5">Full name</label>
+          <label className="block text-xs font-medium text-body mb-1.5">Nama lengkap</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Inggar Saputra"
+            placeholder="cth. Inggar Saputra"
             className={`w-full border rounded-[20px] px-3.5 py-3.5 text-[15px] text-ink bg-card outline-none focus:border-brand ${
               useCredentials && effectiveCredentialMatch === "not-found" ? "border-danger" : "border-border-1"
             }`}
@@ -260,7 +260,7 @@ function RegisterScreen({
             value={useCredentials ? displayJemaat : jemaat}
             onChange={(e) => !useCredentials && setJemaat(e.target.value)}
             readOnly={useCredentials}
-            placeholder={useCredentials ? "Auto-filled after name matches" : "e.g. Jemaat KPJ"}
+            placeholder={useCredentials ? "Terisi otomatis setelah nama cocok" : "cth. Jemaat KPJ"}
             className={`w-full border border-border-1 rounded-[20px] px-3.5 py-3.5 text-[15px] text-ink outline-none focus:border-brand ${
               useCredentials ? "bg-border-5 text-body" : "bg-card"
             }`}
@@ -268,14 +268,14 @@ function RegisterScreen({
         </div>
         {useCredentials ? (
           <div>
-            <label className="block text-xs font-medium text-body mb-1.5">Personal token</label>
+            <label className="block text-xs font-medium text-body mb-1.5">Token pribadi</label>
             <div className="w-full border border-dashed border-border-2 rounded-[20px] px-3.5 py-3.5 text-[13.5px] text-faint bg-border-5">
               Token di generate otomatis
             </div>
           </div>
         ) : (
           <div>
-            <label className="block text-xs font-medium text-body mb-1.5">Personal token</label>
+            <label className="block text-xs font-medium text-body mb-1.5">Token pribadi</label>
             <input
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
@@ -285,7 +285,7 @@ function RegisterScreen({
           </div>
         )}
         <div>
-          <label className="block text-xs font-medium text-body mb-1.5">Profile photo</label>
+          <label className="block text-xs font-medium text-body mb-1.5">Foto profil</label>
           <label
             className={`flex items-center w-full rounded-[22px] p-3.5 cursor-pointer transition-all ${
               photo ? "bg-[rgba(61,123,255,.14)] border-[1.5px] border-brand-soft-border-2" : "bg-card border-[1.5px] border-dashed border-border-2"
@@ -296,8 +296,8 @@ function RegisterScreen({
               <span className="flex items-center gap-3 w-full">
                 <img src={photo} alt="" className="w-12 h-12 rounded-xl object-cover flex-none" />
                 <span className="flex-1 text-left min-w-0">
-                  <span className="block text-[13px] font-medium text-ink">Photo selected</span>
-                  <span className="block font-mono text-[11.5px] leading-relaxed text-brand">compressed</span>
+                  <span className="block text-[13px] font-medium text-ink">Foto terpilih</span>
+                  <span className="block font-mono text-[11.5px] leading-relaxed text-brand">terkompresi</span>
                 </span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D7BFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
                   <path d="M4 12.5 9.5 18 20 6.5"></path>
@@ -308,8 +308,8 @@ function RegisterScreen({
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C76A0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path>
                 </svg>
-                <span className="text-[13px] font-medium text-ink-soft">{busy ? "Compressing…" : "Take or upload a photo"}</span>
-                <span className="text-[11.5px] text-faint">Compressed to ≤ 500 KB on your phone</span>
+                <span className="text-[13px] font-medium text-ink-soft">{busy ? "Mengompres…" : "Ambil atau unggah foto"}</span>
+                <span className="text-[11.5px] text-faint">Dikompresi hingga ≤ 500 KB di ponsel Anda</span>
               </span>
             )}
           </label>
@@ -324,9 +324,9 @@ function RegisterScreen({
           disabled={busy}
           className="glow-ring w-full bg-brand text-white rounded-full py-4 text-[15px] font-semibold cursor-pointer hover:bg-brand-hover disabled:opacity-60 disabled:shadow-none"
         >
-          {busy ? "Please wait…" : "Register"}
+          {busy ? "Mohon tunggu…" : "Daftar"}
         </button>
-        <p className="m-0 text-[11.5px] leading-relaxed text-faint text-center">One device, one token, one vote per stage.</p>
+        <p className="m-0 text-[11.5px] leading-relaxed text-faint text-center">Satu perangkat, satu token, satu suara per stage.</p>
       </div>
     </div>
   );
@@ -409,11 +409,11 @@ function WaitingScreen({
         </span>
         <span className="flex-1 min-w-0">
           <span className="block text-sm font-semibold text-ink">{name}</span>
-          <span className="block font-mono text-[11.5px] leading-relaxed text-faint">{token} · registered</span>
+          <span className="block font-mono text-[11.5px] leading-relaxed text-faint">{token} · terdaftar</span>
         </span>
-        <span className="text-[11px] font-medium text-brand bg-brand-soft rounded-md px-2 py-1.5 flex-none">Ready</span>
+        <span className="text-[11px] font-medium text-brand bg-brand-soft rounded-md px-2 py-1.5 flex-none">Siap</span>
       </div>
-      <div className="font-mono text-[11.5px] text-fainter">{totalStages} stage{totalStages === 1 ? "" : "s"} configured</div>
+      <div className="font-mono text-[11.5px] text-fainter">{totalStages} stage dikonfigurasi</div>
     </div>
   );
 }
@@ -463,7 +463,7 @@ function BoothScreen({
       <div className="px-6 pt-3 pb-3.5 border-b border-border-4 flex-none">
         <div className="flex items-center gap-2 mb-1.5">
           <span className="font-mono text-[10px] tracking-[.1em] text-brand uppercase">
-            Stage {stage.order} of {totalStages}
+            Stage {stage.order} dari {totalStages}
           </span>
           <span className="flex-1 h-[3px] rounded bg-border-4 overflow-hidden">
             <span className="block w-full h-full bg-brand" />
@@ -518,7 +518,7 @@ function BoothScreen({
               abstain ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(31,95,78,.1)]" : "border-[1.5px] border-border-1"
             }`}
           >
-            <span className="flex-1 text-[15px] font-semibold text-ink">Golput (abstain)</span>
+            <span className="flex-1 text-[15px] font-semibold text-ink">Golput</span>
             <span className={`w-5 h-5 rounded-full flex-none ${abstain ? "border-[6px] border-brand" : "border-[1.5px] border-border-2"}`} />
           </button>
         )}
@@ -527,7 +527,7 @@ function BoothScreen({
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="1.7" strokeLinecap="round" className="flex-none mt-0.5">
             <path d="M12 3 3 7v6c0 5 3.8 8.4 9 9 5.2-.6 9-4 9-9V7l-9-4Z"></path>
           </svg>
-          <span className="text-[11.5px] leading-relaxed text-faint">Your ballot is anonymous. Only the fact that you voted is recorded against your token.</span>
+          <span className="text-[11.5px] leading-relaxed text-faint">Suara Anda bersifat anonim. Hanya status bahwa Anda telah memilih yang dicatat pada token Anda.</span>
         </div>
       </div>
 
@@ -539,7 +539,7 @@ function BoothScreen({
             canSubmit ? "glow-ring bg-brand text-white cursor-pointer hover:bg-brand-hover" : "bg-border-4 text-fainter cursor-not-allowed"
           }`}
         >
-          {busy ? "Submitting…" : canSubmit ? "Submit vote" : "Select a candidate"}
+          {busy ? "Mengirim…" : canSubmit ? "Kirim suara" : "Pilih kandidat"}
         </button>
       </div>
     </div>
@@ -555,15 +555,15 @@ function DoneScreen({ token, stageName }: { token: string; stageName: string }) 
         </svg>
       </div>
       <div>
-        <h2 className="m-0 mb-2 text-[23px] font-semibold tracking-tight text-ink">Vote recorded</h2>
-        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">Thank you. Results are announced on the shared screen — not here.</p>
+        <h2 className="m-0 mb-2 text-[23px] font-semibold tracking-tight text-ink">Suara tercatat</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">Terima kasih. Hasil akan diumumkan di layar bersama — bukan di sini.</p>
       </div>
       <div className="w-full bg-card border border-border-1 rounded-[22px] p-3.5 flex flex-col gap-2 text-left">
         <Row label="Token" value={token} mono />
         <Row label="Stage" value={stageName} />
-        <Row label="Recorded" value={new Date().toLocaleTimeString()} mono />
+        <Row label="Tercatat" value={new Date().toLocaleTimeString()} mono />
       </div>
-      <div className="text-[11.5px] text-fainter">You can close this page.</div>
+      <div className="text-[11.5px] text-fainter">Anda dapat menutup halaman ini.</div>
     </div>
   );
 }
@@ -587,10 +587,10 @@ function ClosedScreen({ eventName, publicId }: { eventName: string; publicId: st
         </svg>
       </div>
       <div>
-        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">This event is closed</h2>
-        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">Registration and voting for {eventName} are no longer open.</p>
+        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">Acara ini telah ditutup</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">Pendaftaran dan pemilihan untuk {eventName} sudah tidak dibuka.</p>
       </div>
-      <div className="font-mono text-[11px] text-fainter">{publicId} · CLOSED</div>
+      <div className="font-mono text-[11px] text-fainter">{publicId} · DITUTUP</div>
     </div>
   );
 }

@@ -12,26 +12,26 @@ const schema = z.object({
 export async function POST(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   const { publicId } = await params;
   const body = schema.safeParse(await req.json());
-  if (!body.success) return NextResponse.json({ ok: false, error: "Invalid input." }, { status: 400 });
+  if (!body.success) return NextResponse.json({ ok: false, error: "Input tidak valid." }, { status: 400 });
   const { token, candidateId, abstain } = body.data;
 
   const event = await prisma.event.findUnique({
     where: { publicId },
     include: { stages: { where: { status: "LIVE" }, include: { candidates: true } } },
   });
-  if (!event) return NextResponse.json({ ok: false, error: "Event not found." }, { status: 404 });
-  if (event.status !== "ACTIVE") return NextResponse.json({ ok: false, error: "This event is closed." }, { status: 403 });
+  if (!event) return NextResponse.json({ ok: false, error: "Acara tidak ditemukan." }, { status: 404 });
+  if (event.status !== "ACTIVE") return NextResponse.json({ ok: false, error: "Acara ini sudah ditutup." }, { status: 403 });
 
   const liveStage = event.stages[0];
-  if (!liveStage) return NextResponse.json({ ok: false, error: "No stage is open for voting right now." }, { status: 409 });
+  if (!liveStage) return NextResponse.json({ ok: false, error: "Belum ada stage yang dibuka untuk pemilihan." }, { status: 409 });
 
   const participant = await prisma.participant.findFirst({ where: { eventId: event.id, token: token.trim().toUpperCase() } });
   if (!participant || !participant.registeredAt) {
-    return NextResponse.json({ ok: false, error: "Register before voting." }, { status: 403 });
+    return NextResponse.json({ ok: false, error: "Daftar terlebih dahulu sebelum memilih." }, { status: 403 });
   }
 
   if (!abstain && (!candidateId || !liveStage.candidates.some((c) => c.id === candidateId))) {
-    return NextResponse.json({ ok: false, error: "Choose a candidate." }, { status: 400 });
+    return NextResponse.json({ ok: false, error: "Pilih salah satu kandidat." }, { status: 400 });
   }
 
   const existing = await prisma.vote.findUnique({

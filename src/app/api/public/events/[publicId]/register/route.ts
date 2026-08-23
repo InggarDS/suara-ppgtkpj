@@ -24,12 +24,12 @@ async function uniqueToken(prefix: string, suffix: string) {
 export async function POST(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   const { publicId } = await params;
   const body = schema.safeParse(await req.json());
-  if (!body.success) return NextResponse.json({ ok: false, error: "Invalid input." }, { status: 400 });
+  if (!body.success) return NextResponse.json({ ok: false, error: "Input tidak valid." }, { status: 400 });
   const { name, photo, deviceId, deviceLabel } = body.data;
 
   const event = await prisma.event.findUnique({ where: { publicId } });
-  if (!event) return NextResponse.json({ ok: false, error: "Event not found." }, { status: 404 });
-  if (event.status !== "ACTIVE") return NextResponse.json({ ok: false, error: "This event is not open for registration." }, { status: 403 });
+  if (!event) return NextResponse.json({ ok: false, error: "Acara tidak ditemukan." }, { status: 404 });
+  if (event.status !== "ACTIVE") return NextResponse.json({ ok: false, error: "Pendaftaran untuk acara ini belum dibuka." }, { status: 403 });
 
   if (event.useCredentials) {
     const credential = await prisma.credential.findFirst({
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
       const participant = await prisma.participant.findUnique({ where: { id: credential.participantId } });
       if (participant) {
         if (participant.deviceId && participant.deviceId !== deviceId) {
-          return NextResponse.json({ ok: false, error: "This name has already been registered on another device." }, { status: 409 });
+          return NextResponse.json({ ok: false, error: "Nama ini sudah terdaftar di perangkat lain." }, { status: 409 });
         }
         await prisma.participant.update({
           where: { id: participant.id },
@@ -79,13 +79,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
 
   const token = body.data.token?.trim().toUpperCase();
   const jemaat = body.data.jemaat?.trim();
-  if (!token || !jemaat) return NextResponse.json({ ok: false, error: "Token and jemaat are required." }, { status: 400 });
+  if (!token || !jemaat) return NextResponse.json({ ok: false, error: "Token dan jemaat wajib diisi." }, { status: 400 });
 
   const participant = await prisma.participant.findFirst({ where: { eventId: event.id, token } });
-  if (!participant) return NextResponse.json({ ok: false, error: "Invalid token. Check the code from your invitation." }, { status: 404 });
+  if (!participant) return NextResponse.json({ ok: false, error: "Token tidak valid. Periksa kembali kode dari undangan Anda." }, { status: 404 });
 
   if (participant.registeredAt && participant.deviceId && participant.deviceId !== deviceId) {
-    return NextResponse.json({ ok: false, error: "This token has already been registered on another device." }, { status: 409 });
+    return NextResponse.json({ ok: false, error: "Token ini sudah terdaftar di perangkat lain." }, { status: 409 });
   }
 
   await prisma.participant.update({
