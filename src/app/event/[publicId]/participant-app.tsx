@@ -234,6 +234,7 @@ function RegisterScreen({
       )}
       <div className={bannerImage ? "px-6" : "px-6 pt-3.5"}>
         <div className="font-mono text-[10px] tracking-[.1em] text-faint uppercase mb-2">{publicId}</div>
+        <div className="text-[13px] font-semibold text-brand mb-1">Selamat datang di</div>
         <h2 className="m-0 mb-1.5 text-2xl font-semibold tracking-tight text-ink leading-tight text-pretty">{eventName}</h2>
         <p className="m-0 text-[13.5px] leading-relaxed text-body">
           {useCredentials

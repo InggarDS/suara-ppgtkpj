@@ -40,7 +40,15 @@ export default async function EventsPage() {
             ? `${pct(liveStage._count.votes, ev.expectedParticipants || ev._count.participants || 1)}%`
             : "—";
           return (
-            <div key={ev.id} className="bg-card border border-border-1 rounded-xl p-4.5 flex flex-col gap-3.5">
+            <div key={ev.id} className="bg-card border border-border-1 rounded-xl p-4.5 flex flex-col gap-3.5 overflow-hidden">
+              {ev.bannerImage && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={ev.bannerImage}
+                  alt=""
+                  className="-mx-4.5 -mt-4.5 h-28 w-[calc(100%+2.25rem)] max-w-none object-cover flex-none"
+                />
+              )}
               <div className="flex items-start gap-2.5">
                 <div className="flex-1 min-w-0">
                   <div className="text-[15px] font-semibold text-ink tracking-tight">{ev.name}</div>
