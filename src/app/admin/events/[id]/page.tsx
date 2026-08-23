@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Pill } from "@/components/ui/pill";
 import { CopyButton } from "@/components/ui/copy-button";
+import { InviteQrPanel } from "@/components/ui/invite-qr";
 import { pct } from "@/lib/format";
 import EventHeader from "./event-header";
 import BannerEditor from "./banner-editor";
@@ -86,10 +87,13 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
               <div className="text-[13px] font-semibold text-ink">Participant link</div>
               <div className="font-mono text-xs leading-relaxed text-body">{baseUrl}/event/{event.publicId}</div>
             </div>
-            <CopyButton
-              text={`${baseUrl}/event/${event.publicId}`}
-              className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer"
-            />
+            <div className="flex items-center gap-2.5 flex-none">
+              <CopyButton
+                text={`${baseUrl}/event/${event.publicId}`}
+                className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer"
+              />
+              <InviteQrPanel url={`${baseUrl}/event/${event.publicId}`} eventName={event.name} />
+            </div>
           </div>
         </div>
       </div>
