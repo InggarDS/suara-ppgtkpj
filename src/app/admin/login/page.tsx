@@ -3,9 +3,9 @@ import LoginForm from "./login-form";
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-app-bg px-6">
-      <div className="w-full max-w-sm bg-card border border-border-1 rounded-2xl p-7 shadow-sm">
+      <div className="elevated w-full max-w-sm bg-card border border-border-1 rounded-3xl p-7">
         <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-7 h-7 rounded-[7px] bg-brand flex items-center justify-center">
+          <div className="w-7 h-7 rounded-[10px] bg-brand flex items-center justify-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 12.5 9.5 18 20 6.5"></path>
             </svg>

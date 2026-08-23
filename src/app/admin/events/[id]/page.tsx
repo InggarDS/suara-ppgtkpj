@@ -92,16 +92,16 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
                 <Link
                   key={q.key}
                   href={`/admin/events/${event.id}/${q.key}`}
-                  className="flex items-center gap-2.5 w-full text-left bg-paper-2 border border-border-3 rounded-[10px] px-3.5 py-2.5 hover:border-hairline"
+                  className="flex items-center gap-2.5 w-full text-left bg-paper-2 border border-border-3 rounded-[18px] px-3.5 py-2.5 hover:border-hairline"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6C6A64" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
                     <path d={q.icon}></path>
                   </svg>
                   <span className="flex-1">
                     <span className="block text-[12.5px] font-medium text-ink">{q.label}</span>
                     <span className="block text-[11px] text-faint">{q.hint}</span>
                   </span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9C3B6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B6AA8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
                     <path d="m10 6 6 6-6 6"></path>
                   </svg>
                 </Link>

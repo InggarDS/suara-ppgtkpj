@@ -47,7 +47,7 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 bg-black/42 flex items-center justify-center z-[60] p-6">
-      <div className="bg-card rounded-2xl max-w-[430px] w-full p-6.5 shadow-2xl animate-rise-in">
+      <div className="elevated bg-card rounded-3xl max-w-[430px] w-full p-6.5 animate-rise-in">
         <div className="text-[17px] font-semibold text-ink mb-2 tracking-tight">{title}</div>
         <p className="mb-4.5 text-[13px] leading-relaxed text-body">{body}</p>
         <label className="block text-[11.5px] font-medium text-body mb-1.5">

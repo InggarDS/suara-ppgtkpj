@@ -76,9 +76,9 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
 
   return (
     <div className="min-h-screen bg-app-bg flex items-start sm:items-center justify-center py-8 px-4">
-      <div className="w-full max-w-[420px] bg-paper rounded-[26px] shadow-sm border border-border-1 min-h-[600px] flex flex-col overflow-hidden">
+      <div className="elevated w-full max-w-[420px] bg-paper rounded-[34px] border border-border-1 min-h-[600px] flex flex-col overflow-hidden">
         <div className="flex items-center gap-2 px-6 pt-5 pb-1">
-          <div className="w-[22px] h-[22px] rounded-[6px] bg-brand flex items-center justify-center">
+          <div className="w-[22px] h-[22px] rounded-[9px] bg-brand flex items-center justify-center">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 12.5 9.5 18 20 6.5"></path>
             </svg>
@@ -229,7 +229,7 @@ function RegisterScreen({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Inggar Saputra"
-            className={`w-full border rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink bg-white outline-none focus:border-brand ${
+            className={`w-full border rounded-[20px] px-3.5 py-3.5 text-[15px] text-ink bg-card outline-none focus:border-brand ${
               useCredentials && effectiveCredentialMatch === "not-found" ? "border-danger" : "border-border-1"
             }`}
           />
@@ -244,15 +244,15 @@ function RegisterScreen({
             onChange={(e) => !useCredentials && setJemaat(e.target.value)}
             readOnly={useCredentials}
             placeholder={useCredentials ? "Auto-filled after name matches" : "e.g. Jemaat KPJ"}
-            className={`w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 text-[15px] text-ink outline-none focus:border-brand ${
-              useCredentials ? "bg-border-5 text-body" : "bg-white"
+            className={`w-full border border-border-1 rounded-[20px] px-3.5 py-3.5 text-[15px] text-ink outline-none focus:border-brand ${
+              useCredentials ? "bg-border-5 text-body" : "bg-card"
             }`}
           />
         </div>
         {useCredentials ? (
           <div>
             <label className="block text-xs font-medium text-body mb-1.5">Personal token</label>
-            <div className="w-full border border-dashed border-border-2 rounded-[11px] px-3.5 py-3.5 text-[13.5px] text-faint bg-border-5">
+            <div className="w-full border border-dashed border-border-2 rounded-[20px] px-3.5 py-3.5 text-[13.5px] text-faint bg-border-5">
               Token di generate otomatis
             </div>
           </div>
@@ -263,15 +263,15 @@ function RegisterScreen({
               value={tokenInput}
               onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
               placeholder="TOK-0000"
-              className="w-full border border-border-1 rounded-[11px] px-3.5 py-3.5 font-mono text-[15px] tracking-[.06em] text-ink bg-white outline-none focus:border-brand"
+              className="w-full border border-border-1 rounded-[20px] px-3.5 py-3.5 font-mono text-[15px] tracking-[.06em] text-ink bg-card outline-none focus:border-brand"
             />
           </div>
         )}
         <div>
           <label className="block text-xs font-medium text-body mb-1.5">Profile photo</label>
           <label
-            className={`flex items-center w-full rounded-[13px] p-3.5 cursor-pointer transition-all ${
-              photo ? "bg-[#F3F8F5] border-[1.5px] border-brand-soft-border-2" : "bg-white border-[1.5px] border-dashed border-border-2"
+            className={`flex items-center w-full rounded-[22px] p-3.5 cursor-pointer transition-all ${
+              photo ? "bg-[rgba(61,123,255,.14)] border-[1.5px] border-brand-soft-border-2" : "bg-card border-[1.5px] border-dashed border-border-2"
             }`}
           >
             <input type="file" accept="image/*" capture="user" className="hidden" onChange={onPhotoChange} />
@@ -282,13 +282,13 @@ function RegisterScreen({
                   <span className="block text-[13px] font-medium text-ink">Photo selected</span>
                   <span className="block font-mono text-[11.5px] leading-relaxed text-brand">compressed</span>
                 </span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1F5F4E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D7BFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
                   <path d="M4 12.5 9.5 18 20 6.5"></path>
                 </svg>
               </span>
             ) : (
               <span className="flex flex-col items-center gap-1.5 w-full py-2">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8B8880" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C76A0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path>
                 </svg>
                 <span className="text-[13px] font-medium text-ink-soft">{busy ? "Compressing…" : "Take or upload a photo"}</span>
@@ -305,7 +305,7 @@ function RegisterScreen({
         <button
           onClick={submit}
           disabled={busy}
-          className="w-full bg-brand text-white rounded-xl py-4 text-[15px] font-semibold cursor-pointer hover:bg-brand-hover disabled:opacity-60"
+          className="glow-ring w-full bg-brand text-white rounded-full py-4 text-[15px] font-semibold cursor-pointer hover:bg-brand-hover disabled:opacity-60 disabled:shadow-none"
         >
           {busy ? "Please wait…" : "Register"}
         </button>
@@ -326,8 +326,8 @@ function WaitingScreen({ name, token, totalStages }: { name: string; token: stri
         <h2 className="m-0 mb-2 text-[22px] font-semibold tracking-tight text-ink">Voting hasn&apos;t started</h2>
         <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[26ch] mx-auto">This screen updates on its own. Keep it open — no need to refresh.</p>
       </div>
-      <div className="w-full bg-white border border-border-1 rounded-[13px] p-3.5 flex items-center gap-3 text-left">
-        <span className="w-10.5 h-10.5 rounded-[11px] bg-border-4 text-body text-[13px] font-semibold flex items-center justify-center flex-none">
+      <div className="w-full bg-card border border-border-1 rounded-[22px] p-3.5 flex items-center gap-3 text-left">
+        <span className="w-10.5 h-10.5 rounded-[20px] bg-border-4 text-body text-[13px] font-semibold flex items-center justify-center flex-none">
           {name ? initials(name) : ""}
         </span>
         <span className="flex-1 min-w-0">
@@ -405,7 +405,7 @@ function BoothScreen({
                 setChoice(c.id);
                 setAbstain(false);
               }}
-              className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-white ${
+              className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card ${
                 on ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(31,95,78,.1)]" : "border-[1.5px] border-border-1"
               }`}
             >
@@ -414,7 +414,7 @@ function BoothScreen({
               ) : (
                 <span
                   className={`w-11.5 h-11.5 rounded-full flex-none flex items-center justify-center text-[13px] font-semibold ${
-                    on ? "bg-[#DCE8E1] text-brand" : "bg-border-4 text-faint"
+                    on ? "bg-[rgba(61,123,255,.22)] text-brand" : "bg-border-4 text-faint"
                   }`}
                 >
                   {initials(c.name)}
@@ -437,7 +437,7 @@ function BoothScreen({
               setAbstain(true);
               setChoice(null);
             }}
-            className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-white ${
+            className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card ${
               abstain ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(31,95,78,.1)]" : "border-[1.5px] border-border-1"
             }`}
           >
@@ -447,7 +447,7 @@ function BoothScreen({
         )}
 
         <div className="flex gap-2 items-start pt-2.5">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A3A099" strokeWidth="1.7" strokeLinecap="round" className="flex-none mt-0.5">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="1.7" strokeLinecap="round" className="flex-none mt-0.5">
             <path d="M12 3 3 7v6c0 5 3.8 8.4 9 9 5.2-.6 9-4 9-9V7l-9-4Z"></path>
           </svg>
           <span className="text-[11.5px] leading-relaxed text-faint">Your ballot is anonymous. Only the fact that you voted is recorded against your token.</span>
@@ -458,8 +458,8 @@ function BoothScreen({
         <button
           onClick={submit}
           disabled={!canSubmit || busy}
-          className={`w-full rounded-xl py-4 text-[15px] font-semibold border-none transition-colors ${
-            canSubmit ? "bg-brand text-white cursor-pointer hover:bg-brand-hover" : "bg-border-4 text-fainter cursor-not-allowed"
+          className={`w-full rounded-full py-4 text-[15px] font-semibold border-none transition-colors ${
+            canSubmit ? "glow-ring bg-brand text-white cursor-pointer hover:bg-brand-hover" : "bg-border-4 text-fainter cursor-not-allowed"
           }`}
         >
           {busy ? "Submitting…" : canSubmit ? "Submit vote" : "Select a candidate"}
@@ -473,7 +473,7 @@ function DoneScreen({ token, stageName }: { token: string; stageName: string }) 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-5.5 text-center">
       <div className="w-[66px] h-[66px] rounded-full bg-brand-soft flex items-center justify-center animate-rise-in">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1F5F4E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3D7BFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 12.5 9.5 18 20 6.5"></path>
         </svg>
       </div>
@@ -481,7 +481,7 @@ function DoneScreen({ token, stageName }: { token: string; stageName: string }) 
         <h2 className="m-0 mb-2 text-[23px] font-semibold tracking-tight text-ink">Vote recorded</h2>
         <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">Thank you. Results are announced on the shared screen — not here.</p>
       </div>
-      <div className="w-full bg-white border border-border-1 rounded-[13px] p-3.5 flex flex-col gap-2 text-left">
+      <div className="w-full bg-card border border-border-1 rounded-[22px] p-3.5 flex flex-col gap-2 text-left">
         <Row label="Token" value={token} mono />
         <Row label="Stage" value={stageName} />
         <Row label="Recorded" value={new Date().toLocaleTimeString()} mono />
@@ -504,7 +504,7 @@ function ClosedScreen({ eventName, publicId }: { eventName: string; publicId: st
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-5 text-center bg-border-5 rounded-b-[26px]">
       <div className="w-14 h-14 rounded-full bg-border-2 flex items-center justify-center">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#8B8880" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C76A0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
           <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
           <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path>
         </svg>

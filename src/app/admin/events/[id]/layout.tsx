@@ -28,7 +28,7 @@ export default async function EventLayout({
 
   return (
     <div className="max-w-[1440px] mx-auto px-6.5 py-6.5">
-      <div className="bg-card border border-border-1 rounded-2xl overflow-hidden shadow-sm flex min-h-[760px]">
+      <div className="elevated bg-card border border-border-1 rounded-2xl overflow-hidden flex min-h-[760px]">
         <Sidebar
           currentEventId={event.id}
           currentEventName={event.name}

@@ -40,7 +40,7 @@ export default function BannerEditor({ eventId, bannerImage }: { eventId: string
         <div className="text-[13px] font-semibold text-ink">Event banner</div>
         <div className="text-[11.5px] text-faint">Shown at the top of the participant registration screen.</div>
       </div>
-      <label className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[#EAE7E0]">
+      <label className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(150,170,255,.16)]">
         <input type="file" accept="image/*" className="hidden" onChange={onChange} />
         {busy || pending ? "Saving…" : banner ? "Change" : "Upload"}
       </label>

@@ -29,7 +29,7 @@ export default function PresentView({
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-stage-dark text-[#F4F2EE] relative overflow-hidden flex items-center justify-center p-12">
+    <div className="min-h-screen w-full bg-stage-dark text-[#F4F7FF] relative overflow-hidden flex items-center justify-center p-12">
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
@@ -41,7 +41,7 @@ export default function PresentView({
           onClick={() => {
             document.documentElement.requestFullscreen().catch(() => {});
           }}
-          className="absolute top-5 right-5 font-mono text-[11px] tracking-[.08em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-3 py-2 cursor-pointer hover:text-[#F4F2EE] hover:border-stage-dim bg-stage-dark-3/60"
+          className="absolute top-5 right-5 font-mono text-[11px] tracking-[.08em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-3 py-2 cursor-pointer hover:text-[#F4F7FF] hover:border-stage-dim bg-stage-dark-3/60"
         >
           Enter fullscreen
         </button>

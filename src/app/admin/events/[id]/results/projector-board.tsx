@@ -35,7 +35,7 @@ export default function ProjectorBoard({ eventName, data }: { eventName: string;
           <div className="w-full max-w-[420px] h-3 rounded-lg bg-stage-dark-2 overflow-hidden">
             <div
               className="h-full rounded-lg transition-all duration-700"
-              style={{ width: `${data.registrationPct}%`, background: "linear-gradient(90deg,#2E9E7B,#7FBFA6)" }}
+              style={{ width: `${data.registrationPct}%`, background: "linear-gradient(90deg,#57A6FF,#A78BFA)" }}
             />
           </div>
           <div className="text-[13px] text-stage-dimmer">Results appear here once everyone has registered.</div>
@@ -72,7 +72,7 @@ export default function ProjectorBoard({ eventName, data }: { eventName: string;
                 ) : null}
                 <span
                   className={`w-[180px] flex-none overflow-hidden text-ellipsis whitespace-nowrap ${
-                    revealed ? "text-[14px] font-semibold text-[#F4F2EE]" : "text-stage-dim font-mono text-[13px] tracking-[.03em]"
+                    revealed ? "text-[14px] font-semibold text-[#F4F7FF]" : "text-stage-dim font-mono text-[13px] tracking-[.03em]"
                   }`}
                 >
                   {revealed ? r.name : `Candidate ${i + 1}`}
@@ -82,7 +82,7 @@ export default function ProjectorBoard({ eventName, data }: { eventName: string;
                     className="block h-full rounded transition-all duration-700"
                     style={{
                       width: `${r.pct}%`,
-                      background: i === 0 ? "linear-gradient(90deg,#2E9E7B,#7FBFA6)" : "#3C4340",
+                      background: i === 0 ? "linear-gradient(90deg,#57A6FF,#A78BFA)" : "#232B52",
                     }}
                   />
                 </span>
@@ -94,7 +94,7 @@ export default function ProjectorBoard({ eventName, data }: { eventName: string;
           {data.results.length > TOP_N && (
             <button
               onClick={() => setExpanded((v) => !v)}
-              className="mt-3 flex-none self-start font-mono text-[11px] tracking-[.08em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-2.5 py-1.5 cursor-pointer hover:text-[#F4F2EE] hover:border-stage-dim"
+              className="mt-3 flex-none self-start font-mono text-[11px] tracking-[.08em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-2.5 py-1.5 cursor-pointer hover:text-[#F4F7FF] hover:border-stage-dim"
             >
               {expanded ? "Show top 10 only" : `Show all ${data.results.length} (+${hiddenCount})`}
             </button>

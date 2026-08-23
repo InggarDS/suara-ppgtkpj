@@ -46,7 +46,7 @@ export default function Sidebar({
         <div className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase mb-2 ml-2">Current event</div>
         <button
           onClick={() => setSwitcherOpen((v) => !v)}
-          className="w-full text-left bg-white border border-border-1 rounded-[10px] px-3 py-2.5 cursor-pointer flex items-center gap-2.5"
+          className="w-full text-left bg-card border border-border-1 rounded-[18px] px-3 py-2.5 cursor-pointer flex items-center gap-2.5"
         >
           <span
             className={`w-2 h-2 rounded-full flex-none ${
@@ -59,12 +59,12 @@ export default function Sidebar({
             </span>
             <span className="block font-mono text-[10.5px] leading-relaxed text-faint">{currentEventPublicId}</span>
           </span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A3A099" strokeWidth="2" strokeLinecap="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="2" strokeLinecap="round">
             <path d="m7 9 5 5 5-5"></path>
           </svg>
         </button>
         {switcherOpen && (
-          <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-white border border-border-1 rounded-[10px] shadow-lg overflow-hidden max-h-[280px] overflow-y-auto">
+          <div className="absolute z-20 top-full mt-1 left-0 right-0 bg-card border border-border-1 rounded-[18px] shadow-lg overflow-hidden max-h-[280px] overflow-y-auto">
             {events.map((ev) => (
               <button
                 key={ev.id}
@@ -99,8 +99,8 @@ export default function Sidebar({
             <Link
               key={item.key}
               href={`/admin/events/${currentEventId}${item.key ? `/${item.key}` : ""}`}
-              className={`flex items-center gap-2.5 w-full rounded-[9px] px-2.5 py-2.5 text-[13px] font-medium transition-colors ${
-                active ? "bg-brand-soft text-brand" : "text-ink-mute hover:bg-white"
+              className={`flex items-center gap-2.5 w-full rounded-[16px] px-2.5 py-2.5 text-[13px] font-medium transition-colors ${
+                active ? "bg-brand-soft text-brand" : "text-ink-mute hover:bg-card"
               }`}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="flex-none opacity-85">

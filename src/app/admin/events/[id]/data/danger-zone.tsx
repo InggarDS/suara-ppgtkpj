@@ -33,19 +33,19 @@ export default function DangerZone({ eventId }: { eventId: string }) {
   return (
     <div className="border border-danger-border bg-danger-bg rounded-xl p-5">
       <div className="text-sm font-semibold text-danger mb-3.5">Danger zone</div>
-      <div className="flex items-center gap-4 pb-3.5 border-b border-[#F0DEDB]">
+      <div className="flex items-center gap-4 pb-3.5 border-b border-[rgba(255,92,122,.28)]">
         <div className="flex-1">
           <div className="text-[13px] font-semibold text-ink">Reset votes</div>
           <div className="text-xs text-body leading-relaxed">Clears every vote log. Participants and their photos stay registered and can vote again.</div>
         </div>
         <button
           onClick={() => setKind("votes")}
-          className="text-[12.5px] font-medium text-danger bg-white border border-danger-border rounded-lg px-3.5 py-2 cursor-pointer flex-none hover:bg-danger-bg-hover"
+          className="text-[12.5px] font-medium text-danger bg-card border border-danger-border rounded-lg px-3.5 py-2 cursor-pointer flex-none hover:bg-danger-bg-hover"
         >
           Reset votes
         </button>
       </div>
-      <div className="flex items-center gap-4 py-3.5 border-b border-[#F0DEDB]">
+      <div className="flex items-center gap-4 py-3.5 border-b border-[rgba(255,92,122,.28)]">
         <div className="flex-1">
           <div className="text-[13px] font-semibold text-ink">Full reset</div>
           <div className="text-xs text-body leading-relaxed">Permanently deletes all votes, participants and uploaded photos for this event. Requires double confirmation.</div>

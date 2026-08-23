@@ -69,7 +69,7 @@ export default async function EventsPage() {
                 </span>
                 <Link
                   href={`/admin/events/${ev.id}`}
-                  className="text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 py-1.5 hover:bg-[#DBE8E1]"
+                  className="text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 py-1.5 hover:bg-[rgba(61,123,255,.26)]"
                 >
                   Open
                 </Link>

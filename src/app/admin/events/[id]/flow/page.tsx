@@ -42,7 +42,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
         <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "minmax(0,1fr) 300px" }}>
           <div
             className="bg-card border border-border-1 rounded-xl p-6.5"
-            style={{ backgroundImage: "radial-gradient(#EDEAE3 1px,transparent 1px)", backgroundSize: "18px 18px" }}
+            style={{ backgroundImage: "radial-gradient(rgba(150,170,255,.08) 1px,transparent 1px)", backgroundSize: "18px 18px" }}
           >
             <div className="flex flex-col">
               {event.stages.map((stage, i) => {
@@ -55,8 +55,8 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                       </div>
                     )}
                     {i > 0 && prev && prev.status !== "NOT_STARTED" && (
-                      <div className="bg-amber-bg border-[1.5px] border-dashed border-amber-border rounded-[11px] px-4.5 py-3.5 flex items-center gap-3.5 mb-0">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B5761F" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <div className="bg-amber-bg border-[1.5px] border-dashed border-amber-border rounded-[20px] px-4.5 py-3.5 flex items-center gap-3.5 mb-0">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E0B273" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                           <path d="M12 3 3 7v6c0 5 3.8 8.4 9 9 5.2-.6 9-4 9-9V7l-9-4Z"></path>
                         </svg>
                         <div className="flex-1">
@@ -79,7 +79,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                     {i > 0 && <div className="flex items-stretch gap-3.5 pl-[30px]"><div className="w-0.5 bg-border-2 h-8.5" /></div>}
 
                     <div
-                      className={`bg-white rounded-[11px] px-4.5 py-4 ${
+                      className={`bg-card rounded-[20px] px-4.5 py-4 ${
                         stage.status === "LIVE" ? "border-[1.5px] border-brand shadow-sm" : "border-[1.5px] border-border-1"
                       }`}
                     >

@@ -24,7 +24,7 @@ export default function AddStageButton({ eventId }: { eventId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="self-start border border-dashed border-border-2 bg-transparent rounded-[10px] px-4 py-2.5 text-[13px] text-faint cursor-pointer flex items-center gap-2 hover:border-brand hover:text-brand"
+        className="self-start border border-dashed border-border-2 bg-transparent rounded-[18px] px-4 py-2.5 text-[13px] text-faint cursor-pointer flex items-center gap-2 hover:border-brand hover:text-brand"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
           <path d="M12 5v14M5 12h14"></path>
@@ -35,7 +35,7 @@ export default function AddStageButton({ eventId }: { eventId: string }) {
   }
 
   return (
-    <div className="border-[1.5px] border-border-1 bg-white rounded-[11px] p-4.5 flex flex-col gap-3">
+    <div className="border-[1.5px] border-border-1 bg-card rounded-[20px] p-4.5 flex flex-col gap-3">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}

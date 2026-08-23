@@ -30,7 +30,7 @@ export default async function DataPage({ params }: { params: Promise<{ id: strin
               </p>
               <a
                 href={`/api/admin/events/${event.id}/export`}
-                className="inline-block text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 hover:bg-[#EAE7E0]"
+                className="inline-block text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 hover:bg-[rgba(150,170,255,.16)]"
               >
                 Download CSV
               </a>

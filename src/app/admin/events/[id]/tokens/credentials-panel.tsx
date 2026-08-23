@@ -35,7 +35,7 @@ export default function CredentialsPanel({ eventId, credentials }: { eventId: st
       <p className="m-0 mb-3.5 text-xs leading-relaxed text-body">
         Participants register with their name, matched against this list. Jemaat is filled in automatically from a match.
       </p>
-      <label className="inline-flex items-center text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[#EAE7E0]">
+      <label className="inline-flex items-center text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(150,170,255,.16)]">
         <input
           type="file"
           accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"

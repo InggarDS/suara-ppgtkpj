@@ -19,9 +19,9 @@ export default function MonitorView({ eventId, initial }: { eventId: string; ini
   return (
     <div className="flex flex-col gap-5">
       {data.quorum && (
-        <div className="flex items-center gap-3 bg-[#EDF6F1] border border-[#CFE3D8] rounded-[11px] px-4 py-3.5">
+        <div className="flex items-center gap-3 bg-[rgba(61,123,255,.10)] border border-[rgba(61,123,255,.35)] rounded-[20px] px-4 py-3.5">
           <span className="w-2 h-2 rounded-full bg-brand-accent flex-none animate-pulse-dot" />
-          <span className="flex-1 text-[13px] text-[#1B4A3D]">
+          <span className="flex-1 text-[13px] text-[#DBE3FB]">
             <strong className="font-semibold">Quorum reached.</strong> {data.voted} of {data.denom} participants have voted — above the {data.thresholdMin}-voter minimum. Stage may be closed at any time.
           </span>
           {data.liveStageId && (
@@ -65,7 +65,7 @@ export default function MonitorView({ eventId, initial }: { eventId: string; ini
           <div className="h-3 rounded-lg bg-border-4 overflow-hidden relative">
             <div
               className="h-full rounded-lg transition-all duration-700"
-              style={{ width: `${data.pct}%`, background: "linear-gradient(90deg,#1F5F4E,#3E9C7F)" }}
+              style={{ width: `${data.pct}%`, background: "linear-gradient(90deg,#3D7BFF,#6A8DFF)" }}
             />
             {data.thresholdMin !== null && data.denom > 0 && (
               <div

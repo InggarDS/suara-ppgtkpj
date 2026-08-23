@@ -91,7 +91,7 @@ export default function NewEventCardClient() {
 
       {open && (
         <div className="fixed inset-0 bg-black/42 flex items-center justify-center z-[60] p-8">
-          <div className="bg-card rounded-2xl max-w-[620px] w-full max-h-[88vh] overflow-auto shadow-2xl animate-rise-in">
+          <div className="elevated bg-card rounded-3xl max-w-[620px] w-full max-h-[88vh] overflow-auto animate-rise-in">
             <div className="px-7 pt-6 pb-4.5 border-b border-border-4 flex items-start gap-4">
               <div className="flex-1">
                 <div className="text-lg font-semibold text-ink tracking-tight mb-1">New event</div>
@@ -108,7 +108,7 @@ export default function NewEventCardClient() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Pemilihan Ketua Umum 2026"
-                  className="w-full border border-border-1 rounded-[10px] px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
+                  className="w-full border border-border-1 rounded-[18px] px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
                 />
               </div>
               <div>
@@ -119,7 +119,7 @@ export default function NewEventCardClient() {
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
                   placeholder="One line participants will see on the registration screen"
-                  className="w-full border border-border-1 rounded-[10px] px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
+                  className="w-full border border-border-1 rounded-[18px] px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
                 />
               </div>
 
@@ -128,8 +128,8 @@ export default function NewEventCardClient() {
                   Banner image <span className="text-fainter font-normal">optional, shown to participants</span>
                 </label>
                 <label
-                  className={`flex items-center w-full rounded-[10px] p-3 cursor-pointer transition-all ${
-                    banner ? "bg-[#F3F8F5] border-[1.5px] border-brand-soft-border-2" : "bg-paper border-[1.5px] border-dashed border-border-2"
+                  className={`flex items-center w-full rounded-[18px] p-3 cursor-pointer transition-all ${
+                    banner ? "bg-[rgba(61,123,255,.14)] border-[1.5px] border-brand-soft-border-2" : "bg-paper border-[1.5px] border-dashed border-border-2"
                   }`}
                 >
                   <input type="file" accept="image/*" className="hidden" onChange={onBannerChange} />
@@ -171,11 +171,11 @@ export default function NewEventCardClient() {
                       useCredentials ? "bg-brand justify-end" : "bg-hairline justify-start"
                     }`}
                   >
-                    <span className="block w-4 h-4 rounded-full bg-white shadow" />
+                    <span className="block w-4 h-4 rounded-full bg-card shadow" />
                   </button>
                 </div>
                 {useCredentials && (
-                  <label className="flex items-center w-full rounded-[10px] p-3 cursor-pointer bg-white border-[1.5px] border-dashed border-border-2">
+                  <label className="flex items-center w-full rounded-[18px] p-3 cursor-pointer bg-card border-[1.5px] border-dashed border-border-2">
                     <input
                       type="file"
                       accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
@@ -203,7 +203,7 @@ export default function NewEventCardClient() {
                       className={`flex-1 rounded-lg py-2.5 text-xs font-medium cursor-pointer border transition-colors ${
                         stageCount === n
                           ? "border-brand bg-brand-soft text-brand"
-                          : "border-border-1 bg-white text-body"
+                          : "border-border-1 bg-card text-body"
                       }`}
                     >
                       {n === 1 ? "1 stage" : `${n} stages`}
@@ -222,7 +222,7 @@ export default function NewEventCardClient() {
                           setStageNames(next);
                         }}
                         placeholder="Stage name"
-                        className="flex-1 border border-border-1 rounded-[9px] px-3 py-2.5 text-[13px] text-ink bg-paper outline-none focus:border-brand"
+                        className="flex-1 border border-border-1 rounded-[16px] px-3 py-2.5 text-[13px] text-ink bg-paper outline-none focus:border-brand"
                       />
                     </div>
                   ))}
@@ -235,7 +235,7 @@ export default function NewEventCardClient() {
                   <input
                     value={participants}
                     onChange={(e) => setParticipants(e.target.value)}
-                    className="w-full border border-border-1 rounded-[10px] px-3 py-2.5 font-mono text-sm text-ink bg-paper outline-none focus:border-brand"
+                    className="w-full border border-border-1 rounded-[18px] px-3 py-2.5 font-mono text-sm text-ink bg-paper outline-none focus:border-brand"
                   />
                 </div>
                 <div>
@@ -269,7 +269,7 @@ export default function NewEventCardClient() {
                     openNow ? "bg-brand justify-end" : "bg-hairline justify-start"
                   }`}
                 >
-                  <span className="block w-4 h-4 rounded-full bg-white shadow" />
+                  <span className="block w-4 h-4 rounded-full bg-card shadow" />
                 </button>
               </div>
               {error && <p className="text-xs text-danger">{error}</p>}
@@ -286,8 +286,8 @@ export default function NewEventCardClient() {
               <button
                 onClick={submit}
                 disabled={!valid || pending}
-                className={`text-[13px] font-semibold rounded-lg px-4 py-2.5 border-none transition-colors ${
-                  valid ? "bg-brand text-white cursor-pointer hover:bg-brand-hover" : "bg-[#E4E9E6] text-[#A8B5AF] cursor-not-allowed"
+                className={`text-[13px] font-semibold rounded-full px-5 py-2.5 border-none transition-colors ${
+                  valid ? "glow-ring bg-brand text-white cursor-pointer hover:bg-brand-hover" : "bg-[rgba(150,170,255,.12)] text-[#5B6AA8] cursor-not-allowed"
                 }`}
               >
                 {pending ? "Creating…" : "Create event"}

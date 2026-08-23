@@ -69,7 +69,7 @@ export default function CandidateEditor({
             <select
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
-              className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand bg-white"
+              className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand bg-card"
             >
               <option value="">
                 {availableParticipants.length ? "Select a registered participant…" : "No registered participants left"}

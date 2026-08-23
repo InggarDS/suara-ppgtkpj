@@ -77,7 +77,7 @@ export default function StageRulesPanel({ eventId, stage }: { eventId: string; s
         <button
           disabled={pending}
           onClick={() => startTransition(() => { void closeStageAction(eventId, stage.id); })}
-          className="text-[12.5px] font-semibold text-white bg-ink rounded-lg py-2.5 cursor-pointer disabled:opacity-50"
+          className="text-[12.5px] font-semibold text-[#0B1130] bg-brand-accent-2 rounded-full py-2.5 cursor-pointer disabled:opacity-50 hover:brightness-110"
         >
           Close stage
         </button>

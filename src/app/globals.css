@@ -1,63 +1,63 @@
 @import "tailwindcss";
 
 :root {
-  --background: #F1EFEA;
-  --foreground: #15171B;
+  --background: #070b18;
+  --foreground: #f4f7ff;
 
-  --color-ink: #15171B;
-  --color-ink-soft: #3A3833;
-  --color-ink-mute: #4A4842;
-  --color-body: #6C6A64;
-  --color-faint: #8B8880;
-  --color-fainter: #A3A099;
-  --color-hairline: #CFCAC0;
+  --color-ink: #f4f7ff;
+  --color-ink-soft: #dbe3fb;
+  --color-ink-mute: #b7c1e8;
+  --color-body: #8d97c2;
+  --color-faint: #6c76a0;
+  --color-fainter: #545e82;
+  --color-hairline: rgba(150, 170, 255, 0.28);
 
-  --color-paper: #FDFCFA;
-  --color-paper-2: #FBFAF8;
-  --color-card: #ffffff;
-  --color-app-bg: #F1EFEA;
-  --color-border: #E4E1DA;
-  --color-border-2: #DFDCD4;
-  --color-border-3: #E9E6DF;
-  --color-border-4: #EFECE5;
-  --color-border-5: #F4F2EE;
-  --color-border-6: #F1EEE8;
+  --color-paper: #171d3d;
+  --color-paper-2: #10142c;
+  --color-card: #12172f;
+  --color-app-bg: #070b18;
+  --color-border: rgba(150, 170, 255, 0.14);
+  --color-border-2: rgba(150, 170, 255, 0.2);
+  --color-border-3: rgba(150, 170, 255, 0.12);
+  --color-border-4: rgba(150, 170, 255, 0.1);
+  --color-border-5: rgba(150, 170, 255, 0.08);
+  --color-border-6: rgba(150, 170, 255, 0.09);
 
-  --color-brand: #1F5F4E;
-  --color-brand-hover: #17493C;
-  --color-brand-soft: #E8F0EC;
-  --color-brand-soft-border: #D3E3DA;
-  --color-brand-soft-border-2: #CFE3D8;
-  --color-brand-accent: #2E9E7B;
-  --color-brand-accent-2: #7FBFA6;
-  --color-brand-accent-3: #3E9C7F;
-  --color-brand-muted: #9CBDB0;
+  --color-brand: #3d7bff;
+  --color-brand-hover: #285fe0;
+  --color-brand-soft: rgba(61, 123, 255, 0.16);
+  --color-brand-soft-border: rgba(61, 123, 255, 0.32);
+  --color-brand-soft-border-2: rgba(61, 123, 255, 0.4);
+  --color-brand-accent: #57a6ff;
+  --color-brand-accent-2: #a78bfa;
+  --color-brand-accent-3: #6a8dff;
+  --color-brand-muted: #5b6aa8;
 
-  --color-amber-bg: #FDF8EF;
-  --color-amber-border: #E0C48A;
-  --color-amber-icon: #B5761F;
-  --color-amber-text: #7A5312;
-  --color-amber-chip: #F3E5CB;
-  --color-amber-sub: #8B7448;
+  --color-amber-bg: rgba(217, 164, 90, 0.08);
+  --color-amber-border: rgba(217, 164, 90, 0.4);
+  --color-amber-icon: #e0b273;
+  --color-amber-text: #e5c393;
+  --color-amber-chip: rgba(217, 164, 90, 0.18);
+  --color-amber-sub: #c3a077;
 
-  --color-danger: #A5342B;
-  --color-danger-hover: #8C2A22;
-  --color-danger-bg: #FDF6F5;
-  --color-danger-border: #E7CFCB;
-  --color-danger-bg-hover: #FBEDEB;
+  --color-danger: #ff5c7a;
+  --color-danger-hover: #e0405f;
+  --color-danger-bg: rgba(255, 92, 122, 0.08);
+  --color-danger-border: rgba(255, 92, 122, 0.35);
+  --color-danger-bg-hover: rgba(255, 92, 122, 0.14);
 
-  --color-stage-dark: #111311;
-  --color-stage-dark-2: #1E211F;
-  --color-stage-dark-3: #26292A;
-  --color-stage-dark-4: #2C302E;
-  --color-stage-dim: #9C9A93;
-  --color-stage-dimmer: #77756E;
+  --color-stage-dark: #05070f;
+  --color-stage-dark-2: #0e1226;
+  --color-stage-dark-3: #161b38;
+  --color-stage-dark-4: #212a52;
+  --color-stage-dim: #8d97c2;
+  --color-stage-dimmer: #6c76a0;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-instrument-sans);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-ibm-plex-mono);
 
   --color-ink: var(--color-ink);
@@ -108,6 +108,14 @@
   --color-stage-dark-4: var(--color-stage-dark-4);
   --color-stage-dim: var(--color-stage-dim);
   --color-stage-dimmer: var(--color-stage-dimmer);
+
+  /* large, premium-SaaS corner radii */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1.25rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2rem;
 }
 
 * {
@@ -115,23 +123,56 @@
 }
 
 body {
-  background: var(--color-app-bg);
+  background:
+    radial-gradient(1200px 620px at 12% -10%, rgba(61, 123, 255, 0.16), transparent 60%),
+    radial-gradient(900px 560px at 100% 0%, rgba(167, 139, 250, 0.12), transparent 55%),
+    radial-gradient(1000px 700px at 50% 110%, rgba(61, 123, 255, 0.08), transparent 60%),
+    linear-gradient(180deg, #070b18 0%, #0a0f22 55%, #0d1330 100%);
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
 }
 
 a {
-  color: var(--color-brand);
+  color: var(--color-brand-accent);
 }
 a:hover {
-  color: var(--color-brand-hover);
+  color: var(--color-ink);
 }
 
 input,
 button,
 textarea {
   font-family: inherit;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background: rgba(61, 123, 255, 0.35);
+  color: #ffffff;
+}
+
+/* soft floating shadow + faint blue ambient glow, for elevated surfaces */
+.elevated {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 30px 60px -30px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(150, 170, 255, 0.08),
+    0 0 60px -20px rgba(61, 123, 255, 0.25);
+}
+
+/* glowing ring for primary / focused actions */
+.glow-ring {
+  box-shadow:
+    0 0 0 1px rgba(61, 123, 255, 0.5),
+    0 8px 30px -8px rgba(61, 123, 255, 0.55);
 }
 
 @keyframes pulseDot {

@@ -9,7 +9,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen bg-app-bg">
       <div className="flex items-center gap-4 flex-wrap px-6.5 py-4 border-b border-border-1">
         <Link href="/admin/events" className="flex items-center gap-2.5">
-          <div className="w-[26px] h-[26px] rounded-[7px] bg-brand flex items-center justify-center">
+          <div className="w-[26px] h-[26px] rounded-[10px] bg-brand flex items-center justify-center">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 12.5 9.5 18 20 6.5"></path>
             </svg>

@@ -25,7 +25,7 @@ export default function EventHeader({
         <p className="m-0 text-[13px] leading-relaxed text-body max-w-[56ch]">{subtitle}</p>
       </div>
       <div className="flex items-center gap-2.5 flex-none">
-        <div className="flex items-center gap-2 bg-paper-2 border border-border-1 rounded-[9px] px-2.5 py-1.5">
+        <div className="flex items-center gap-2 bg-paper-2 border border-border-1 rounded-[16px] px-2.5 py-1.5">
           <span className="text-xs text-body">Event access</span>
           <Toggle on={active} disabled={pending} onToggle={() => startTransition(() => { void toggleEventStatusAction(eventId); })} />
           <span className={`text-xs font-semibold w-11 ${active ? "text-brand" : "text-faint"}`}>

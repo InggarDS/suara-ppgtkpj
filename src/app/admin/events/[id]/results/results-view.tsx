@@ -53,28 +53,28 @@ export default function ResultsView({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-3 bg-card border border-border-1 rounded-[11px] px-4 py-3">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#6C6A64" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <div className="flex items-center gap-3 bg-card border border-border-1 rounded-[20px] px-4 py-3">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 4.5h18v12H3zM9 20.5h6"></path>
         </svg>
         <span className="flex-1 text-[13px] text-ink-soft">Projector output — participants never see results on their own device.</span>
         <button
           onClick={() => setConfirmKind(revealed ? "hide" : "reveal")}
           className={`flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border cursor-pointer ${
-            revealed ? "bg-brand-soft text-brand border-border-1" : "bg-white text-ink-soft border-border-1"
+            revealed ? "bg-brand-soft text-brand border-border-1" : "bg-card text-ink-soft border-border-1"
           }`}
         >
           {revealed ? "Lock names" : "Unlock names"}
         </button>
         <button
           onClick={presentFullscreen}
-          className="flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border border-border-1 bg-ink text-white cursor-pointer"
+          className="flex items-center gap-1.5 text-[12.5px] font-semibold rounded-full px-3.5 py-2 border-none bg-brand-accent-2 text-[#0B1130] cursor-pointer hover:brightness-110"
         >
           Present fullscreen
         </button>
       </div>
 
-      <div className="bg-stage-dark rounded-[14px] px-13 py-11 text-[#F4F2EE] relative overflow-hidden flex items-center justify-center">
+      <div className="elevated bg-stage-dark rounded-[28px] px-13 py-11 text-[#F4F7FF] relative overflow-hidden flex items-center justify-center">
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}

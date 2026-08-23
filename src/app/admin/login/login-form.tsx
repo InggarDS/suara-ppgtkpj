@@ -33,7 +33,7 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full bg-brand text-white rounded-lg py-2.5 text-sm font-semibold cursor-pointer hover:bg-brand-hover disabled:opacity-60"
+        className="glow-ring w-full bg-brand text-white rounded-full py-2.5 text-sm font-semibold cursor-pointer hover:bg-brand-hover disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>
