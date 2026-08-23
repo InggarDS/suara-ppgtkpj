@@ -7,7 +7,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const session = await getAdminSession();
 
   return (
-    <div className="min-h-screen bg-app-bg">
+    <div className="min-h-screen bg-app-bg flex flex-col">
       <div className="flex items-center gap-4 flex-wrap px-6.5 py-4 border-b border-border-1">
         <Link href="/admin/events" className="flex items-center gap-2.5">
           <div className="w-[26px] h-[26px] rounded-[10px] bg-brand flex items-center justify-center">
@@ -33,7 +33,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           )}
         </div>
       </div>
-      {children}
+      <div className="flex-1 flex flex-col">{children}</div>
+      <div className="text-center text-[11px] text-faint py-4 border-t border-border-1">
+        © PPGT Klasis Pulau Jawa 2026
+      </div>
     </div>
   );
 }

@@ -40,6 +40,10 @@ export default function PresentView({
       />
       {data && <ProjectorBoard eventName={eventName} data={data} inviteUrl={inviteUrl} showQr={showQr} />}
 
+      <div className="absolute bottom-3 left-0 right-0 text-center font-mono text-[10px] tracking-[.08em] text-stage-dimmer">
+        © PPGT Klasis Pulau Jawa 2026
+      </div>
+
       {!isFullscreen && (
         <button
           onClick={() => {

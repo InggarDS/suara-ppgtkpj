@@ -79,7 +79,8 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
   }
 
   return (
-    <div className="min-h-screen bg-app-bg flex items-start sm:items-center justify-center py-8 px-4">
+    <div className="min-h-screen bg-app-bg flex flex-col items-center py-8 px-4">
+      <div className="flex-1 flex items-start sm:items-center justify-center w-full">
       <div className="elevated w-full max-w-[420px] bg-paper rounded-[34px] border border-border-1 min-h-[600px] flex flex-col overflow-hidden">
         <div className="flex items-center gap-2 px-6 pt-5 pb-1">
           <div className="w-[22px] h-[22px] rounded-[9px] bg-brand flex items-center justify-center">
@@ -123,6 +124,8 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
         )}
         {screen === "done" && data && <DoneScreen token={data.token ?? ""} stageName={data.liveStage?.name ?? ""} />}
       </div>
+      </div>
+      <div className="text-[11px] text-faint pt-6">© PPGT Klasis Pulau Jawa 2026</div>
     </div>
   );
 }
