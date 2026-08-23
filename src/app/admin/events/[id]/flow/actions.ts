@@ -41,12 +41,14 @@ export async function startStageAction(eventId: string, stageId: string) {
       where: { id: stageId },
       data: { status: "LIVE", startedAt: new Date() },
     }),
+    prisma.event.update({ where: { id: eventId }, data: { resultsRevealed: false } }),
   ]);
 
-  await logAudit(eventId, `Stage "${stage.name}" opened by admin`, session.name);
+  await logAudit(eventId, `Stage "${stage.name}" opened by admin (names locked)`, session.name);
   revalidatePath(`/admin/events/${eventId}/flow`);
   revalidatePath(`/admin/events/${eventId}/monitor`);
   revalidatePath(`/admin/events/${eventId}`);
+  revalidatePath(`/admin/events/${eventId}/results`);
   return { ok: true };
 }
 
