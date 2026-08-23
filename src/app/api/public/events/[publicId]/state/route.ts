@@ -17,6 +17,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
   if (!event) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const liveStage = event.stages.find((s) => s.status === "LIVE");
+  const completedStages = event.stages.filter((s) => s.status === "COMPLETED");
+  const lastCompletedStage = completedStages.length ? completedStages[completedStages.length - 1] : null;
+  const eventFinished = event.stages.length > 0 && !liveStage && event.stages.every((s) => s.status === "COMPLETED");
 
   const base = {
     eventName: event.name,
@@ -25,6 +28,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
     useCredentials: event.useCredentials,
     closed: event.status !== "ACTIVE",
     totalStages: event.stages.length,
+    stages: event.stages.map((s) => ({ order: s.order, name: s.name, status: s.status })),
+    lastCompletedStage: lastCompletedStage ? { order: lastCompletedStage.order, name: lastCompletedStage.name } : null,
+    eventFinished,
     liveStage: liveStage
       ? {
           id: liveStage.id,

@@ -21,6 +21,9 @@ type StateResp = {
     candidates: { id: string; name: string; note: string; photo: string | null }[];
   } | null;
   totalStages: number;
+  stages: { order: number; name: string; status: string }[];
+  lastCompletedStage: { order: number; name: string } | null;
+  eventFinished: boolean;
   valid?: boolean;
   registered?: boolean;
   name?: string | null;
@@ -89,6 +92,10 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
           <ThemeToggle />
         </div>
 
+        {data && data.stages.length > 1 && ["waiting", "booth", "done"].includes(screen) && (
+          <StageTrack stages={data.stages} currentOrder={data.liveStage?.order ?? data.lastCompletedStage?.order ?? null} />
+        )}
+
         {screen === "loading" && <div className="flex-1 flex items-center justify-center text-sm text-faint">Loading…</div>}
         {screen === "register" && (
           <RegisterScreen
@@ -102,7 +109,13 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
         )}
         {screen === "closed" && <ClosedScreen eventName={eventName} publicId={publicId} />}
         {screen === "waiting" && data && (
-          <WaitingScreen name={data.name ?? ""} token={data.token ?? ""} totalStages={data.totalStages} />
+          <WaitingScreen
+            name={data.name ?? ""}
+            token={data.token ?? ""}
+            totalStages={data.totalStages}
+            lastCompletedStage={data.lastCompletedStage}
+            eventFinished={data.eventFinished}
+          />
         )}
         {screen === "booth" && data?.liveStage && token && (
           <BoothScreen publicId={publicId} token={token} stage={data.liveStage} totalStages={data.totalStages} onVoted={() => mutate()} />
@@ -318,7 +331,61 @@ function RegisterScreen({
   );
 }
 
-function WaitingScreen({ name, token, totalStages }: { name: string; token: string; totalStages: number }) {
+function StageTrack({
+  stages,
+  currentOrder,
+}: {
+  stages: { order: number; name: string; status: string }[];
+  currentOrder: number | null;
+}) {
+  const maxOrder = Math.max(...stages.map((s) => s.order));
+  return (
+    <div className="flex items-center gap-1.5 px-6 pb-3 pt-1 flex-none overflow-x-auto">
+      {stages.map((s, i) => {
+        const isFinal = s.order === maxOrder;
+        const active = s.order === currentOrder;
+        const done = s.status === "COMPLETED";
+        return (
+          <div key={s.order} className="flex items-center gap-1.5 flex-none">
+            <span
+              className={`font-mono text-[10px] uppercase tracking-[.06em] rounded-full px-2 py-1 border whitespace-nowrap ${
+                active
+                  ? "border-brand text-brand bg-brand-soft"
+                  : done
+                    ? "border-border-2 text-body"
+                    : "border-border-3 text-faint"
+              }`}
+            >
+              {isFinal ? "Final" : s.name}
+            </span>
+            {i < stages.length - 1 && <span className="w-2.5 h-px bg-border-3 flex-none" />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WaitingScreen({
+  name,
+  token,
+  totalStages,
+  lastCompletedStage,
+  eventFinished,
+}: {
+  name: string;
+  token: string;
+  totalStages: number;
+  lastCompletedStage: { order: number; name: string } | null;
+  eventFinished: boolean;
+}) {
+  const title = eventFinished ? "Pemilihan selesai" : lastCompletedStage ? "Menunggu stage berikutnya" : "Voting hasn't started";
+  const body = eventFinished
+    ? "Terima kasih sudah berpartisipasi. Hasil akhir dapat dilihat di layar bersama."
+    : lastCompletedStage
+      ? `Terima kasih untuk pemilihan di ${lastCompletedStage.name}. Selanjutnya akan dilakukan pemilihan di stage berikutnya.`
+      : "This screen updates on its own. Keep it open — no need to refresh.";
+
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-6.5 text-center">
       <div className="relative w-16 h-16 flex items-center justify-center">
@@ -326,8 +393,8 @@ function WaitingScreen({ name, token, totalStages }: { name: string; token: stri
         <span className="w-3 h-3 rounded-full bg-brand animate-pulse-dot" />
       </div>
       <div>
-        <h2 className="m-0 mb-2 text-[22px] font-semibold tracking-tight text-ink">Voting hasn&apos;t started</h2>
-        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[26ch] mx-auto">This screen updates on its own. Keep it open — no need to refresh.</p>
+        <h2 className="m-0 mb-2 text-[22px] font-semibold tracking-tight text-ink">{title}</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[30ch] mx-auto">{body}</p>
       </div>
       <div className="w-full bg-card border border-border-1 rounded-[22px] p-3.5 flex items-center gap-3 text-left">
         <span className="w-10.5 h-10.5 rounded-[20px] bg-border-4 text-body text-[13px] font-semibold flex items-center justify-center flex-none">
