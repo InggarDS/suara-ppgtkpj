@@ -110,6 +110,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
         {screen === "closed" && <ClosedScreen eventName={eventName} publicId={publicId} />}
         {screen === "waiting" && data && (
           <WaitingScreen
+            eventName={eventName}
             name={data.name ?? ""}
             token={data.token ?? ""}
             totalStages={data.totalStages}
@@ -367,24 +368,27 @@ function StageTrack({
 }
 
 function WaitingScreen({
+  eventName,
   name,
   token,
   totalStages,
   lastCompletedStage,
   eventFinished,
 }: {
+  eventName: string;
   name: string;
   token: string;
   totalStages: number;
   lastCompletedStage: { order: number; name: string } | null;
   eventFinished: boolean;
 }) {
-  const title = eventFinished ? "Pemilihan selesai" : lastCompletedStage ? "Menunggu stage berikutnya" : "Voting hasn't started";
+  const notStartedYet = !eventFinished && !lastCompletedStage;
+  const title = eventFinished ? "Pemilihan selesai" : lastCompletedStage ? "Menunggu stage berikutnya" : "Voting Belum Dimulai";
   const body = eventFinished
     ? "Terima kasih sudah berpartisipasi. Hasil akhir dapat dilihat di layar bersama."
     : lastCompletedStage
       ? `Terima kasih untuk pemilihan di ${lastCompletedStage.name}. Selanjutnya akan dilakukan pemilihan di stage berikutnya.`
-      : "This screen updates on its own. Keep it open — no need to refresh.";
+      : "Layar ini akan otomatis berpindah begitu admin membuka stage pertama.";
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-6.5 text-center">
@@ -393,6 +397,9 @@ function WaitingScreen({
         <span className="w-3 h-3 rounded-full bg-brand animate-pulse-dot" />
       </div>
       <div>
+        {notStartedYet && (
+          <div className="font-mono text-[10.5px] tracking-[.12em] text-faint uppercase mb-2">{eventName}</div>
+        )}
         <h2 className="m-0 mb-2 text-[22px] font-semibold tracking-tight text-ink">{title}</h2>
         <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[30ch] mx-auto">{body}</p>
       </div>

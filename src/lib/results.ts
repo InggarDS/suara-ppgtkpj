@@ -24,6 +24,8 @@ export async function getResultsSnapshot(eventId: string) {
     .map((s) => ({ order: s.order, name: s.name, status: s.status }));
   const maxOrder = stageSequence.length ? Math.max(...stageSequence.map((s) => s.order)) : 0;
 
+  const notStarted = !event.stages.some((s) => s.status === "LIVE" || s.status === "COMPLETED");
+
   const targetStage = event.stages.find((s) => s.status === "LIVE") ?? event.stages.find((s) => s.status === "COMPLETED") ?? event.stages[0];
   if (!targetStage) {
     return {
@@ -32,6 +34,7 @@ export async function getResultsSnapshot(eventId: string) {
       stageOrder: 0,
       isFinalStage: false,
       stageSequence,
+      notStarted,
       live: false,
       totalVotes: 0,
       denom,
@@ -73,6 +76,7 @@ export async function getResultsSnapshot(eventId: string) {
     stageOrder: targetStage.order,
     isFinalStage,
     stageSequence,
+    notStarted,
     live: targetStage.status === "LIVE",
     totalVotes,
     denom,

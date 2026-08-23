@@ -25,6 +25,16 @@ export default function ProjectorBoard({
   const visibleResults = expanded ? data.results : data.results.slice(0, TOP_N);
   const hiddenCount = data.results.length - visibleResults.length;
 
+  if (data.notStarted) {
+    return (
+      <div className="w-full max-w-[980px] flex flex-col items-center justify-center gap-5 py-16 text-center animate-rise-in">
+        <span className="font-mono text-[13px] tracking-[.25em] uppercase text-stage-dimmer">{eventName}</span>
+        <div className="text-[64px] font-semibold tracking-tight leading-tight max-w-[16ch]">Voting Belum Dimulai</div>
+        <div className="text-lg text-stage-dim">Menunggu admin membuka stage pertama.</div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative w-full max-w-[980px] flex flex-col" style={{ maxHeight: "min(940px, 86vh)" }}>
       <div className="flex items-baseline gap-3 mb-2 flex-none">
