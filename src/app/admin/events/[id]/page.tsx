@@ -7,7 +7,6 @@ import { InviteQrPanel } from "@/components/ui/invite-qr";
 import { pct } from "@/lib/format";
 import EventHeader from "./event-header";
 import BannerEditor from "./banner-editor";
-import QuickActionsSection from "./quick-actions-section";
 
 export const dynamic = "force-dynamic";
 
@@ -79,8 +78,6 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
               Edit voting flow
             </Link>
           </div>
-
-          <QuickActionsSection eventId={event.id} />
 
           <div className="bg-card border border-border-1 rounded-xl p-5 flex items-center gap-4">
             <div className="flex-1">
