@@ -147,6 +147,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                 eventId={event.id}
                 stage={focusStage}
                 hasNextStage={event.stages.some((s) => s.order > focusStage.order)}
+                maxVoters={Math.max(registeredParticipants.length, 1)}
               />
             ) : (
               <div className="bg-card border border-border-1 rounded-xl p-4.5">
