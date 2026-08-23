@@ -25,6 +25,7 @@ export async function fullResetAction(eventId: string) {
 
   await prisma.$transaction([
     prisma.vote.deleteMany({ where: { stage: { eventId } } }),
+    prisma.candidate.updateMany({ where: { stage: { eventId } }, data: { photo: null } }),
     prisma.participant.deleteMany({ where: { eventId } }),
     prisma.stage.updateMany({ where: { eventId }, data: { status: "NOT_STARTED", startedAt: null, completedAt: null } }),
     prisma.event.update({ where: { id: eventId }, data: { resultsRevealed: false } }),
