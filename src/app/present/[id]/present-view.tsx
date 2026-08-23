@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { ResultsSnapshot } from "@/lib/results";
+import { useStageQrVisibility } from "@/components/ui/invite-qr";
 import ProjectorBoard from "@/app/admin/events/[id]/results/projector-board";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -23,6 +24,7 @@ export default function PresentView({
     refreshInterval: 3000,
   });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showQr] = useStageQrVisibility(eventId);
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -36,7 +38,7 @@ export default function PresentView({
         className="absolute inset-0 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
       />
-      {data && <ProjectorBoard eventName={eventName} data={data} inviteUrl={inviteUrl} />}
+      {data && <ProjectorBoard eventName={eventName} data={data} inviteUrl={inviteUrl} showQr={showQr} />}
 
       {!isFullscreen && (
         <button

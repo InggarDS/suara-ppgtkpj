@@ -35,6 +35,39 @@ export function QrImage({ url, size, className }: { url: string; size: number; c
   return <img src={dataUrl} alt="Invite QR code" width={size} height={size} className={className} />;
 }
 
+function stageQrKey(eventId: string) {
+  return `suara-stage-qr-${eventId}`;
+}
+
+function readStageQrVisible(eventId: string) {
+  if (typeof localStorage === "undefined") return true;
+  return localStorage.getItem(stageQrKey(eventId)) !== "0";
+}
+
+export function useStageQrVisibility(eventId: string) {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(readStageQrVisible(eventId)), 0);
+    return () => clearTimeout(t);
+  }, [eventId]);
+
+  useEffect(() => {
+    function onStorage(e: StorageEvent) {
+      if (e.key === stageQrKey(eventId)) setVisible(e.newValue !== "0");
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [eventId]);
+
+  function set(next: boolean) {
+    setVisible(next);
+    localStorage.setItem(stageQrKey(eventId), next ? "1" : "0");
+  }
+
+  return [visible, set] as const;
+}
+
 export function downloadQr(url: string, filename: string, size = 480) {
   QRCode.toDataURL(url, { width: size, margin: 2, color: { dark: "#0b1130", light: "#ffffff" } }).then((dataUrl) => {
     const a = document.createElement("a");

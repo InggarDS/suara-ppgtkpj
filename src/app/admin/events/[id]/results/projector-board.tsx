@@ -10,10 +10,12 @@ export default function ProjectorBoard({
   eventName,
   data,
   inviteUrl,
+  showQr = true,
 }: {
   eventName: string;
   data: ResultsSnapshot;
   inviteUrl?: string;
+  showQr?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const revealed = data.revealed;
@@ -50,7 +52,7 @@ export default function ProjectorBoard({
                 />
               </div>
             </div>
-            {inviteUrl && (
+            {inviteUrl && showQr && (
               <div className="flex flex-col items-center gap-3 flex-none">
                 <div className="bg-white rounded-2xl p-3">
                   <QrImage url={inviteUrl} size={150} />

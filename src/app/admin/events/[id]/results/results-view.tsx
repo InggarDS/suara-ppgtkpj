@@ -4,6 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { ResultsSnapshot } from "@/lib/results";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useStageQrVisibility } from "@/components/ui/invite-qr";
 import { setRevealAction } from "./actions";
 import ProjectorBoard from "./projector-board";
 
@@ -25,6 +26,7 @@ export default function ResultsView({
     refreshInterval: 3000,
   });
   const [confirmKind, setConfirmKind] = useState<"reveal" | "hide" | null>(null);
+  const [showQr, setShowQr] = useStageQrVisibility(eventId);
 
   if (!data) return null;
   const revealed = data.revealed;
@@ -61,6 +63,14 @@ export default function ResultsView({
         </svg>
         <span className="flex-1 text-[13px] text-ink-soft">Projector output — participants never see results on their own device.</span>
         <button
+          onClick={() => setShowQr(!showQr)}
+          className={`flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border cursor-pointer ${
+            showQr ? "bg-brand-soft text-brand border-border-1" : "bg-card text-ink-soft border-border-1"
+          }`}
+        >
+          {showQr ? "Hide QR" : "Show QR"}
+        </button>
+        <button
           onClick={() => setConfirmKind(revealed ? "hide" : "reveal")}
           className={`flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border cursor-pointer ${
             revealed ? "bg-brand-soft text-brand border-border-1" : "bg-card text-ink-soft border-border-1"
@@ -81,7 +91,7 @@ export default function ResultsView({
           className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
         />
-        <ProjectorBoard eventName={eventName} data={data} inviteUrl={inviteUrl} />
+        <ProjectorBoard eventName={eventName} data={data} inviteUrl={inviteUrl} showQr={showQr} />
       </div>
 
       <ConfirmDialog
