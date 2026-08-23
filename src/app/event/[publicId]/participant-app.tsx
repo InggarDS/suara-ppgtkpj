@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { compressImage } from "@/lib/compress-image";
 import { initials } from "@/lib/ids";
 import { parseDeviceLabel } from "@/lib/device";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 type StateResp = {
   eventName: string;
@@ -84,6 +85,8 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             </svg>
           </div>
           <span className="text-[13px] font-semibold text-ink">Suara</span>
+          <span className="flex-1" />
+          <ThemeToggle />
         </div>
 
         {screen === "loading" && <div className="flex-1 flex items-center justify-center text-sm text-faint">Loading…</div>}

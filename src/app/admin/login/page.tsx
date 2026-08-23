@@ -1,8 +1,12 @@
 import LoginForm from "./login-form";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-app-bg px-6">
+    <div className="min-h-screen flex items-center justify-center bg-app-bg px-6 relative">
+      <div className="absolute top-5 right-5">
+        <ThemeToggle />
+      </div>
       <div className="elevated w-full max-w-sm bg-card border border-border-1 rounded-3xl p-7">
         <div className="flex items-center gap-2.5 mb-6">
           <div className="w-7 h-7 rounded-[10px] bg-brand flex items-center justify-center">

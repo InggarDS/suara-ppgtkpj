@@ -54,6 +54,54 @@
   --color-stage-dimmer: #6c76a0;
 }
 
+/* "Afternoon" (light) mode — same electric-blue/violet brand, cool off-white surfaces */
+[data-theme="light"] {
+  --background: #eef2fc;
+  --foreground: #0b1130;
+
+  --color-ink: #0b1130;
+  --color-ink-soft: #1c2444;
+  --color-ink-mute: #333c5c;
+  --color-body: #5b6478;
+  --color-faint: #8891b0;
+  --color-fainter: #aab2cc;
+  --color-hairline: #d7dcf0;
+
+  --color-paper: #f7f9fe;
+  --color-paper-2: #f1f4fc;
+  --color-card: #ffffff;
+  --color-app-bg: #eef2fc;
+  --color-border: #e4e8f7;
+  --color-border-2: #d9e0f5;
+  --color-border-3: #e9edfa;
+  --color-border-4: #edf1fb;
+  --color-border-5: #f1f4fc;
+  --color-border-6: #eef1fa;
+
+  --color-brand: #3d7bff;
+  --color-brand-hover: #2f63e0;
+  --color-brand-soft: rgba(61, 123, 255, 0.1);
+  --color-brand-soft-border: rgba(61, 123, 255, 0.28);
+  --color-brand-soft-border-2: rgba(61, 123, 255, 0.35);
+  --color-brand-accent: #2f6be0;
+  --color-brand-accent-2: #8b5cf6;
+  --color-brand-accent-3: #3d7bff;
+  --color-brand-muted: #9aa8d9;
+
+  --color-amber-bg: #fdf6ec;
+  --color-amber-border: rgba(217, 164, 90, 0.45);
+  --color-amber-icon: #b5761f;
+  --color-amber-text: #7a5312;
+  --color-amber-chip: #f3e5cb;
+  --color-amber-sub: #8b7448;
+
+  --color-danger: #d6304f;
+  --color-danger-hover: #b8253f;
+  --color-danger-bg: #fdf1f3;
+  --color-danger-border: rgba(214, 48, 79, 0.3);
+  --color-danger-bg-hover: #fbe3e7;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -133,6 +181,16 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   letter-spacing: -0.01em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+[data-theme="light"] body {
+  background:
+    radial-gradient(1100px 600px at 12% -10%, rgba(61, 123, 255, 0.1), transparent 60%),
+    radial-gradient(900px 520px at 100% 0%, rgba(139, 92, 246, 0.08), transparent 55%),
+    radial-gradient(1000px 680px at 50% 110%, rgba(61, 123, 255, 0.06), transparent 60%),
+    linear-gradient(180deg, #eef2fc 0%, #f2f5fd 55%, #eef1fb 100%);
+  background-attachment: fixed;
 }
 
 @layer base {

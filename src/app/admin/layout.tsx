@@ -1,6 +1,7 @@
 import { getAdminSession } from "@/lib/auth";
 import { logoutAction } from "./actions";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getAdminSession();
@@ -18,16 +19,19 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <span className="text-xs text-faint hidden sm:inline">Multi-stage voting platform</span>
         </Link>
         <div className="flex-1" />
-        {session && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-body">{session.name}</span>
-            <form action={logoutAction}>
-              <button className="text-xs font-medium text-body border border-border-1 rounded-md px-2.5 py-1.5 cursor-pointer hover:border-hairline">
-                Sign out
-              </button>
-            </form>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          {session && (
+            <>
+              <span className="text-xs text-body">{session.name}</span>
+              <form action={logoutAction}>
+                <button className="text-xs font-medium text-body border border-border-1 rounded-md px-2.5 py-1.5 cursor-pointer hover:border-hairline">
+                  Sign out
+                </button>
+              </form>
+            </>
+          )}
+        </div>
       </div>
       {children}
     </div>
