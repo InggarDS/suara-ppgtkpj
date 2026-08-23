@@ -6,15 +6,9 @@ import { CopyButton } from "@/components/ui/copy-button";
 import { pct } from "@/lib/format";
 import EventHeader from "./event-header";
 import BannerEditor from "./banner-editor";
+import QuickActionsSection from "./quick-actions-section";
 
 export const dynamic = "force-dynamic";
-
-const QUICK_ACTIONS = [
-  { key: "monitor", label: "Live monitoring", hint: "Turnout as it happens", icon: "M4 20V11M10 20V4M16 20v-6M2 20h20" },
-  { key: "results", label: "Shared screen", hint: "Push results to the projector", icon: "M3 4.5h18v12H3zM9 20.5h6" },
-  { key: "tokens", label: "Access & tokens", hint: "Invite link and personal tokens", icon: "M14 8a5 5 0 1 0-4.6 5H11v3h3v-3h1.2A5 5 0 0 0 14 8Z" },
-  { key: "data", label: "Data & cleanup", hint: "Export, archive, reset", icon: "M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3ZM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7" },
-];
 
 export default async function EventOverviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -59,55 +53,33 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
             <Stat label="Threshold" value={liveStage ? liveStage.thresholdMin : "—"} unit="min. voters" />
           </div>
 
-          <div className="grid gap-4 items-start" style={{ gridTemplateColumns: "minmax(0,1.3fr) minmax(0,1fr)" }}>
-            <div className="bg-card border border-border-1 rounded-xl p-5">
-              <div className="text-sm font-semibold text-ink mb-3.5">Stages</div>
-              <div className="flex flex-col">
-                {event.stages.map((st) => (
-                  <div key={st.id} className="flex items-center gap-3 py-2.5 border-b border-border-5 last:border-b-0">
-                    <span
-                      className={`w-[7px] h-[7px] rounded-full flex-none ${
-                        st.status === "LIVE" ? "bg-brand-accent" : st.status === "COMPLETED" ? "bg-brand-muted" : "bg-border-2"
-                      }`}
-                    />
-                    <span className="font-mono text-[10.5px] text-fainter w-[58px] flex-none">Stage {st.order}</span>
-                    <span className="flex-1 text-[13px] font-medium text-ink">{st.name}</span>
-                    <span className={`text-[11.5px] font-medium ${st.status === "LIVE" ? "text-brand" : "text-faint"}`}>
-                      {st.status === "LIVE" ? "Live now" : st.status === "COMPLETED" ? "Completed" : "Not started"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <Link
-                href={`/admin/events/${event.id}/flow`}
-                className="inline-block mt-3.5 text-[12.5px] font-medium text-brand bg-brand-soft rounded-lg px-3.5 py-2"
-              >
-                Edit voting flow
-              </Link>
-            </div>
-
-            <div className="bg-card border border-border-1 rounded-xl p-5 flex flex-col gap-3">
-              <div className="text-sm font-semibold text-ink">Quick actions</div>
-              {QUICK_ACTIONS.map((q) => (
-                <Link
-                  key={q.key}
-                  href={`/admin/events/${event.id}/${q.key}`}
-                  className="flex items-center gap-2.5 w-full text-left bg-paper-2 border border-border-3 rounded-[18px] px-3.5 py-2.5 hover:border-hairline"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
-                    <path d={q.icon}></path>
-                  </svg>
-                  <span className="flex-1">
-                    <span className="block text-[12.5px] font-medium text-ink">{q.label}</span>
-                    <span className="block text-[11px] text-faint">{q.hint}</span>
+          <div className="bg-card border border-border-1 rounded-xl p-5">
+            <div className="text-sm font-semibold text-ink mb-3.5">Stages</div>
+            <div className="flex flex-col">
+              {event.stages.map((st) => (
+                <div key={st.id} className="flex items-center gap-3 py-2.5 border-b border-border-5 last:border-b-0">
+                  <span
+                    className={`w-[7px] h-[7px] rounded-full flex-none ${
+                      st.status === "LIVE" ? "bg-brand-accent" : st.status === "COMPLETED" ? "bg-brand-muted" : "bg-border-2"
+                    }`}
+                  />
+                  <span className="font-mono text-[10.5px] text-fainter w-[58px] flex-none">Stage {st.order}</span>
+                  <span className="flex-1 text-[13px] font-medium text-ink">{st.name}</span>
+                  <span className={`text-[11.5px] font-medium ${st.status === "LIVE" ? "text-brand" : "text-faint"}`}>
+                    {st.status === "LIVE" ? "Live now" : st.status === "COMPLETED" ? "Completed" : "Not started"}
                   </span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5B6AA8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
-                    <path d="m10 6 6 6-6 6"></path>
-                  </svg>
-                </Link>
+                </div>
               ))}
             </div>
+            <Link
+              href={`/admin/events/${event.id}/flow`}
+              className="inline-block mt-3.5 text-[12.5px] font-medium text-brand bg-brand-soft rounded-lg px-3.5 py-2"
+            >
+              Edit voting flow
+            </Link>
           </div>
+
+          <QuickActionsSection eventId={event.id} />
 
           <div className="bg-card border border-border-1 rounded-xl p-5 flex items-center gap-4">
             <div className="flex-1">
