@@ -2,10 +2,19 @@
 
 import { useState } from "react";
 import { ResultsSnapshot } from "@/lib/results";
+import { QrImage } from "@/components/ui/invite-qr";
 
 const TOP_N = 10;
 
-export default function ProjectorBoard({ eventName, data }: { eventName: string; data: ResultsSnapshot }) {
+export default function ProjectorBoard({
+  eventName,
+  data,
+  inviteUrl,
+}: {
+  eventName: string;
+  data: ResultsSnapshot;
+  inviteUrl?: string;
+}) {
   const [expanded, setExpanded] = useState(false);
   const revealed = data.revealed;
   const registrationGate = data.registrationPct < 100;
@@ -28,15 +37,27 @@ export default function ProjectorBoard({ eventName, data }: { eventName: string;
       {registrationGate ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-6 py-16">
           <span className="font-mono text-[11px] tracking-[.12em] text-brand-accent-2 uppercase">Registration</span>
-          <div className="text-[88px] font-semibold tracking-tight leading-none">{data.registrationPct}%</div>
-          <div className="text-base text-stage-dim font-mono">
-            {data.registered} of {data.denom} participants registered
-          </div>
-          <div className="w-full max-w-[420px] h-3 rounded-lg bg-stage-dark-2 overflow-hidden">
-            <div
-              className="h-full rounded-lg transition-all duration-700"
-              style={{ width: `${data.registrationPct}%`, background: "linear-gradient(90deg,#57A6FF,#A78BFA)" }}
-            />
+          <div className="flex items-center gap-12">
+            <div className="flex flex-col items-center gap-6">
+              <div className="text-[88px] font-semibold tracking-tight leading-none">{data.registrationPct}%</div>
+              <div className="text-base text-stage-dim font-mono">
+                {data.registered} of {data.denom} participants registered
+              </div>
+              <div className="w-full max-w-[420px] h-3 rounded-lg bg-stage-dark-2 overflow-hidden">
+                <div
+                  className="h-full rounded-lg transition-all duration-700"
+                  style={{ width: `${data.registrationPct}%`, background: "linear-gradient(90deg,#57A6FF,#A78BFA)" }}
+                />
+              </div>
+            </div>
+            {inviteUrl && (
+              <div className="flex flex-col items-center gap-3 flex-none">
+                <div className="bg-white rounded-2xl p-3">
+                  <QrImage url={inviteUrl} size={150} />
+                </div>
+                <span className="font-mono text-[11px] text-stage-dimmer uppercase tracking-[.1em]">Scan to join</span>
+              </div>
+            )}
           </div>
           <div className="text-[13px] text-stage-dimmer">Results appear here once everyone has registered.</div>
         </div>

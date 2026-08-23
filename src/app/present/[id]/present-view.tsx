@@ -10,10 +10,12 @@ const fetcher = (url: string) => fetch(url).then((r) => r.json());
 export default function PresentView({
   eventId,
   eventName,
+  inviteUrl,
   initial,
 }: {
   eventId: string;
   eventName: string;
+  inviteUrl: string;
   initial: ResultsSnapshot | null;
 }) {
   const { data } = useSWR<ResultsSnapshot>(`/api/admin/events/${eventId}/results`, fetcher, {
@@ -34,7 +36,7 @@ export default function PresentView({
         className="absolute inset-0 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
       />
-      {data && <ProjectorBoard eventName={eventName} data={data} />}
+      {data && <ProjectorBoard eventName={eventName} data={data} inviteUrl={inviteUrl} />}
 
       {!isFullscreen && (
         <button

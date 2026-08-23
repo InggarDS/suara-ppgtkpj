@@ -3,17 +3,50 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 
-export function InviteQrPanel({ url, eventName }: { url: string; eventName: string }) {
-  const [open, setOpen] = useState(false);
+export function useQrDataUrl(url: string, size = 240) {
   const [dataUrl, setDataUrl] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!open || dataUrl) return;
-    QRCode.toDataURL(url, { width: 480, margin: 2, color: { dark: "#0b1130", light: "#ffffff" } }).then((generated) => {
-      setDataUrl(generated);
+    let cancelled = false;
+    QRCode.toDataURL(url, { width: size, margin: 1, color: { dark: "#0b1130", light: "#ffffff" } }).then((generated) => {
+      if (!cancelled) setDataUrl(generated);
     });
-  }, [open, dataUrl, url]);
+    return () => {
+      cancelled = true;
+    };
+  }, [url, size]);
+
+  return dataUrl;
+}
+
+export function QrImage({ url, size, className }: { url: string; size: number; className?: string }) {
+  const dataUrl = useQrDataUrl(url, size * 2);
+  if (!dataUrl) {
+    return (
+      <div
+        className={`flex items-center justify-center bg-border-5 text-faint text-[10px] font-mono ${className ?? ""}`}
+        style={{ width: size, height: size }}
+      >
+        …
+      </div>
+    );
+  }
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={dataUrl} alt="Invite QR code" width={size} height={size} className={className} />;
+}
+
+export function downloadQr(url: string, filename: string, size = 480) {
+  QRCode.toDataURL(url, { width: size, margin: 2, color: { dark: "#0b1130", light: "#ffffff" } }).then((dataUrl) => {
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = filename;
+    a.click();
+  });
+}
+
+export function InviteQrPanel({ url, eventName }: { url: string; eventName: string }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   async function share() {
     if (navigator.share) {
@@ -30,11 +63,7 @@ export function InviteQrPanel({ url, eventName }: { url: string; eventName: stri
   }
 
   function download() {
-    if (!dataUrl) return;
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = `${eventName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-qr.png`;
-    a.click();
+    downloadQr(url, `${eventName.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}-qr.png`);
   }
 
   return (
@@ -42,15 +71,17 @@ export function InviteQrPanel({ url, eventName }: { url: string; eventName: stri
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer flex items-center gap-1.5"
+        title="View QR code"
+        className="flex-none rounded-lg border border-border-1 bg-white p-1 cursor-pointer"
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="3" width="7" height="7" rx="1"></rect>
-          <rect x="14" y="3" width="7" height="7" rx="1"></rect>
-          <rect x="3" y="14" width="7" height="7" rx="1"></rect>
-          <path d="M14 14h3v3h-3zM14 20h3M20 14v3M17.5 20H21v-3"></path>
-        </svg>
-        QR code
+        <QrImage url={url} size={40} className="rounded" />
+      </button>
+      <button
+        type="button"
+        onClick={download}
+        className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer"
+      >
+        Download QR
       </button>
       <button
         type="button"
@@ -71,20 +102,14 @@ export function InviteQrPanel({ url, eventName }: { url: string; eventName: stri
           >
             <div className="text-sm font-semibold text-ink text-center">{eventName}</div>
             <div className="bg-white rounded-2xl p-4 w-full flex items-center justify-center">
-              {dataUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={dataUrl} alt="Invite QR code" width={240} height={240} />
-              ) : (
-                <div className="w-[240px] h-[240px] flex items-center justify-center text-xs text-faint">Generating…</div>
-              )}
+              <QrImage url={url} size={240} />
             </div>
             <div className="font-mono text-[11px] text-body break-all text-center">{url}</div>
             <div className="flex items-center gap-2.5 w-full">
               <button
                 type="button"
                 onClick={download}
-                disabled={!dataUrl}
-                className="flex-1 text-[12.5px] font-medium text-white bg-brand rounded-lg px-3.5 py-2.5 cursor-pointer disabled:opacity-50"
+                className="flex-1 text-[12.5px] font-medium text-white bg-brand rounded-lg px-3.5 py-2.5 cursor-pointer"
               >
                 Download PNG
               </button>
