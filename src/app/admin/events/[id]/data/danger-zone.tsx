@@ -16,7 +16,7 @@ export default function DangerZone({ eventId }: { eventId: string }) {
     },
     full: {
       title: "Permanently delete this event's data?",
-      body: "All votes, all participant records and their uploaded photos will be erased. This cannot be undone — export the audit log first.",
+      body: "All votes, all participant records and their uploaded photos will be erased, and every later stage's candidate list (auto-selected or added during the run) is cleared back to just Stage 1. This cannot be undone — export the audit log first.",
       word: "DELETE",
       cta: "Delete everything",
     },
@@ -48,7 +48,7 @@ export default function DangerZone({ eventId }: { eventId: string }) {
       <div className="flex items-center gap-4 py-3.5 border-b border-[rgba(255,92,122,.28)]">
         <div className="flex-1">
           <div className="text-[13px] font-semibold text-ink">Full reset</div>
-          <div className="text-xs text-body leading-relaxed">Permanently deletes all votes, participants and uploaded photos for this event. Requires double confirmation.</div>
+          <div className="text-xs text-body leading-relaxed">Permanently deletes all votes, participants, uploaded photos, and later-stage candidate lists for this event. Requires double confirmation.</div>
         </div>
         <button
           onClick={() => setKind("full")}
