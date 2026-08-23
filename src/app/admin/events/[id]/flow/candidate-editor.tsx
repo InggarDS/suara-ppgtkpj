@@ -8,7 +8,7 @@ import {
   removeCandidateAction,
 } from "./actions";
 
-type Candidate = { id: string; name: string };
+type Candidate = { id: string; name: string; selectionSource?: string };
 type Participant = { id: string; name: string | null; jemaat: string | null };
 
 export default function CandidateEditor({
@@ -34,7 +34,14 @@ export default function CandidateEditor({
     <div className="mt-3 pt-3 border-t border-border-5 flex flex-col gap-2">
       {candidates.map((c) => (
         <div key={c.id} className="flex items-center gap-2">
-          <span className="flex-1 text-xs text-body">{c.name}</span>
+          <span className="flex-1 text-xs text-body flex items-center gap-1.5">
+            {c.name}
+            {c.selectionSource === "AUTO_THRESHOLD" && (
+              <span className="font-mono text-[9px] tracking-[.06em] uppercase text-brand bg-brand-soft rounded px-1 py-0.5">
+                Auto
+              </span>
+            )}
+          </span>
           <button
             onClick={() => startTransition(() => { void removeCandidateAction(eventId, c.id); })}
             className="text-[11px] text-faint hover:text-danger"

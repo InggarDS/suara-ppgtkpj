@@ -106,13 +106,18 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                         {stage.candidates.map((c) => (
                           <span
                             key={c.id}
-                            className={`text-xs rounded-full px-2.5 py-1.5 border ${
+                            className={`flex items-center gap-1.5 text-xs rounded-full px-2.5 py-1.5 border ${
                               stage.status === "NOT_STARTED"
                                 ? "text-ink-soft bg-border-5 border-border-3"
                                 : "text-ink bg-brand-soft border-brand-soft-border"
                             }`}
                           >
                             {c.name}
+                            {c.selectionSource === "AUTO_THRESHOLD" && (
+                              <span className="font-mono text-[9px] tracking-[.06em] uppercase text-brand bg-brand-soft rounded px-1 py-0.5">
+                                Auto
+                              </span>
+                            )}
                           </span>
                         ))}
                       </div>
@@ -138,7 +143,11 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
 
           <div className="sticky top-5">
             {focusStage ? (
-              <StageRulesPanel eventId={event.id} stage={focusStage} />
+              <StageRulesPanel
+                eventId={event.id}
+                stage={focusStage}
+                hasNextStage={event.stages.some((s) => s.order > focusStage.order)}
+              />
             ) : (
               <div className="bg-card border border-border-1 rounded-xl p-4.5">
                 <div className="text-[13px] font-semibold text-ink mb-1">All stages completed</div>

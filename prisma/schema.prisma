@@ -19,6 +19,11 @@ enum StageStatus {
   COMPLETED
 }
 
+enum SelectionSource {
+  MANUAL
+  AUTO_THRESHOLD
+}
+
 model Admin {
   id           String   @id @default(cuid())
   email        String   @unique
@@ -70,6 +75,7 @@ model Stage {
   name           String
   status         StageStatus @default(NOT_STARTED)
   thresholdMin   Int         @default(1)
+  advanceThreshold Int?
   autoAdvance    Boolean     @default(true)
   allowAbstain   Boolean     @default(false)
   requireFingerprint Boolean @default(true)
@@ -93,6 +99,7 @@ model Candidate {
   order         Int
   participantId String?
   participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  selectionSource SelectionSource @default(MANUAL)
 
   votes Vote[]
 }

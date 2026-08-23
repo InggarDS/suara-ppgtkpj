@@ -9,18 +9,32 @@ type Stage = {
   name: string;
   status: string;
   thresholdMin: number;
+  advanceThreshold: number | null;
   autoAdvance: boolean;
   allowAbstain: boolean;
   requireFingerprint: boolean;
   notifyOnQuorum: boolean;
 };
 
-export default function StageRulesPanel({ eventId, stage }: { eventId: string; stage: Stage }) {
+export default function StageRulesPanel({
+  eventId,
+  stage,
+  hasNextStage,
+}: {
+  eventId: string;
+  stage: Stage;
+  hasNextStage: boolean;
+}) {
   const [threshold, setThreshold] = useState(stage.thresholdMin);
+  const [advanceThreshold, setAdvanceThreshold] = useState(stage.advanceThreshold ?? 0);
   const [pending, startTransition] = useTransition();
 
   const toggles: { key: keyof Stage; label: string; hint: string }[] = [
-    { key: "autoAdvance", label: "Auto-advance on threshold", hint: "Move to the next stage without admin action" },
+    {
+      key: "autoAdvance",
+      label: "Auto-close on threshold",
+      hint: "Close this stage and pre-select the next stage's candidates once the quorum is reached — the next stage still needs to be opened manually",
+    },
     { key: "allowAbstain", label: "Allow abstain", hint: 'Adds a "Golput" option to the ballot' },
     { key: "requireFingerprint", label: "Device fingerprinting", hint: "Block a second device on the same token" },
     { key: "notifyOnQuorum", label: "Notify on quorum", hint: "Dashboard alert when the minimum is reached" },
@@ -55,6 +69,36 @@ export default function StageRulesPanel({ eventId, stage }: { eventId: string; s
           className="w-full accent-brand"
         />
       </div>
+      {hasNextStage && (
+        <div>
+          <div className="flex items-baseline gap-1.5 mb-2">
+            <label className="text-[11.5px] font-medium text-body">Minimum votes to qualify for next stage</label>
+            <span className="flex-1" />
+            <span className="font-mono text-xs text-ink font-medium">{advanceThreshold || "Off"}</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={300}
+            value={advanceThreshold}
+            onChange={(e) => setAdvanceThreshold(Number(e.target.value))}
+            onMouseUp={() =>
+              startTransition(() => {
+                void updateStageRulesAction(eventId, stage.id, { advanceThreshold: advanceThreshold || null });
+              })
+            }
+            onTouchEnd={() =>
+              startTransition(() => {
+                void updateStageRulesAction(eventId, stage.id, { advanceThreshold: advanceThreshold || null });
+              })
+            }
+            className="w-full accent-brand"
+          />
+          <div className="text-[11px] text-faint leading-relaxed mt-1.5">
+            Candidates who reach this many votes here are automatically added to the next stage. Set to 0 to select candidates manually instead.
+          </div>
+        </div>
+      )}
       <div className="h-px bg-border-4" />
       {toggles.map((t) => (
         <div key={t.key} className="flex items-center gap-2.5">

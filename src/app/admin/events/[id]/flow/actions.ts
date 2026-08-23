@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { autoSelectNextStageCandidates } from "@/lib/stage-transition";
 import { revalidatePath } from "next/cache";
 
 async function requireSession() {
@@ -13,6 +14,7 @@ async function requireSession() {
 
 export type StageRulePatch = Partial<{
   thresholdMin: number;
+  advanceThreshold: number | null;
   autoAdvance: boolean;
   allowAbstain: boolean;
   requireFingerprint: boolean;
@@ -59,14 +61,7 @@ export async function closeStageAction(eventId: string, stageId: string) {
   await logAudit(eventId, `Stage "${stage.name}" closed by admin`, session.name);
 
   if (stage.autoAdvance) {
-    const next = await prisma.stage.findFirst({
-      where: { eventId, order: { gt: stage.order }, status: "NOT_STARTED" },
-      orderBy: { order: "asc" },
-    });
-    if (next) {
-      await prisma.stage.update({ where: { id: next.id }, data: { status: "LIVE", startedAt: new Date() } });
-      await logAudit(eventId, `Stage "${next.name}" auto-opened`, "system");
-    }
+    await autoSelectNextStageCandidates(stage);
   }
 
   revalidatePath(`/admin/events/${eventId}/flow`);
@@ -98,19 +93,31 @@ export async function addStageAction(eventId: string, name: string, candidateNam
   return { ok: true };
 }
 
+async function requireEditableStage(stageId: string) {
+  const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
+  if (stage.status !== "NOT_STARTED") return null;
+  return stage;
+}
+
 export async function addCandidateAction(eventId: string, stageId: string, name: string, note: string) {
-  await requireSession();
+  const session = await requireSession();
   if (!name.trim()) return { ok: false, error: "Name is required." };
+  const stage = await requireEditableStage(stageId);
+  if (!stage) return { ok: false, error: "Candidates are locked once a stage has started." };
+
   const count = await prisma.candidate.count({ where: { stageId } });
   await prisma.candidate.create({
     data: { stageId, name: name.trim(), note: note.trim(), order: count + 1 },
   });
+  await logAudit(eventId, `Added "${name.trim()}" to "${stage.name}" (manual)`, session.name);
   revalidatePath(`/admin/events/${eventId}/flow`);
   return { ok: true };
 }
 
 export async function addCandidateFromParticipantAction(eventId: string, stageId: string, participantId: string) {
-  await requireSession();
+  const session = await requireSession();
+  const stage = await requireEditableStage(stageId);
+  if (!stage) return { ok: false, error: "Candidates are locked once a stage has started." };
   const participant = await prisma.participant.findUnique({ where: { id: participantId } });
   if (!participant || !participant.name) return { ok: false, error: "Participant not found." };
 
@@ -125,13 +132,16 @@ export async function addCandidateFromParticipantAction(eventId: string, stageId
       order: count + 1,
     },
   });
+  await logAudit(eventId, `Added "${participant.name}" to "${stage.name}" (manual)`, session.name);
   revalidatePath(`/admin/events/${eventId}/flow`);
   return { ok: true };
 }
 
 export async function addAllParticipantsAsCandidatesAction(eventId: string, stageId: string, participantIds: string[]) {
-  await requireSession();
+  const session = await requireSession();
   if (!participantIds.length) return { ok: false, error: "No participants to add." };
+  const stage = await requireEditableStage(stageId);
+  if (!stage) return { ok: false, error: "Candidates are locked once a stage has started." };
 
   const participants = await prisma.participant.findMany({
     where: { id: { in: participantIds }, name: { not: null } },
@@ -149,13 +159,25 @@ export async function addAllParticipantsAsCandidatesAction(eventId: string, stag
       order: count + i + 1,
     })),
   });
+  await logAudit(eventId, `Added ${participants.length} participant(s) to "${stage.name}" (manual)`, session.name);
   revalidatePath(`/admin/events/${eventId}/flow`);
   return { ok: true, added: participants.length };
 }
 
 export async function removeCandidateAction(eventId: string, candidateId: string) {
-  await requireSession();
+  const session = await requireSession();
+  const candidate = await prisma.candidate.findUniqueOrThrow({ where: { id: candidateId }, include: { stage: true } });
+  if (candidate.stage.status !== "NOT_STARTED") {
+    return { ok: false, error: "Candidates are locked once a stage has started." };
+  }
   await prisma.candidate.delete({ where: { id: candidateId } });
+  await logAudit(
+    eventId,
+    `Removed "${candidate.name}" from "${candidate.stage.name}"${
+      candidate.selectionSource === "AUTO_THRESHOLD" ? " (was auto-selected via vote threshold)" : ""
+    }`,
+    session.name
+  );
   revalidatePath(`/admin/events/${eventId}/flow`);
   return { ok: true };
 }
