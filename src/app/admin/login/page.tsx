@@ -1,15 +1,16 @@
+import Image from "next/image";
 import LoginForm from "./login-form";
 
-function BrandMark({ className = "" }: { className?: string }) {
+function PpgtLogo({ size = 40, className = "" }: { size?: number; className?: string }) {
   return (
-    <span className={`flex items-center gap-2.5 ${className}`}>
-      <span className="w-8 h-8 rounded-[12px] bg-white/15 flex items-center justify-center backdrop-blur-sm">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 12.5 9.5 18 20 6.5"></path>
-        </svg>
-      </span>
-      <span className="text-lg font-semibold tracking-tight text-white">Suara</span>
-    </span>
+    <Image
+      src="/ppgt-logo.png"
+      alt="Logo PPGT"
+      width={size}
+      height={size}
+      priority
+      className={className}
+    />
   );
 }
 
@@ -29,7 +30,12 @@ export default function LoginPage() {
           }}
         />
         <div className="relative flex flex-col gap-5">
-          <BrandMark className="mb-4" />
+          <span className="mb-4 flex items-center gap-3">
+            <span className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm">
+              <PpgtLogo size={36} />
+            </span>
+            <span className="text-lg font-semibold tracking-tight text-white">Suara</span>
+          </span>
           <h1 className="text-5xl font-extrabold tracking-tight leading-[1.05] text-white">
             Hey, Hello!
           </h1>
@@ -46,19 +52,12 @@ export default function LoginPage() {
       {/* Right form panel */}
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
-          <div className="lg:hidden mb-8 flex justify-center">
-            <span className="flex items-center gap-2.5">
-              <span className="w-7 h-7 rounded-[10px] bg-brand flex items-center justify-center">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12.5 9.5 18 20 6.5"></path>
-                </svg>
-              </span>
-              <span className="text-sm font-semibold text-ink tracking-tight">Suara</span>
-              <span className="text-xs text-faint">Admin</span>
-            </span>
+          <div className="lg:hidden mb-8 flex flex-col items-center gap-2.5">
+            <PpgtLogo size={56} />
+            <span className="text-sm font-semibold text-ink tracking-tight">Suara</span>
           </div>
           <h2 className="text-2xl font-semibold text-ink mb-1.5 tracking-tight text-center lg:text-left">
-            Welcome Back
+            Selamat Datang
           </h2>
           <p className="text-sm text-body mb-7 text-center lg:text-left">
             Masuk untuk mengelola voting event Anda.
