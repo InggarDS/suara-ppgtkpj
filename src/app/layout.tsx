@@ -18,8 +18,8 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Suara — Multi-stage voting platform",
-  description: "Multi-stage voting platform for organizational elections",
+  title: "Suara — Suara Kita Untuk Pelayanan",
+  description: "Suara Kita Untuk Pelayanan",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

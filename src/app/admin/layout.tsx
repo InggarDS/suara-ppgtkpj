@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </svg>
           </div>
           <span className="text-sm font-semibold text-ink tracking-tight">Suara</span>
-          <span className="text-xs text-faint hidden sm:inline">Multi-stage voting platform</span>
+          <span className="text-xs text-faint hidden sm:inline">Suara Kita Untuk Pelayanan</span>
         </Link>
         <div className="flex-1" />
         <div className="flex items-center gap-3">
