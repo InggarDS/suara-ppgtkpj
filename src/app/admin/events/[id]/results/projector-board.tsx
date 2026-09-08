@@ -19,7 +19,8 @@ export default function ProjectorBoard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const revealed = data.revealed;
-  const registrationGate = data.registrationPct < 100;
+  // Once the admin opens a stage's result, show it regardless of registration progress.
+  const registrationGate = data.registrationPct < 100 && !data.resultsOpen;
   const showWinnerReveal = data.isFinalStage && revealed && Boolean(data.winnerName);
 
   const visibleResults = expanded ? data.results : data.results.slice(0, TOP_N);
@@ -31,6 +32,19 @@ export default function ProjectorBoard({
         <span className="font-mono text-[13px] tracking-[.25em] uppercase text-stage-dimmer">{eventName}</span>
         <div className="text-[64px] font-semibold tracking-tight leading-tight max-w-[16ch]">Voting Belum Dimulai</div>
         <div className="text-lg text-stage-dim">Menunggu admin membuka stage pertama.</div>
+      </div>
+    );
+  }
+
+  if (!data.resultsOpen && !showWinnerReveal) {
+    return (
+      <div className="w-full max-w-[980px] flex flex-col items-center justify-center gap-5 py-16 text-center animate-rise-in">
+        <span className="font-mono text-[13px] tracking-[.25em] uppercase text-stage-dimmer">{eventName}</span>
+        <div className="text-[56px] font-semibold tracking-tight leading-tight max-w-[18ch]">Hasil Belum Dibuka</div>
+        <div className="text-lg text-stage-dim">
+          {data.stageName ? `${data.stageName} · ` : ""}
+          Menunggu admin membuka hasil.
+        </div>
       </div>
     );
   }
@@ -61,7 +75,7 @@ export default function ProjectorBoard({
               <div className="w-full max-w-[420px] h-3 rounded-lg bg-stage-dark-2 overflow-hidden">
                 <div
                   className="h-full rounded-lg transition-all duration-700"
-                  style={{ width: `${data.registrationPct}%`, background: "linear-gradient(90deg,#57A6FF,#A78BFA)" }}
+                  style={{ width: `${data.registrationPct}%`, background: "linear-gradient(90deg,#3d6df0,#1b4de4)" }}
                 />
               </div>
             </div>
@@ -85,7 +99,7 @@ export default function ProjectorBoard({
             {data.isFinalStage && (
               <span
                 className="font-mono text-[11px] tracking-[.12em] uppercase text-brand-accent-2 rounded-md px-2 py-1"
-                style={{ border: "1px solid rgba(167,139,250,.4)" }}
+                style={{ border: "1px solid rgba(77,123,245,.45)" }}
               >
                 Final
               </span>
@@ -133,7 +147,7 @@ export default function ProjectorBoard({
                     className="block h-full rounded transition-all duration-700"
                     style={{
                       width: `${r.pct}%`,
-                      background: i === 0 ? "linear-gradient(90deg,#57A6FF,#A78BFA)" : "#232B52",
+                      background: i === 0 ? "linear-gradient(90deg,#3d6df0,#1b4de4)" : "#1a3372",
                     }}
                   />
                 </span>
@@ -162,7 +176,7 @@ function StageSequenceBar({ stages }: { stages: ResultsSnapshot["stageSequence"]
     <div className="flex items-center gap-2 mb-6 flex-none flex-wrap">
       {stages.map((s, i) => {
         const isFinal = s.order === maxOrder;
-        const state = s.status === "LIVE" ? "live" : s.status === "COMPLETED" ? "done" : "upcoming";
+        const state = s.status === "VOTING" ? "live" : s.status === "STOPPED" ? "done" : "upcoming";
         return (
           <div key={s.order} className="flex items-center gap-2">
             <span
@@ -173,7 +187,7 @@ function StageSequenceBar({ stages }: { stages: ResultsSnapshot["stageSequence"]
                     ? "border-stage-dark-4 text-stage-dim"
                     : "border-stage-dark-3 text-stage-dimmer"
               } ${isFinal ? "border-dashed" : ""}`}
-              style={state === "live" ? { background: "rgba(167,139,250,.12)" } : undefined}
+              style={state === "live" ? { background: "rgba(27,77,228,.14)" } : undefined}
             >
               {state === "live" && <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse-dot" />}
               {state === "done" && (
@@ -198,7 +212,7 @@ function WinnerReveal({ data }: { data: ResultsSnapshot }) {
     <div className="flex-1 flex flex-col items-center justify-center gap-8 py-6 overflow-y-auto animate-celebrate">
       <div
         className="font-mono text-[13px] tracking-[.3em] uppercase text-brand-accent-2"
-        style={{ textShadow: "0 0 24px rgba(167,139,250,.55)" }}
+        style={{ textShadow: "0 0 24px rgba(77,123,245,.55)" }}
       >
         Selamat Terpilih
       </div>
@@ -206,7 +220,7 @@ function WinnerReveal({ data }: { data: ResultsSnapshot }) {
       <div className="flex flex-col items-center gap-4">
         <div
           className="relative rounded-full p-1.5"
-          style={{ background: "linear-gradient(135deg,#57A6FF,#A78BFA)", boxShadow: "0 0 60px -10px rgba(87,166,255,.65)" }}
+          style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 60px -10px rgba(27,77,228,.6)" }}
         >
           {data.winnerPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element

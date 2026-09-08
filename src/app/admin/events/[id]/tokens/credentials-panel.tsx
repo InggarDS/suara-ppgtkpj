@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { parseCredentialsFile } from "@/lib/credentials-file";
 import { addCredentialsAction, deleteCredentialAction } from "./actions";
 import { Pill } from "@/components/ui/pill";
+import { Spinner } from "@/components/ui/spinner";
 
 type Credential = { id: string; name: string; jemaat: string; registered: boolean };
 
@@ -35,13 +36,14 @@ export default function CredentialsPanel({ eventId, credentials }: { eventId: st
       <p className="m-0 mb-3.5 text-xs leading-relaxed text-body">
         Participants register with their name, matched against this list. Jemaat is filled in automatically from a match.
       </p>
-      <label className="inline-flex items-center text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(150,170,255,.16)]">
+      <label className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(27,77,228,.12)]">
         <input
           type="file"
           accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
           className="hidden"
           onChange={onFile}
         />
+        {pending && <Spinner className="w-3.5 h-3.5 text-brand" />}
         {pending ? "Uploading…" : "Upload more (CSV or Excel: Nama, Jemaat)"}
       </label>
       {error && <p className="text-xs text-danger mt-2">{error}</p>}
@@ -73,9 +75,10 @@ function DeleteCredentialButton({ eventId, credentialId }: { eventId: string; cr
         onClick={() => startTransition(() => { void deleteCredentialAction(eventId, credentialId); })}
         onBlur={() => setArmed(false)}
         autoFocus
-        className="text-[11px] font-medium text-white bg-danger rounded-md px-2 py-1.5 cursor-pointer disabled:opacity-50"
+        className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-danger rounded-md px-2 py-1.5 cursor-pointer disabled:opacity-50"
       >
-        {pending ? "…" : "Confirm?"}
+        {pending && <Spinner className="w-3 h-3" />}
+        {pending ? "Deleting…" : "Confirm?"}
       </button>
     );
   }

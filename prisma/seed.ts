@@ -32,8 +32,6 @@ async function main() {
             {
               order: 1,
               name: "Pemilihan Bakal Calon",
-              status: "NOT_STARTED",
-              thresholdMin: 10,
               candidates: {
                 create: [
                   { name: "Nadia Rahmawati", note: "Bidang Organisasi · 4 tahun", order: 1 },
@@ -45,8 +43,6 @@ async function main() {
             {
               order: 2,
               name: "Pemilihan Calon Tetap",
-              status: "NOT_STARTED",
-              thresholdMin: 10,
               candidates: {
                 create: [
                   { name: "Nadia Rahmawati", note: "Bidang Organisasi · 4 tahun", order: 1 },

@@ -6,14 +6,14 @@ export const THEME_INIT_SCRIPT = `
 (function () {
   try {
     var t = localStorage.getItem("suara-theme");
-    if (t === "light") document.documentElement.setAttribute("data-theme", "light");
+    if (t === "dark") document.documentElement.setAttribute("data-theme", "dark");
   } catch (e) {}
 })();
 `;
 
 function readTheme(): "dark" | "light" {
-  if (typeof document === "undefined") return "dark";
-  return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+  if (typeof document === "undefined") return "light";
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
 }
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
@@ -22,8 +22,8 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   function toggle() {
     const next = theme === "light" ? "dark" : "light";
     setTheme(next);
-    if (next === "light") {
-      document.documentElement.setAttribute("data-theme", "light");
+    if (next === "dark") {
+      document.documentElement.setAttribute("data-theme", "dark");
     } else {
       document.documentElement.removeAttribute("data-theme");
     }

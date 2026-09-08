@@ -16,7 +16,7 @@ export default async function MonitorPage({ params }: { params: Promise<{ id: st
   return (
     <>
       <EventHeader eventId={event.id} title="Live monitoring" subtitle="Turnout as it happens. Nothing here is visible to participants." status={event.status} />
-      <div className="flex-1 px-8 pt-6.5 pb-10 bg-paper">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-6.5 pb-10 bg-paper">
         <MonitorView eventId={id} initial={snapshot} />
       </div>
     </>

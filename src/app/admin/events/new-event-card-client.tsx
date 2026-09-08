@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { BusyLabel, Spinner } from "@/components/ui/spinner";
 import { createEventAction } from "../actions";
 import { compressImage } from "@/lib/compress-image";
 import { parseCredentialsFile } from "@/lib/credentials-file";
@@ -15,7 +16,6 @@ export default function NewEventCardClient() {
   const [stageCount, setStageCount] = useState(2);
   const [stageNames, setStageNames] = useState<string[]>(defaultStages);
   const [participants, setParticipants] = useState("300");
-  const [threshold, setThreshold] = useState(10);
   const [openNow, setOpenNow] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
   const [bannerBusy, setBannerBusy] = useState(false);
@@ -63,7 +63,6 @@ export default function NewEventCardClient() {
         expectedParticipants: Number(participants) || 0,
         openNow,
         stageNames: stageNames.slice(0, stageCount),
-        threshold,
         bannerImage: banner,
         useCredentials,
         credentials: useCredentials ? credentials : undefined,
@@ -81,7 +80,7 @@ export default function NewEventCardClient() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="border border-dashed border-border-2 rounded-xl bg-transparent min-h-[174px] flex flex-col items-center justify-center gap-2 cursor-pointer text-faint hover:border-brand hover:text-brand"
+        className="border-2 border-dashed border-border-2 rounded-2xl bg-transparent h-full min-h-[292px] flex flex-col items-center justify-center gap-2 cursor-pointer text-faint hover:border-brand hover:text-brand transition-colors"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <path d="M12 5v14M5 12h14"></path>
@@ -129,7 +128,7 @@ export default function NewEventCardClient() {
                 </label>
                 <label
                   className={`flex items-center w-full rounded-[18px] p-3 cursor-pointer transition-all ${
-                    banner ? "bg-[rgba(61,123,255,.14)] border-[1.5px] border-brand-soft-border-2" : "bg-paper border-[1.5px] border-dashed border-border-2"
+                    banner ? "bg-[rgba(27,77,228,.12)] border-[1.5px] border-brand-soft-border-2" : "bg-paper border-[1.5px] border-dashed border-border-2"
                   }`}
                 >
                   <input type="file" accept="image/*" className="hidden" onChange={onBannerChange} />
@@ -149,7 +148,8 @@ export default function NewEventCardClient() {
                       </button>
                     </span>
                   ) : (
-                    <span className="text-[12.5px] text-faint mx-auto">
+                    <span className="inline-flex items-center gap-1.5 text-[12.5px] text-faint mx-auto">
+                      {bannerBusy && <Spinner className="w-3.5 h-3.5 text-brand" />}
                       {bannerBusy ? "Compressing…" : "Click to upload a banner (wide image works best)"}
                     </span>
                   )}
@@ -229,30 +229,13 @@ export default function NewEventCardClient() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3.5 items-end">
-                <div>
-                  <label className="block text-xs font-medium text-body mb-1.5">Expected participants</label>
-                  <input
-                    value={participants}
-                    onChange={(e) => setParticipants(e.target.value)}
-                    className="w-full border border-border-1 rounded-[18px] px-3 py-2.5 font-mono text-sm text-ink bg-paper outline-none focus:border-brand"
-                  />
-                </div>
-                <div>
-                  <div className="flex items-baseline gap-1.5 mb-2">
-                    <label className="text-xs font-medium text-body">Minimum voters to advance</label>
-                    <span className="flex-1" />
-                    <span className="font-mono text-xs text-ink font-medium">{threshold}</span>
-                  </div>
-                  <input
-                    type="range"
-                    min={1}
-                    max={Number(participants) || 300}
-                    value={threshold}
-                    onChange={(e) => setThreshold(Number(e.target.value))}
-                    className="w-full accent-brand"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-body mb-1.5">Expected participants</label>
+                <input
+                  value={participants}
+                  onChange={(e) => setParticipants(e.target.value)}
+                  className="w-full border border-border-1 rounded-[18px] px-3 py-2.5 font-mono text-sm text-ink bg-paper outline-none focus:border-brand"
+                />
               </div>
 
               <div className="flex items-center gap-3 bg-paper-2 border border-border-3 rounded-xl px-3.5 py-3">
@@ -276,7 +259,7 @@ export default function NewEventCardClient() {
             </div>
 
             <div className="px-7 py-4 border-t border-border-4 flex items-center gap-2.5">
-              <span className="flex-1 text-[11.5px] text-fainter">Stages and thresholds stay editable after creation.</span>
+              <span className="flex-1 text-[11.5px] text-fainter">Stages and candidates stay editable after creation.</span>
               <button
                 onClick={() => setOpen(false)}
                 className="text-[13px] font-medium text-ink-soft bg-border-5 border border-border-1 rounded-lg px-3.5 py-2.5 cursor-pointer"
@@ -287,10 +270,10 @@ export default function NewEventCardClient() {
                 onClick={submit}
                 disabled={!valid || pending}
                 className={`text-[13px] font-semibold rounded-full px-5 py-2.5 border-none transition-colors ${
-                  valid ? "glow-ring bg-brand text-white cursor-pointer hover:bg-brand-hover" : "bg-[rgba(150,170,255,.12)] text-[#5B6AA8] cursor-not-allowed"
+                  valid ? "btn-gradient cursor-pointer" : "bg-border-4 text-brand-muted cursor-not-allowed"
                 }`}
               >
-                {pending ? "Creating…" : "Create event"}
+                <BusyLabel busy={pending} busyText="Creating…">Create event</BusyLabel>
               </button>
             </div>
           </div>

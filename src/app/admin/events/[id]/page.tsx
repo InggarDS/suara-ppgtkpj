@@ -21,14 +21,22 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
   });
   if (!event) notFound();
 
-  const liveStage = event.stages.find((s) => s.status === "LIVE");
-  const turnout = liveStage ? pct(liveStage._count.votes, event.expectedParticipants || event._count.participants || 1) : null;
+  const liveStage = event.stages.find((s) => s.status === "VOTING" || s.status === "CHECK_IN");
+  const turnout =
+    liveStage && liveStage.status === "VOTING"
+      ? pct(liveStage._count.votes, event.expectedParticipants || event._count.participants || 1)
+      : null;
+  const stagePhase = liveStage
+    ? liveStage.status === "VOTING"
+      ? "Voting live"
+      : "Check-in open"
+    : "—";
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
 
   return (
     <>
       <EventHeader eventId={event.id} title={event.name} subtitle={event.description || "No description yet."} status={event.status} />
-      <div className="flex-1 px-8 pt-6.5 pb-10 bg-paper">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-6.5 pb-10 bg-paper">
         <div className="flex flex-col gap-5 max-w-[1000px]">
           <div className="flex items-center gap-3">
             <Link
@@ -50,7 +58,7 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
             <Stat label="Participants" value={event._count.participants} unit="registered" />
             <Stat label="Turnout" value={turnout !== null ? `${turnout}%` : "—"} unit="this stage" />
             <Stat label="Stages" value={event.stages.length} unit="configured" />
-            <Stat label="Threshold" value={liveStage ? liveStage.thresholdMin : "—"} unit="min. voters" />
+            <Stat label="Current stage" value={stagePhase} unit={liveStage ? liveStage.name : "none active"} />
           </div>
 
           <div className="bg-card border border-border-1 rounded-xl p-5">
@@ -60,13 +68,29 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
                 <div key={st.id} className="flex items-center gap-3 py-2.5 border-b border-border-5 last:border-b-0">
                   <span
                     className={`w-[7px] h-[7px] rounded-full flex-none ${
-                      st.status === "LIVE" ? "bg-brand-accent" : st.status === "COMPLETED" ? "bg-brand-muted" : "bg-border-2"
+                      st.status === "VOTING"
+                        ? "bg-brand-accent"
+                        : st.status === "CHECK_IN"
+                          ? "bg-brand"
+                          : st.status === "STOPPED"
+                            ? "bg-brand-muted"
+                            : "bg-border-2"
                     }`}
                   />
                   <span className="font-mono text-[10.5px] text-fainter w-[58px] flex-none">Stage {st.order}</span>
                   <span className="flex-1 text-[13px] font-medium text-ink">{st.name}</span>
-                  <span className={`text-[11.5px] font-medium ${st.status === "LIVE" ? "text-brand" : "text-faint"}`}>
-                    {st.status === "LIVE" ? "Live now" : st.status === "COMPLETED" ? "Completed" : "Not started"}
+                  <span
+                    className={`text-[11.5px] font-medium ${
+                      st.status === "VOTING" || st.status === "CHECK_IN" ? "text-brand" : "text-faint"
+                    }`}
+                  >
+                    {st.status === "VOTING"
+                      ? "Voting live"
+                      : st.status === "CHECK_IN"
+                        ? "Check-in open"
+                        : st.status === "STOPPED"
+                          ? "Stopped"
+                          : "Not started"}
                   </span>
                 </div>
               ))}

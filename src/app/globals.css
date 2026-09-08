@@ -1,39 +1,120 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   "Unilibre" theme — bold cobalt-blue brand identity.
+   Electric blue (#1B4DE4) + deep navy, white floating cards, glossy vertical
+   blue gradients with layered 3D shadows, heavy Archivo display type.
+   Light is the default; [data-theme="dark"] is a deep-navy variant.
+   ========================================================================== */
+
 :root {
-  --background: #070b18;
-  --foreground: #f4f7ff;
+  --background: #eef1fb;
+  --foreground: #0a1a4f;
 
-  --color-ink: #f4f7ff;
-  --color-ink-soft: #dbe3fb;
-  --color-ink-mute: #b7c1e8;
-  --color-body: #8d97c2;
-  --color-faint: #6c76a0;
-  --color-fainter: #545e82;
-  --color-hairline: rgba(150, 170, 255, 0.28);
+  --color-ink: #0a1a4f;
+  --color-ink-soft: #1a2a63;
+  --color-ink-mute: #3a4a7d;
+  --color-body: #5a6690;
+  --color-faint: #8b95b8;
+  --color-fainter: #b4bcd6;
+  --color-hairline: #dfe4f5;
 
-  --color-paper: #171d3d;
-  --color-paper-2: #10142c;
-  --color-card: #12172f;
-  --color-app-bg: #070b18;
-  --color-border: rgba(150, 170, 255, 0.14);
-  --color-border-2: rgba(150, 170, 255, 0.2);
-  --color-border-3: rgba(150, 170, 255, 0.12);
-  --color-border-4: rgba(150, 170, 255, 0.1);
-  --color-border-5: rgba(150, 170, 255, 0.08);
-  --color-border-6: rgba(150, 170, 255, 0.09);
+  --color-paper: #ffffff;
+  --color-paper-2: #f4f6fd;
+  --color-card: #ffffff;
+  --color-app-bg: #eef1fb;
+  --color-border: #e6eaf7;
+  --color-border-2: #d8def0;
+  --color-border-3: #eef1fb;
+  --color-border-4: #f1f4fc;
+  --color-border-5: #f4f6fd;
+  --color-border-6: #f0f3fb;
 
-  --color-brand: #3d7bff;
-  --color-brand-hover: #285fe0;
-  --color-brand-soft: rgba(61, 123, 255, 0.16);
-  --color-brand-soft-border: rgba(61, 123, 255, 0.32);
-  --color-brand-soft-border-2: rgba(61, 123, 255, 0.4);
-  --color-brand-accent: #57a6ff;
-  --color-brand-accent-2: #a78bfa;
-  --color-brand-accent-3: #6a8dff;
-  --color-brand-muted: #5b6aa8;
+  --color-brand: #1b4de4;
+  --color-brand-hover: #1740c4;
+  --color-brand-soft: rgba(27, 77, 228, 0.1);
+  --color-brand-soft-border: rgba(27, 77, 228, 0.28);
+  --color-brand-soft-border-2: rgba(27, 77, 228, 0.4);
+  --color-brand-accent: #1b4de4;
+  --color-brand-accent-2: #0d2260;
+  --color-brand-accent-3: #4d7bf5;
+  --color-brand-muted: #9db0e6;
 
-  --color-amber-bg: rgba(217, 164, 90, 0.08);
+  /* glossy vertical blue gradient + 3D shadows from the reference pills */
+  --gradient-brand: linear-gradient(180deg, #3d6df0 0%, #1b4de4 46%, #1230a8 100%);
+  --gradient-brand-hover: linear-gradient(180deg, #4a78f4 0%, #2050d8 46%, #16379c 100%);
+  --gradient-brand-soft: linear-gradient(180deg, #eaf0ff 0%, #d9e5ff 100%);
+  --gradient-navy: linear-gradient(180deg, #14337a 0%, #0d2260 55%, #081748 100%);
+  --shadow-pill: 0 12px 26px -8px rgba(18, 48, 168, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -2px 6px rgba(9, 24, 90, 0.35);
+  --shadow-card: 0 26px 54px -22px rgba(10, 26, 79, 0.24), 0 8px 22px -14px rgba(10, 26, 79, 0.14);
+  --shadow-card-sm: 0 12px 28px -14px rgba(10, 26, 79, 0.2);
+
+  --color-amber-bg: #fdf4e6;
+  --color-amber-border: rgba(199, 128, 31, 0.4);
+  --color-amber-icon: #c7801f;
+  --color-amber-text: #8a5a12;
+  --color-amber-chip: #f5e6cc;
+  --color-amber-sub: #8b7448;
+
+  --color-danger: #d6304f;
+  --color-danger-hover: #b8253f;
+  --color-danger-bg: #fdf1f3;
+  --color-danger-border: rgba(214, 48, 79, 0.3);
+  --color-danger-bg-hover: #fbe3e7;
+
+  --color-stage-dark: #0b1f57;
+  --color-stage-dark-2: #12307f;
+  --color-stage-dark-3: #1b4de4;
+  --color-stage-dark-4: #4d7bf5;
+  --color-stage-dim: #b8c6f0;
+  --color-stage-dimmer: #8fa3dd;
+}
+
+/* "Night" mode — deep-navy variant of the same cobalt brand */
+[data-theme="dark"] {
+  --background: #060c22;
+  --foreground: #eef2ff;
+
+  --color-ink: #eef2ff;
+  --color-ink-soft: #d4ddf7;
+  --color-ink-mute: #aebbe0;
+  --color-body: #8b97c0;
+  --color-faint: #69749e;
+  --color-fainter: #4a5478;
+  --color-hairline: rgba(120, 150, 255, 0.24);
+
+  --color-paper: #101836;
+  --color-paper-2: #0b1228;
+  --color-card: #0e1531;
+  --color-app-bg: #060c22;
+  --color-border: rgba(120, 150, 255, 0.14);
+  --color-border-2: rgba(120, 150, 255, 0.2);
+  --color-border-3: rgba(120, 150, 255, 0.12);
+  --color-border-4: rgba(120, 150, 255, 0.1);
+  --color-border-5: rgba(120, 150, 255, 0.08);
+  --color-border-6: rgba(120, 150, 255, 0.09);
+
+  --color-brand: #3d6df0;
+  --color-brand-hover: #5a84f5;
+  --color-brand-soft: rgba(61, 109, 240, 0.16);
+  --color-brand-soft-border: rgba(61, 109, 240, 0.34);
+  --color-brand-soft-border-2: rgba(61, 109, 240, 0.44);
+  --color-brand-accent: #6f97ff;
+  --color-brand-accent-2: #dbe6ff;
+  --color-brand-accent-3: #9db8ff;
+  --color-brand-muted: #5a6aa0;
+
+  --gradient-brand: linear-gradient(180deg, #4d7bf5 0%, #2a5cf0 46%, #1230a8 100%);
+  --gradient-brand-hover: linear-gradient(180deg, #5f89f7 0%, #3a6bf3 46%, #1839b8 100%);
+  --gradient-brand-soft: linear-gradient(180deg, #17245c 0%, #101a44 100%);
+  --gradient-navy: linear-gradient(180deg, #1a2f6e 0%, #101c48 55%, #0a1436 100%);
+  --shadow-pill: 0 12px 26px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 26px 54px -22px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(120, 150, 255, 0.08);
+  --shadow-card-sm: 0 12px 28px -14px rgba(0, 0, 0, 0.5);
+
+  --color-amber-bg: rgba(199, 145, 60, 0.1);
   --color-amber-border: rgba(217, 164, 90, 0.4);
   --color-amber-icon: #e0b273;
   --color-amber-text: #e5c393;
@@ -42,70 +123,23 @@
 
   --color-danger: #ff5c7a;
   --color-danger-hover: #e0405f;
-  --color-danger-bg: rgba(255, 92, 122, 0.08);
+  --color-danger-bg: rgba(255, 92, 122, 0.1);
   --color-danger-border: rgba(255, 92, 122, 0.35);
-  --color-danger-bg-hover: rgba(255, 92, 122, 0.14);
+  --color-danger-bg-hover: rgba(255, 92, 122, 0.16);
 
-  --color-stage-dark: #05070f;
-  --color-stage-dark-2: #0e1226;
-  --color-stage-dark-3: #161b38;
-  --color-stage-dark-4: #212a52;
-  --color-stage-dim: #8d97c2;
-  --color-stage-dimmer: #6c76a0;
-}
-
-/* "Afternoon" (light) mode — same electric-blue/violet brand, cool off-white surfaces */
-[data-theme="light"] {
-  --background: #eef2fc;
-  --foreground: #0b1130;
-
-  --color-ink: #0b1130;
-  --color-ink-soft: #1c2444;
-  --color-ink-mute: #333c5c;
-  --color-body: #5b6478;
-  --color-faint: #8891b0;
-  --color-fainter: #aab2cc;
-  --color-hairline: #d7dcf0;
-
-  --color-paper: #f7f9fe;
-  --color-paper-2: #f1f4fc;
-  --color-card: #ffffff;
-  --color-app-bg: #eef2fc;
-  --color-border: #e4e8f7;
-  --color-border-2: #d9e0f5;
-  --color-border-3: #e9edfa;
-  --color-border-4: #edf1fb;
-  --color-border-5: #f1f4fc;
-  --color-border-6: #eef1fa;
-
-  --color-brand: #3d7bff;
-  --color-brand-hover: #2f63e0;
-  --color-brand-soft: rgba(61, 123, 255, 0.1);
-  --color-brand-soft-border: rgba(61, 123, 255, 0.28);
-  --color-brand-soft-border-2: rgba(61, 123, 255, 0.35);
-  --color-brand-accent: #2f6be0;
-  --color-brand-accent-2: #8b5cf6;
-  --color-brand-accent-3: #3d7bff;
-  --color-brand-muted: #9aa8d9;
-
-  --color-amber-bg: #fdf6ec;
-  --color-amber-border: rgba(217, 164, 90, 0.45);
-  --color-amber-icon: #b5761f;
-  --color-amber-text: #7a5312;
-  --color-amber-chip: #f3e5cb;
-  --color-amber-sub: #8b7448;
-
-  --color-danger: #d6304f;
-  --color-danger-hover: #b8253f;
-  --color-danger-bg: #fdf1f3;
-  --color-danger-border: rgba(214, 48, 79, 0.3);
-  --color-danger-bg-hover: #fbe3e7;
+  --color-stage-dark: #040818;
+  --color-stage-dark-2: #0a1230;
+  --color-stage-dark-3: #12225e;
+  --color-stage-dark-4: #2a5cf0;
+  --color-stage-dim: #b8c6f0;
+  --color-stage-dimmer: #8fa3dd;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-jakarta);
+  --font-sans: var(--font-archivo);
+  --font-display: var(--font-archivo);
   --font-mono: var(--font-ibm-plex-mono);
 
   --color-ink: var(--color-ink);
@@ -157,25 +191,35 @@
   --color-stage-dim: var(--color-stage-dim);
   --color-stage-dimmer: var(--color-stage-dimmer);
 
-  /* large, premium-SaaS corner radii */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1.25rem;
-  --radius-xl: 1.5rem;
-  --radius-2xl: 1.75rem;
-  --radius-3xl: 2rem;
+  /* bold, rounded corners to match the reference cards & pills */
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.375rem;
+  --radius-xl: 1.625rem;
+  --radius-2xl: 1.875rem;
+  --radius-3xl: 2.25rem;
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* slim, buttonless scrollbars.
+   Standard `scrollbar-width: thin` renders a thin scrollbar with NO arrow
+   buttons. We deliberately DON'T add `::-webkit-scrollbar` rules — defining
+   that pseudo-element is what re-introduces the classic arrow buttons on
+   Windows Chrome; the standard property alone gives the slim, buttonless bar. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-2) transparent;
+}
+
 body {
   background:
-    radial-gradient(1200px 620px at 12% -10%, rgba(61, 123, 255, 0.16), transparent 60%),
-    radial-gradient(900px 560px at 100% 0%, rgba(167, 139, 250, 0.12), transparent 55%),
-    radial-gradient(1000px 700px at 50% 110%, rgba(61, 123, 255, 0.08), transparent 60%),
-    linear-gradient(180deg, #070b18 0%, #0a0f22 55%, #0d1330 100%);
+    radial-gradient(1100px 600px at 100% -10%, rgba(27, 77, 228, 0.12), transparent 55%),
+    radial-gradient(900px 560px at 0% 8%, rgba(77, 123, 245, 0.1), transparent 55%),
+    radial-gradient(1000px 720px at 50% 116%, rgba(13, 34, 96, 0.08), transparent 60%),
+    linear-gradient(180deg, #eef1fb 0%, #f2f4fd 55%, #eaeefb 100%);
   background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -184,12 +228,12 @@ body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-[data-theme="light"] body {
+[data-theme="dark"] body {
   background:
-    radial-gradient(1100px 600px at 12% -10%, rgba(61, 123, 255, 0.1), transparent 60%),
-    radial-gradient(900px 520px at 100% 0%, rgba(139, 92, 246, 0.08), transparent 55%),
-    radial-gradient(1000px 680px at 50% 110%, rgba(61, 123, 255, 0.06), transparent 60%),
-    linear-gradient(180deg, #eef2fc 0%, #f2f5fd 55%, #eef1fb 100%);
+    radial-gradient(1100px 600px at 100% -10%, rgba(61, 109, 240, 0.16), transparent 55%),
+    radial-gradient(900px 520px at 0% 8%, rgba(42, 92, 240, 0.12), transparent 55%),
+    radial-gradient(1000px 680px at 50% 116%, rgba(16, 55, 156, 0.1), transparent 60%),
+    linear-gradient(180deg, #060c22 0%, #08102c 55%, #0b1533 100%);
   background-attachment: fixed;
 }
 
@@ -200,6 +244,14 @@ body {
   a:hover {
     color: var(--color-ink);
   }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
 }
 
 input,
@@ -208,31 +260,75 @@ textarea {
   font-family: inherit;
 }
 
-h1,
-h2,
-h3 {
-  letter-spacing: -0.02em;
-}
-
 ::selection {
-  background: rgba(61, 123, 255, 0.35);
-  color: #ffffff;
+  background: rgba(27, 77, 228, 0.28);
+  color: var(--color-ink);
 }
 
-/* soft floating shadow + faint blue ambient glow, for elevated surfaces */
+/* -------- reusable "candy" surfaces from the reference -------- */
+
+/* glossy gradient primary button / CTA */
+.btn-gradient {
+  background-image: var(--gradient-brand);
+  color: #fff;
+  box-shadow: var(--shadow-pill);
+  border: none;
+  transition: filter 0.15s ease, transform 0.06s ease, background-image 0.15s ease;
+}
+.btn-gradient:hover:not(:disabled) {
+  background-image: var(--gradient-brand-hover);
+  filter: brightness(1.03);
+}
+.btn-gradient:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.btn-gradient:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+/* deep-navy variant (like the reference's dark pills on blue) */
+.btn-navy {
+  background-image: var(--gradient-navy);
+  color: #fff;
+  box-shadow: var(--shadow-pill);
+  border: none;
+}
+
+/* white floating card */
+.surface-card {
+  background: var(--color-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border);
+}
+
+/* gradient chip / active pill / toggle track */
+.pill-gradient {
+  background-image: var(--gradient-brand);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgba(18, 48, 168, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* soft tinted gradient (inactive tabs, subtle panels) */
+.pill-soft {
+  background-image: var(--gradient-brand-soft);
+  color: var(--color-brand);
+}
+
+/* gradient headline accent text */
+.text-gradient-brand {
+  background-image: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* legacy hooks kept working, restyled to the blue system */
 .elevated {
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.04) inset,
-    0 30px 60px -30px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(150, 170, 255, 0.08),
-    0 0 60px -20px rgba(61, 123, 255, 0.25);
+  box-shadow: var(--shadow-card);
 }
-
-/* glowing ring for primary / focused actions */
 .glow-ring {
-  box-shadow:
-    0 0 0 1px rgba(61, 123, 255, 0.5),
-    0 8px 30px -8px rgba(61, 123, 255, 0.55);
+  box-shadow: var(--shadow-pill);
 }
 
 @keyframes pulseDot {

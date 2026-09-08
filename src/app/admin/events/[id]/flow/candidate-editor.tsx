@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { BusyLabel, Spinner } from "@/components/ui/spinner";
 import {
   addAllParticipantsAsCandidatesAction,
   addCandidateAction,
@@ -36,16 +37,18 @@ export default function CandidateEditor({
         <div key={c.id} className="flex items-center gap-2">
           <span className="flex-1 text-xs text-body flex items-center gap-1.5">
             {c.name}
-            {c.selectionSource === "AUTO_THRESHOLD" && (
+            {(c.selectionSource === "AUTO_THRESHOLD" || c.selectionSource === "PROMOTED") && (
               <span className="font-mono text-[9px] tracking-[.06em] uppercase text-brand bg-brand-soft rounded px-1 py-0.5">
-                Auto
+                {c.selectionSource === "PROMOTED" ? "Promoted" : "Auto"}
               </span>
             )}
           </span>
           <button
+            disabled={pending}
             onClick={() => startTransition(() => { void removeCandidateAction(eventId, c.id); })}
-            className="text-[11px] text-faint hover:text-danger"
+            className="inline-flex items-center gap-1 text-[11px] text-faint hover:text-danger disabled:opacity-50"
           >
+            {pending && <Spinner className="w-2.5 h-2.5" />}
             Remove
           </button>
         </div>
@@ -96,9 +99,9 @@ export default function CandidateEditor({
                   if (res.ok) setSelected("");
                 })
               }
-              className="text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 disabled:opacity-50"
+              className="inline-flex items-center justify-center text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 disabled:opacity-50"
             >
-              Add
+              <BusyLabel busy={pending} busyText="…" spinnerClassName="w-3 h-3">Add</BusyLabel>
             </button>
           </div>
           {availableParticipants.length > 1 && (
@@ -113,8 +116,9 @@ export default function CandidateEditor({
                   );
                 })
               }
-              className="self-start text-[11px] font-medium text-brand hover:underline disabled:opacity-50"
+              className="self-start inline-flex items-center gap-1.5 text-[11px] font-medium text-brand hover:underline disabled:opacity-50"
             >
+              {pending && <Spinner className="w-3 h-3" />}
               Add all {availableParticipants.length} registered participants
             </button>
           )}
@@ -135,9 +139,9 @@ export default function CandidateEditor({
                 if (res.ok) setName("");
               })
             }
-            className="text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 disabled:opacity-50"
+            className="inline-flex items-center justify-center text-xs font-medium text-brand bg-brand-soft rounded-md px-2.5 disabled:opacity-50"
           >
-            Add
+            <BusyLabel busy={pending} busyText="…" spinnerClassName="w-3 h-3">Add</BusyLabel>
           </button>
         </div>
       )}

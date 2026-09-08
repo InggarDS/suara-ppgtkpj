@@ -24,12 +24,19 @@ export async function getResultsSnapshot(eventId: string) {
     .map((s) => ({ order: s.order, name: s.name, status: s.status }));
   const maxOrder = stageSequence.length ? Math.max(...stageSequence.map((s) => s.order)) : 0;
 
-  const notStarted = !event.stages.some((s) => s.status === "LIVE" || s.status === "COMPLETED");
+  // stages arrive ordered by `order: "desc"`, so the first match is the latest.
+  const votingStage = event.stages.find((s) => s.status === "VOTING");
+  const openResultStage = event.stages.find((s) => s.resultsOpen);
+  const targetStage = openResultStage ?? votingStage ?? event.stages[0];
 
-  const targetStage = event.stages.find((s) => s.status === "LIVE") ?? event.stages.find((s) => s.status === "COMPLETED") ?? event.stages[0];
+  // Shared screen only shows bars once the admin explicitly opens a stage's results.
+  const resultsOpen = Boolean(targetStage?.resultsOpen);
+  const notStarted = !openResultStage && !votingStage;
+
   if (!targetStage) {
     return {
       revealed: event.resultsRevealed,
+      resultsOpen: false,
       stageName: null,
       stageOrder: 0,
       isFinalStage: false,
@@ -72,12 +79,13 @@ export async function getResultsSnapshot(eventId: string) {
 
   return {
     revealed: event.resultsRevealed,
+    resultsOpen,
     stageName: targetStage.name,
     stageOrder: targetStage.order,
     isFinalStage,
     stageSequence,
     notStarted,
-    live: targetStage.status === "LIVE",
+    live: targetStage.status === "VOTING",
     totalVotes,
     denom,
     registered,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { deleteParticipantAction } from "./actions";
 
 export default function DeleteParticipantButton({ eventId, participantId }: { eventId: string; participantId: string }) {
@@ -14,9 +15,10 @@ export default function DeleteParticipantButton({ eventId, participantId }: { ev
         onClick={() => startTransition(() => { void deleteParticipantAction(eventId, participantId); })}
         onBlur={() => setArmed(false)}
         autoFocus
-        className="text-[11px] font-medium text-white bg-danger rounded-md px-2 py-1.5 cursor-pointer disabled:opacity-50"
+        className="inline-flex items-center gap-1 text-[11px] font-medium text-white bg-danger rounded-md px-2 py-1.5 cursor-pointer disabled:opacity-50"
       >
-        {pending ? "…" : "Confirm?"}
+        {pending && <Spinner className="w-3 h-3" />}
+        {pending ? "Deleting…" : "Confirm?"}
       </button>
     );
   }

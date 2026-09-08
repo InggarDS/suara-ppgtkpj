@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { BusyLabel } from "@/components/ui/spinner";
 
 export type ConfirmResult = { ok: boolean; error?: string };
 
@@ -80,11 +81,11 @@ export function ConfirmDialog({
               armed
                 ? danger
                   ? "bg-danger text-white cursor-pointer hover:bg-danger-hover"
-                  : "bg-brand text-white cursor-pointer hover:bg-brand-hover"
+                  : "btn-gradient cursor-pointer"
                 : "bg-border-4 text-fainter cursor-not-allowed"
             }`}
           >
-            {pending ? "Working…" : ctaLabel}
+            <BusyLabel busy={pending} busyText="Working…">{ctaLabel}</BusyLabel>
           </button>
         </div>
       </div>

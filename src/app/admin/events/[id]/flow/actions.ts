@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
-import { autoSelectNextStageCandidates } from "@/lib/stage-transition";
 import { revalidatePath } from "next/cache";
 
 async function requireSession() {
@@ -12,13 +11,16 @@ async function requireSession() {
   return session;
 }
 
+function revalidateEvent(eventId: string) {
+  revalidatePath(`/admin/events/${eventId}/flow`);
+  revalidatePath(`/admin/events/${eventId}/monitor`);
+  revalidatePath(`/admin/events/${eventId}/results`);
+  revalidatePath(`/admin/events/${eventId}`);
+}
+
 export type StageRulePatch = Partial<{
-  thresholdMin: number;
-  advanceThreshold: number | null;
-  autoAdvance: boolean;
   allowAbstain: boolean;
   requireFingerprint: boolean;
-  notifyOnQuorum: boolean;
 }>;
 
 export async function updateStageRulesAction(eventId: string, stageId: string, patch: StageRulePatch) {
@@ -28,47 +30,123 @@ export async function updateStageRulesAction(eventId: string, stageId: string, p
   return { ok: true };
 }
 
-export async function startStageAction(eventId: string, stageId: string) {
+/** Open a stage for check-in. Any other active stage is stopped. */
+export async function openStageAction(eventId: string, stageId: string) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
 
   await prisma.$transaction([
     prisma.stage.updateMany({
-      where: { eventId, status: "LIVE" },
-      data: { status: "COMPLETED", completedAt: new Date() },
+      where: { eventId, status: { in: ["CHECK_IN", "VOTING"] }, NOT: { id: stageId } },
+      data: { status: "STOPPED", completedAt: new Date() },
     }),
+    prisma.stageCheckIn.deleteMany({ where: { stageId } }),
     prisma.stage.update({
       where: { id: stageId },
-      data: { status: "LIVE", startedAt: new Date() },
+      data: { status: "CHECK_IN", startedAt: null, completedAt: null, resultsOpen: false },
     }),
     prisma.event.update({ where: { id: eventId }, data: { resultsRevealed: false } }),
   ]);
 
-  await logAudit(eventId, `Stage "${stage.name}" opened by admin (names locked)`, session.name);
-  revalidatePath(`/admin/events/${eventId}/flow`);
-  revalidatePath(`/admin/events/${eventId}/monitor`);
-  revalidatePath(`/admin/events/${eventId}`);
-  revalidatePath(`/admin/events/${eventId}/results`);
+  await logAudit(eventId, `Stage "${stage.name}" opened for check-in`, session.name);
+  revalidateEvent(eventId);
   return { ok: true };
 }
 
-export async function closeStageAction(eventId: string, stageId: string) {
+export async function startVotingAction(eventId: string, stageId: string) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
 
   await prisma.stage.update({
     where: { id: stageId },
-    data: { status: "COMPLETED", completedAt: new Date() },
+    data: { status: "VOTING", startedAt: new Date(), completedAt: null },
   });
-  await logAudit(eventId, `Stage "${stage.name}" closed by admin`, session.name);
+  await logAudit(eventId, `Voting started for "${stage.name}"`, session.name);
+  revalidateEvent(eventId);
+  return { ok: true };
+}
 
-  if (stage.autoAdvance) {
-    await autoSelectNextStageCandidates(stage);
-  }
+export async function stopVotingAction(eventId: string, stageId: string) {
+  const session = await requireSession();
+  const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
 
+  await prisma.stage.update({
+    where: { id: stageId },
+    data: { status: "STOPPED", completedAt: new Date() },
+  });
+  await logAudit(eventId, `Voting stopped for "${stage.name}"`, session.name);
+  revalidateEvent(eventId);
+  return { ok: true };
+}
+
+/** Wipe this stage's votes and reopen voting from scratch. */
+export async function restartVotingAction(eventId: string, stageId: string) {
+  const session = await requireSession();
+  const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
+
+  await prisma.$transaction([
+    prisma.vote.deleteMany({ where: { stageId } }),
+    prisma.stage.update({
+      where: { id: stageId },
+      data: { status: "VOTING", startedAt: new Date(), completedAt: null },
+    }),
+  ]);
+  await logAudit(eventId, `Voting restarted for "${stage.name}" — all votes cleared`, session.name);
+  revalidateEvent(eventId);
+  return { ok: true };
+}
+
+export async function openResultsAction(eventId: string, stageId: string, open: boolean) {
+  const session = await requireSession();
+  const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
+
+  await prisma.stage.update({ where: { id: stageId }, data: { resultsOpen: open } });
+  await logAudit(
+    eventId,
+    open ? `Results opened for "${stage.name}"` : `Results hidden for "${stage.name}"`,
+    session.name
+  );
+  revalidateEvent(eventId);
+  return { ok: true };
+}
+
+/** Copy a candidate from its stage into the next stage's ballot. */
+export async function sendCandidateToNextStageAction(eventId: string, candidateId: string) {
+  const session = await requireSession();
+  const candidate = await prisma.candidate.findUniqueOrThrow({
+    where: { id: candidateId },
+    include: { stage: true },
+  });
+
+  const next = await prisma.stage.findFirst({
+    where: { eventId, order: { gt: candidate.stage.order } },
+    orderBy: { order: "asc" },
+    include: { candidates: true },
+  });
+  if (!next) return { ok: false, error: "No next stage." };
+
+  const clash = next.candidates.some((c) =>
+    candidate.participantId ? c.participantId === candidate.participantId : c.name === candidate.name
+  );
+  if (clash) return { ok: false, error: "Already in the next stage." };
+
+  await prisma.candidate.create({
+    data: {
+      stageId: next.id,
+      name: candidate.name,
+      note: candidate.note,
+      photo: candidate.photo,
+      participantId: candidate.participantId,
+      order: next.candidates.length + 1,
+      selectionSource: "PROMOTED",
+    },
+  });
+  await logAudit(
+    eventId,
+    `"${candidate.name}" promoted from "${candidate.stage.name}" to "${next.name}"`,
+    session.name
+  );
   revalidatePath(`/admin/events/${eventId}/flow`);
-  revalidatePath(`/admin/events/${eventId}/monitor`);
-  revalidatePath(`/admin/events/${eventId}`);
   return { ok: true };
 }
 
@@ -173,13 +251,7 @@ export async function removeCandidateAction(eventId: string, candidateId: string
     return { ok: false, error: "Candidates are locked once a stage has started." };
   }
   await prisma.candidate.delete({ where: { id: candidateId } });
-  await logAudit(
-    eventId,
-    `Removed "${candidate.name}" from "${candidate.stage.name}"${
-      candidate.selectionSource === "AUTO_THRESHOLD" ? " (was auto-selected via vote threshold)" : ""
-    }`,
-    session.name
-  );
+  await logAudit(eventId, `Removed "${candidate.name}" from "${candidate.stage.name}"`, session.name);
   revalidatePath(`/admin/events/${eventId}/flow`);
   return { ok: true };
 }

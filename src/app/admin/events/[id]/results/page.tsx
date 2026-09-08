@@ -17,7 +17,7 @@ export default async function ResultsPage({ params }: { params: Promise<{ id: st
   return (
     <>
       <EventHeader eventId={event.id} title="Shared screen" subtitle="Compose what the room sees, then push it to the projector." status={event.status} />
-      <div className="flex-1 px-8 pt-6.5 pb-10 bg-paper">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-6.5 pb-10 bg-paper">
         <ResultsView eventId={id} eventName={event.name} inviteUrl={`${baseUrl}/event/${event.publicId}`} initial={snapshot} />
       </div>
     </>

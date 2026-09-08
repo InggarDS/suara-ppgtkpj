@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, IBM_Plex_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { Archivo, IBM_Plex_Mono } from "next/font/google";
 import { THEME_INIT_SCRIPT } from "@/components/ui/theme-toggle";
+import { NavProgress } from "@/components/ui/nav-progress";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
+const archivo = Archivo({
+  variable: "--font-archivo",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -25,12 +27,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${jakarta.variable} ${ibmPlexMono.variable} h-full antialiased`}
+      className={`${archivo.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <Suspense fallback={null}>
+          <NavProgress />
+        </Suspense>
         {children}
       </body>
     </html>

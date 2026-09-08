@@ -15,13 +15,15 @@ enum EventStatus {
 
 enum StageStatus {
   NOT_STARTED
-  LIVE
-  COMPLETED
+  CHECK_IN
+  VOTING
+  STOPPED
 }
 
 enum SelectionSource {
   MANUAL
   AUTO_THRESHOLD
+  PROMOTED
 }
 
 model Admin {
@@ -74,19 +76,29 @@ model Stage {
   order          Int
   name           String
   status         StageStatus @default(NOT_STARTED)
-  thresholdMin   Int         @default(1)
-  advanceThreshold Int?
-  autoAdvance    Boolean     @default(true)
+  resultsOpen    Boolean     @default(false)
   allowAbstain   Boolean     @default(false)
   requireFingerprint Boolean @default(true)
-  notifyOnQuorum Boolean     @default(true)
   startedAt      DateTime?
   completedAt    DateTime?
 
   candidates Candidate[]
   votes      Vote[]
+  checkIns   StageCheckIn[]
 
   @@unique([eventId, order])
+}
+
+model StageCheckIn {
+  id            String      @id @default(cuid())
+  stageId       String
+  stage         Stage       @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@unique([stageId, participantId])
+  @@index([stageId])
 }
 
 model Candidate {
@@ -120,6 +132,7 @@ model Participant {
   votes      Vote[]
   candidacies Candidate[]
   credential  Credential?
+  checkIns   StageCheckIn[]
 
   @@index([eventId])
 }

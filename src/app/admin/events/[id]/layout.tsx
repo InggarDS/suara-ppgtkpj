@@ -24,11 +24,11 @@ export default async function EventLayout({
 
   if (!event) notFound();
 
-  const hasLiveStage = event.stages.some((s) => s.status === "LIVE");
+  const hasLiveStage = event.stages.some((s) => s.status === "VOTING" || s.status === "CHECK_IN");
 
   return (
-    <div className="max-w-[1440px] mx-auto px-6.5 py-6.5">
-      <div className="elevated bg-card border border-border-1 rounded-2xl overflow-hidden flex min-h-[760px]">
+    <div className="px-6.5 py-6.5">
+      <div className="elevated bg-card border border-border-1 rounded-2xl overflow-hidden flex h-[calc(100dvh-160px)] min-h-[560px]">
         <Sidebar
           currentEventId={event.id}
           currentEventName={event.name}
@@ -38,7 +38,7 @@ export default async function EventLayout({
           hasLiveStage={hasLiveStage}
           adminName={session?.name ?? "Administrator"}
         />
-        <main className="flex-1 min-w-0 flex flex-col">{children}</main>
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">{children}</main>
       </div>
     </div>
   );

@@ -33,7 +33,13 @@ export default function PresentView({
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-stage-dark text-[#F4F7FF] relative overflow-hidden flex items-center justify-center p-12">
+    <div
+      className="min-h-screen w-full bg-stage-dark text-white relative overflow-hidden flex items-center justify-center p-12"
+      style={{
+        backgroundImage:
+          "radial-gradient(900px 600px at 100% 0%, rgba(77,123,245,.35), transparent 60%), radial-gradient(800px 520px at 0% 100%, rgba(27,77,228,.28), transparent 60%), var(--gradient-navy)",
+      }}
+    >
       <div
         className="absolute inset-0 pointer-events-none"
         style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}

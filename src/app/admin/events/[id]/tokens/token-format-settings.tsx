@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { BusyLabel } from "@/components/ui/spinner";
 import { updateTokenFormatAction } from "./actions";
 
 export default function TokenFormatSettings({
@@ -68,7 +69,7 @@ export default function TokenFormatSettings({
             saved ? "bg-border-5 text-fainter cursor-default" : "bg-brand text-white cursor-pointer hover:bg-brand-hover"
           }`}
         >
-          {pending ? "Saving…" : saved ? "Saved" : "Save"}
+          <BusyLabel busy={pending} busyText="Saving…">{saved ? "Saved" : "Save"}</BusyLabel>
         </button>
       </div>
     </div>

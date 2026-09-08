@@ -20,7 +20,7 @@ export default async function DataPage({ params }: { params: Promise<{ id: strin
   return (
     <>
       <EventHeader eventId={event.id} title="Data & cleanup" subtitle="Export first, then reset. Destructive actions are logged in the audit trail." status={event.status} />
-      <div className="flex-1 px-8 pt-6.5 pb-10 bg-paper">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-6.5 pb-10 bg-paper">
         <div className="flex flex-col gap-5 max-w-[900px]">
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-card border border-border-1 rounded-xl p-5">
@@ -30,7 +30,7 @@ export default async function DataPage({ params }: { params: Promise<{ id: strin
               </p>
               <a
                 href={`/api/admin/events/${event.id}/export`}
-                className="inline-block text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 hover:bg-[rgba(150,170,255,.16)]"
+                className="inline-block text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 hover:bg-[rgba(27,77,228,.12)]"
               >
                 Download CSV
               </a>

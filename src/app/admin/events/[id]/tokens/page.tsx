@@ -16,7 +16,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
-      stages: { where: { status: "LIVE" } },
+      stages: { where: { status: "VOTING" } },
       participants: { orderBy: { createdAt: "asc" }, include: { votes: true } },
       credentials: { orderBy: { name: "asc" } },
     },
@@ -30,7 +30,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
   return (
     <>
       <EventHeader eventId={event.id} title="Access & tokens" subtitle="One link for the event, one personal token per participant." status={event.status} />
-      <div className="flex-1 px-8 pt-6.5 pb-10 bg-paper">
+      <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-6.5 pb-10 bg-paper">
         <div className="flex flex-col gap-5">
           <div className="grid gap-4" style={{ gridTemplateColumns: "minmax(0,1fr) 250px" }}>
             <div className="bg-card border border-border-1 rounded-xl p-5">

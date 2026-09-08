@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { BusyLabel } from "@/components/ui/spinner";
 import { generateTokensAction } from "./actions";
 
 export default function GenerateTokensButton({ eventId }: { eventId: string }) {
@@ -17,9 +18,9 @@ export default function GenerateTokensButton({ eventId }: { eventId: string }) {
       <button
         disabled={pending || !Number(count)}
         onClick={() => startTransition(() => { void generateTokensAction(eventId, Number(count) || 0); })}
-        className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(150,170,255,.16)] disabled:opacity-50"
+        className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(27,77,228,.12)] disabled:opacity-50"
       >
-        {pending ? "Generating…" : `Generate ${count || 0} token${count === "1" ? "" : "s"}`}
+        <BusyLabel busy={pending} busyText="Generating…">{`Generate ${count || 0} token${count === "1" ? "" : "s"}`}</BusyLabel>
       </button>
     </div>
   );

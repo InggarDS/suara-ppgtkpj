@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { initials } from "@/lib/ids";
+import { Spinner } from "@/components/ui/spinner";
+import { LinkPending } from "@/components/ui/link-pending";
 
 type EventLite = { id: string; name: string; publicId: string; status: string };
 
@@ -36,12 +38,13 @@ export default function Sidebar({
   const pathname = usePathname();
   const router = useRouter();
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [switching, startSwitch] = useTransition();
 
   const section = pathname.split(`/admin/events/${currentEventId}`)[1]?.replace(/^\//, "") || "";
   const activeKey = NAV.find((n) => n.key === section)?.key ?? "";
 
   return (
-    <aside className="w-[236px] flex-none border-r border-border-3 px-3.5 py-5 bg-paper-2 flex flex-col gap-5.5">
+    <aside className="w-[236px] flex-none border-r border-border-3 px-3.5 py-5 bg-paper-2 flex flex-col gap-5.5 overflow-y-auto">
       <div className="relative">
         <div className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase mb-2 ml-2">Current event</div>
         <button
@@ -68,15 +71,19 @@ export default function Sidebar({
             {events.map((ev) => (
               <button
                 key={ev.id}
+                disabled={switching}
                 onClick={() => {
                   setSwitcherOpen(false);
-                  router.push(`/admin/events/${ev.id}${section ? `/${section}` : ""}`);
+                  startSwitch(() => {
+                    router.push(`/admin/events/${ev.id}${section ? `/${section}` : ""}`);
+                  });
                 }}
-                className={`w-full text-left px-3 py-2.5 text-[12.5px] cursor-pointer hover:bg-border-5 ${
+                className={`w-full text-left px-3 py-2.5 text-[12.5px] cursor-pointer hover:bg-border-5 flex items-center gap-2 disabled:opacity-60 ${
                   ev.id === currentEventId ? "text-brand font-medium" : "text-ink-soft"
                 }`}
               >
-                {ev.name}
+                {switching && <Spinner className="w-3 h-3 flex-none" />}
+                <span className="min-w-0 truncate">{ev.name}</span>
               </button>
             ))}
             <Link
@@ -107,6 +114,7 @@ export default function Sidebar({
                 <path d={item.icon}></path>
               </svg>
               <span className="flex-1 text-left">{item.label}</span>
+              <LinkPending className="w-3.5 h-3.5 flex-none" />
               {badge && (
                 <span className="font-mono text-[10px] bg-brand-soft text-brand rounded px-[5px] py-[3px]">LIVE</span>
               )}

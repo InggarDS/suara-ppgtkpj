@@ -16,10 +16,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
   });
   if (!event) return NextResponse.json({ error: "tidak ditemukan" }, { status: 404 });
 
-  const liveStage = event.stages.find((s) => s.status === "LIVE");
-  const completedStages = event.stages.filter((s) => s.status === "COMPLETED");
-  const lastCompletedStage = completedStages.length ? completedStages[completedStages.length - 1] : null;
-  const eventFinished = event.stages.length > 0 && !liveStage && event.stages.every((s) => s.status === "COMPLETED");
+  const activeStage = event.stages.find((s) => s.status === "CHECK_IN" || s.status === "VOTING") ?? null;
+  const phase: "checkin" | "voting" | null = activeStage
+    ? activeStage.status === "VOTING"
+      ? "voting"
+      : "checkin"
+    : null;
+  const stoppedStages = event.stages.filter((s) => s.status === "STOPPED");
+  const lastStoppedStage = stoppedStages.length ? stoppedStages[stoppedStages.length - 1] : null;
+  const eventFinished =
+    event.stages.length > 0 && !activeStage && event.stages.some((s) => s.status === "STOPPED");
 
   const base = {
     eventName: event.name,
@@ -29,15 +35,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
     closed: event.status !== "ACTIVE",
     totalStages: event.stages.length,
     stages: event.stages.map((s) => ({ order: s.order, name: s.name, status: s.status })),
-    lastCompletedStage: lastCompletedStage ? { order: lastCompletedStage.order, name: lastCompletedStage.name } : null,
+    lastCompletedStage: lastStoppedStage ? { order: lastStoppedStage.order, name: lastStoppedStage.name } : null,
     eventFinished,
-    liveStage: liveStage
+    liveStage: activeStage
       ? {
-          id: liveStage.id,
-          order: liveStage.order,
-          name: liveStage.name,
-          allowAbstain: liveStage.allowAbstain,
-          candidates: liveStage.candidates.map((c) => ({ id: c.id, name: c.name, note: c.note, photo: c.photo })),
+          id: activeStage.id,
+          order: activeStage.order,
+          name: activeStage.name,
+          phase,
+          allowAbstain: activeStage.allowAbstain,
+          candidates:
+            phase === "voting"
+              ? activeStage.candidates.map((c) => ({ id: c.id, name: c.name, note: c.note, photo: c.photo }))
+              : [],
         }
       : null,
   };
@@ -50,7 +60,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
   });
   if (!participant) return NextResponse.json({ ...base, valid: false });
 
-  const votedLiveStage = liveStage ? participant.votes.some((v) => v.stageId === liveStage.id) : false;
+  const votedLiveStage = activeStage ? participant.votes.some((v) => v.stageId === activeStage.id) : false;
+  const checkedIn = activeStage
+    ? Boolean(
+        await prisma.stageCheckIn.findUnique({
+          where: { stageId_participantId: { stageId: activeStage.id, participantId: participant.id } },
+        })
+      )
+    : false;
 
   return NextResponse.json({
     ...base,
@@ -59,5 +76,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
     name: participant.name,
     token: participant.token,
     votedLiveStage,
+    checkedIn,
   });
 }

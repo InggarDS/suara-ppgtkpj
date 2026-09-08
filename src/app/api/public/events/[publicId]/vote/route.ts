@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { maybeAutoAdvance } from "@/lib/stage-transition";
 import { z } from "zod";
 
 const schema = z.object({
@@ -17,17 +16,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
 
   const event = await prisma.event.findUnique({
     where: { publicId },
-    include: { stages: { where: { status: "LIVE" }, include: { candidates: true } } },
+    include: { stages: { where: { status: "VOTING" }, include: { candidates: true } } },
   });
   if (!event) return NextResponse.json({ ok: false, error: "Acara tidak ditemukan." }, { status: 404 });
   if (event.status !== "ACTIVE") return NextResponse.json({ ok: false, error: "Acara ini sudah ditutup." }, { status: 403 });
 
   const liveStage = event.stages[0];
-  if (!liveStage) return NextResponse.json({ ok: false, error: "Belum ada stage yang dibuka untuk pemilihan." }, { status: 409 });
+  if (!liveStage) return NextResponse.json({ ok: false, error: "Pemungutan suara belum dibuka." }, { status: 409 });
 
   const participant = await prisma.participant.findFirst({ where: { eventId: event.id, token: token.trim().toUpperCase() } });
   if (!participant || !participant.registeredAt) {
     return NextResponse.json({ ok: false, error: "Daftar terlebih dahulu sebelum memilih." }, { status: 403 });
+  }
+
+  const checkedIn = await prisma.stageCheckIn.findUnique({
+    where: { stageId_participantId: { stageId: liveStage.id, participantId: participant.id } },
+  });
+  if (!checkedIn) {
+    return NextResponse.json({ ok: false, error: "Silakan lakukan check-in terlebih dahulu." }, { status: 403 });
   }
 
   if (!abstain && (!candidateId || !liveStage.candidates.some((c) => c.id === candidateId))) {
@@ -47,8 +53,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
       isAbstain: Boolean(abstain),
     },
   });
-
-  await maybeAutoAdvance(liveStage.id);
 
   return NextResponse.json({ ok: true });
 }

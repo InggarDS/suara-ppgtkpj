@@ -17,7 +17,6 @@ export type CreateEventInput = {
   expectedParticipants: number;
   openNow: boolean;
   stageNames: string[];
-  threshold: number;
   bannerImage?: string | null;
   useCredentials?: boolean;
   credentials?: { name: string; jemaat: string }[];
@@ -49,7 +48,6 @@ export async function createEventAction(input: CreateEventInput) {
         create: (stageNames.length ? stageNames : ["Stage 1"]).map((name, i) => ({
           order: i + 1,
           name,
-          thresholdMin: input.threshold,
         })),
       },
       credentials: input.useCredentials

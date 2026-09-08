@@ -1,9 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useTransition } from "react";
 import { MonitorSnapshot } from "@/lib/monitor";
-import { closeStageAction } from "../flow/actions";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
@@ -12,27 +10,19 @@ export default function MonitorView({ eventId, initial }: { eventId: string; ini
     fallbackData: initial ?? undefined,
     refreshInterval: 3000,
   });
-  const [pending, startTransition] = useTransition();
 
   if (!data) return null;
 
   return (
     <div className="flex flex-col gap-5">
-      {data.quorum && (
-        <div className="flex items-center gap-3 bg-[rgba(61,123,255,.10)] border border-[rgba(61,123,255,.35)] rounded-[20px] px-4 py-3.5">
+      {data.liveStageName && (
+        <div className="flex items-center gap-3 bg-[rgba(27,77,228,.08)] border border-[rgba(27,77,228,.28)] rounded-[20px] px-4 py-3">
           <span className="w-2 h-2 rounded-full bg-brand-accent flex-none animate-pulse-dot" />
-          <span className="flex-1 text-[13px] text-[#DBE3FB]">
-            <strong className="font-semibold">Quorum reached.</strong> {data.voted} of {data.denom} participants have voted — above the {data.thresholdMin}-voter minimum. Stage may be closed at any time.
+          <span className="flex-1 text-[13px] text-ink-soft">
+            <strong className="font-semibold">{data.liveStageName}</strong> ·{" "}
+            {data.phase === "voting" ? "voting is open" : "check-in is open"} · {data.checkedIn} checked in
+            {data.phase === "voting" ? ` · ${data.voted} voted` : ""}. Controls are on the Voting flow tab.
           </span>
-          {data.liveStageId && (
-            <button
-              disabled={pending}
-              onClick={() => startTransition(() => { void closeStageAction(eventId, data.liveStageId!); })}
-              className="text-xs font-medium text-white bg-brand rounded-md px-3 py-1.5 cursor-pointer hover:bg-brand-hover disabled:opacity-50"
-            >
-              Close stage
-            </button>
-          )}
         </div>
       )}
 
@@ -65,14 +55,8 @@ export default function MonitorView({ eventId, initial }: { eventId: string; ini
           <div className="h-3 rounded-lg bg-border-4 overflow-hidden relative">
             <div
               className="h-full rounded-lg transition-all duration-700"
-              style={{ width: `${data.pct}%`, background: "linear-gradient(90deg,#3D7BFF,#6A8DFF)" }}
+              style={{ width: `${data.pct}%`, background: "linear-gradient(90deg,#3d6df0,#1b4de4)" }}
             />
-            {data.thresholdMin !== null && data.denom > 0 && (
-              <div
-                className="absolute top-0 bottom-0 w-0.5 bg-amber-icon"
-                style={{ left: `${Math.min(100, (data.thresholdMin / data.denom) * 100)}%` }}
-              />
-            )}
           </div>
           <div className="flex gap-4.5 mt-4 pt-4 border-t border-border-4">
             {data.breakdown.map((b) => (

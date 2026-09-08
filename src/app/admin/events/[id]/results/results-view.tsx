@@ -80,7 +80,7 @@ export default function ResultsView({
         </button>
         <button
           onClick={presentFullscreen}
-          className="flex items-center gap-1.5 text-[12.5px] font-semibold rounded-full px-3.5 py-2 border-none bg-brand-accent-2 text-[#0B1130] cursor-pointer hover:brightness-110"
+          className="flex items-center gap-1.5 text-[12.5px] font-semibold rounded-full px-3.5 py-2 border-none bg-brand-accent-2 text-white cursor-pointer hover:brightness-110"
         >
           Present fullscreen
         </button>

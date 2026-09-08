@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { BusyLabel } from "@/components/ui/spinner";
 import { loginAction, LoginState } from "./actions";
 
 const initialState: LoginState = {};
@@ -33,9 +34,9 @@ export default function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="glow-ring w-full bg-brand text-white rounded-full py-2.5 text-sm font-semibold cursor-pointer hover:bg-brand-hover disabled:opacity-60"
+        className="btn-gradient w-full rounded-full py-2.5 text-sm font-semibold cursor-pointer"
       >
-        {pending ? "Signing in…" : "Sign in"}
+        <BusyLabel busy={pending} busyText="Signing in…">Sign in</BusyLabel>
       </button>
     </form>
   );

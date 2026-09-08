@@ -6,6 +6,7 @@ import { compressImage } from "@/lib/compress-image";
 import { initials } from "@/lib/ids";
 import { parseDeviceLabel } from "@/lib/device";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Spinner, BusyLabel } from "@/components/ui/spinner";
 
 type StateResp = {
   eventName: string;
@@ -17,6 +18,7 @@ type StateResp = {
     id: string;
     order: number;
     name: string;
+    phase: "checkin" | "voting" | null;
     allowAbstain: boolean;
     candidates: { id: string; name: string; note: string; photo: string | null }[];
   } | null;
@@ -29,6 +31,7 @@ type StateResp = {
   name?: string | null;
   token?: string;
   votedLiveStage?: boolean;
+  checkedIn?: boolean;
 };
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
@@ -69,12 +72,15 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
     mutate();
   }
 
-  let screen: "loading" | "register" | "closed" | "waiting" | "booth" | "done" = "loading";
+  let screen: "loading" | "register" | "closed" | "waiting" | "checkin" | "checkedin" | "booth" | "done" =
+    "loading";
   if (data) {
     if (data.closed) screen = "closed";
     else if (!token || data.valid === false) screen = "register";
-    else if (data.liveStage && !data.votedLiveStage) screen = "booth";
     else if (data.liveStage && data.votedLiveStage) screen = "done";
+    else if (data.liveStage && !data.checkedIn) screen = "checkin";
+    else if (data.liveStage && data.checkedIn && data.liveStage.phase === "checkin") screen = "checkedin";
+    else if (data.liveStage && data.checkedIn && data.liveStage.phase === "voting") screen = "booth";
     else screen = "waiting";
   }
 
@@ -93,11 +99,16 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
           <ThemeToggle />
         </div>
 
-        {data && data.stages.length > 1 && ["waiting", "booth", "done"].includes(screen) && (
+        {data && data.stages.length > 1 && ["waiting", "checkin", "checkedin", "booth", "done"].includes(screen) && (
           <StageTrack stages={data.stages} currentOrder={data.liveStage?.order ?? data.lastCompletedStage?.order ?? null} />
         )}
 
-        {screen === "loading" && <div className="flex-1 flex items-center justify-center text-sm text-faint">Memuat…</div>}
+        {screen === "loading" && (
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 text-sm text-faint">
+            <Spinner className="w-6 h-6 text-brand" />
+            Memuat…
+          </div>
+        )}
         {screen === "register" && (
           <RegisterScreen
             publicId={publicId}
@@ -118,6 +129,20 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             lastCompletedStage={data.lastCompletedStage}
             eventFinished={data.eventFinished}
           />
+        )}
+        {screen === "checkin" && data?.liveStage && token && (
+          <CheckInScreen
+            publicId={publicId}
+            token={token}
+            eventName={eventName}
+            stageName={data.liveStage.name}
+            phase={data.liveStage.phase}
+            name={data.name ?? ""}
+            onCheckedIn={() => mutate()}
+          />
+        )}
+        {screen === "checkedin" && data && (
+          <CheckedInScreen eventName={eventName} name={data.name ?? ""} stageName={data.liveStage?.name ?? ""} />
         )}
         {screen === "booth" && data?.liveStage && token && (
           <BoothScreen publicId={publicId} token={token} stage={data.liveStage} totalStages={data.totalStages} onVoted={() => mutate()} />
@@ -254,6 +279,15 @@ function RegisterScreen({
               useCredentials && effectiveCredentialMatch === "not-found" ? "border-danger" : "border-border-1"
             }`}
           />
+          {useCredentials && effectiveCredentialMatch === "checking" && (
+            <p className="m-0 mt-1.5 inline-flex items-center gap-1.5 text-xs text-faint">
+              <Spinner className="w-3 h-3" />
+              Memeriksa kredensi…
+            </p>
+          )}
+          {useCredentials && effectiveCredentialMatch === "found" && (
+            <p className="m-0 mt-1.5 text-xs text-brand">Nama cocok dengan kredensi</p>
+          )}
           {useCredentials && effectiveCredentialMatch === "not-found" && (
             <p className="m-0 mt-1.5 text-xs text-danger">Nama tidak sesuai kredensi</p>
           )}
@@ -292,7 +326,7 @@ function RegisterScreen({
           <label className="block text-xs font-medium text-body mb-1.5">Foto profil</label>
           <label
             className={`flex items-center w-full rounded-[22px] p-3.5 cursor-pointer transition-all ${
-              photo ? "bg-[rgba(61,123,255,.14)] border-[1.5px] border-brand-soft-border-2" : "bg-card border-[1.5px] border-dashed border-border-2"
+              photo ? "bg-[rgba(27,77,228,.12)] border-[1.5px] border-brand-soft-border-2" : "bg-card border-[1.5px] border-dashed border-border-2"
             }`}
           >
             <input type="file" accept="image/*" capture="user" className="hidden" onChange={onPhotoChange} />
@@ -303,7 +337,7 @@ function RegisterScreen({
                   <span className="block text-[13px] font-medium text-ink">Foto terpilih</span>
                   <span className="block font-mono text-[11.5px] leading-relaxed text-brand">terkompresi</span>
                 </span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3D7BFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a5cf0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
                   <path d="M4 12.5 9.5 18 20 6.5"></path>
                 </svg>
               </span>
@@ -312,7 +346,10 @@ function RegisterScreen({
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C76A0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path>
                 </svg>
-                <span className="text-[13px] font-medium text-ink-soft">{busy ? "Mengompres…" : "Ambil atau unggah foto"}</span>
+                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-soft">
+                  {busy && <Spinner className="w-3.5 h-3.5 text-brand" />}
+                  {busy ? "Mengompres…" : "Ambil atau unggah foto"}
+                </span>
                 <span className="text-[11.5px] text-faint">Dikompresi hingga ≤ 500 KB di ponsel Anda</span>
               </span>
             )}
@@ -326,9 +363,9 @@ function RegisterScreen({
         <button
           onClick={submit}
           disabled={busy}
-          className="glow-ring w-full bg-brand text-white rounded-full py-4 text-[15px] font-semibold cursor-pointer hover:bg-brand-hover disabled:opacity-60 disabled:shadow-none"
+          className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer"
         >
-          {busy ? "Mohon tunggu…" : "Daftar"}
+          <BusyLabel busy={busy} busyText="Mohon tunggu…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
         </button>
         <p className="m-0 text-[11.5px] leading-relaxed text-faint text-center">Satu perangkat, satu token, satu suara per stage.</p>
       </div>
@@ -349,7 +386,7 @@ function StageTrack({
       {stages.map((s, i) => {
         const isFinal = s.order === maxOrder;
         const active = s.order === currentOrder;
-        const done = s.status === "COMPLETED";
+        const done = s.status === "STOPPED";
         return (
           <div key={s.order} className="flex items-center gap-1.5 flex-none">
             <span
@@ -367,6 +404,111 @@ function StageTrack({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function CheckInScreen({
+  publicId,
+  token,
+  eventName,
+  stageName,
+  phase,
+  name,
+  onCheckedIn,
+}: {
+  publicId: string;
+  token: string;
+  eventName: string;
+  stageName: string;
+  phase: "checkin" | "voting" | null;
+  name: string;
+  onCheckedIn: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | undefined>();
+
+  async function checkIn() {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const res = await fetch(`/api/public/events/${publicId}/checkin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        setError(json.error || "Check-in gagal.");
+        return;
+      }
+      onCheckedIn();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-6 text-center">
+      <div className="w-[66px] h-[66px] rounded-full bg-brand-soft flex items-center justify-center">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2a5cf0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 12.5 11 15l4.5-5" />
+          <circle cx="12" cy="12" r="9" />
+        </svg>
+      </div>
+      <div>
+        <div className="font-mono text-[10.5px] tracking-[.12em] text-faint uppercase mb-2">{eventName}</div>
+        <h2 className="m-0 mb-2 text-[22px] font-semibold tracking-tight text-ink">Konfirmasi kehadiran</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[30ch] mx-auto">
+          Stage <strong className="text-ink">{stageName}</strong> sudah dibuka. Tekan tombol di bawah untuk
+          menandai kehadiran Anda{phase === "voting" ? " sebelum memilih" : ""}.
+        </p>
+      </div>
+      {name && (
+        <div className="w-full bg-card border border-border-1 rounded-[22px] p-3.5 flex items-center gap-3 text-left">
+          <span className="w-10.5 h-10.5 rounded-[20px] bg-border-4 text-body text-[13px] font-semibold flex items-center justify-center flex-none">
+            {initials(name)}
+          </span>
+          <span className="flex-1 min-w-0 text-sm font-semibold text-ink">{name}</span>
+        </div>
+      )}
+      {error && <p className="text-xs text-danger m-0">{error}</p>}
+      <button
+        onClick={checkIn}
+        disabled={busy}
+        className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer"
+      >
+        <BusyLabel busy={busy} busyText="Mengirim…" spinnerClassName="w-4 h-4">Konfirmasi kehadiran</BusyLabel>
+      </button>
+    </div>
+  );
+}
+
+function CheckedInScreen({ eventName, name, stageName }: { eventName: string; name: string; stageName: string }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-6.5 text-center">
+      <div className="relative w-16 h-16 flex items-center justify-center">
+        <span className="absolute w-16 h-16 rounded-full border-[1.5px] border-brand animate-ring" />
+        <span className="w-3 h-3 rounded-full bg-brand animate-pulse-dot" />
+      </div>
+      <div>
+        <div className="font-mono text-[10.5px] tracking-[.12em] text-faint uppercase mb-2">{eventName}</div>
+        <h2 className="m-0 mb-2 text-[22px] font-semibold tracking-tight text-ink">Anda sudah check-in</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[30ch] mx-auto">
+          Menunggu pemungutan suara untuk <strong className="text-ink">{stageName}</strong> dibuka. Layar ini
+          akan otomatis berpindah.
+        </p>
+      </div>
+      <div className="w-full bg-card border border-border-1 rounded-[22px] p-3.5 flex items-center gap-3 text-left">
+        <span className="w-10.5 h-10.5 rounded-[20px] bg-border-4 text-body text-[13px] font-semibold flex items-center justify-center flex-none">
+          {name ? initials(name) : ""}
+        </span>
+        <span className="flex-1 min-w-0">
+          <span className="block text-sm font-semibold text-ink">{name}</span>
+          <span className="block font-mono text-[11.5px] leading-relaxed text-faint">hadir · siap memilih</span>
+        </span>
+        <span className="text-[11px] font-medium text-brand bg-brand-soft rounded-md px-2 py-1.5 flex-none">Siap</span>
+      </div>
     </div>
   );
 }
@@ -487,7 +629,7 @@ function BoothScreen({
                 setAbstain(false);
               }}
               className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card ${
-                on ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(31,95,78,.1)]" : "border-[1.5px] border-border-1"
+                on ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(27,77,228,.14)]" : "border-[1.5px] border-border-1"
               }`}
             >
               {c.photo ? (
@@ -495,7 +637,7 @@ function BoothScreen({
               ) : (
                 <span
                   className={`w-11.5 h-11.5 rounded-full flex-none flex items-center justify-center text-[13px] font-semibold ${
-                    on ? "bg-[rgba(61,123,255,.22)] text-brand" : "bg-border-4 text-faint"
+                    on ? "bg-[rgba(27,77,228,.18)] text-brand" : "bg-border-4 text-faint"
                   }`}
                 >
                   {initials(c.name)}
@@ -519,7 +661,7 @@ function BoothScreen({
               setChoice(null);
             }}
             className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card ${
-              abstain ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(31,95,78,.1)]" : "border-[1.5px] border-border-1"
+              abstain ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(27,77,228,.14)]" : "border-[1.5px] border-border-1"
             }`}
           >
             <span className="flex-1 text-[15px] font-semibold text-ink">Golput</span>
@@ -540,10 +682,12 @@ function BoothScreen({
           onClick={submit}
           disabled={!canSubmit || busy}
           className={`w-full rounded-full py-4 text-[15px] font-semibold border-none transition-colors ${
-            canSubmit ? "glow-ring bg-brand text-white cursor-pointer hover:bg-brand-hover" : "bg-border-4 text-fainter cursor-not-allowed"
+            canSubmit ? "btn-gradient cursor-pointer" : "bg-border-4 text-fainter cursor-not-allowed"
           }`}
         >
-          {busy ? "Mengirim…" : canSubmit ? "Kirim suara" : "Pilih kandidat"}
+          <BusyLabel busy={busy} busyText="Mengirim…" spinnerClassName="w-4 h-4">
+            {canSubmit ? "Kirim suara" : "Pilih kandidat"}
+          </BusyLabel>
         </button>
       </div>
     </div>
@@ -554,7 +698,7 @@ function DoneScreen({ token, stageName }: { token: string; stageName: string }) 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-5.5 text-center">
       <div className="w-[66px] h-[66px] rounded-full bg-brand-soft flex items-center justify-center animate-rise-in">
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3D7BFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2a5cf0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M4 12.5 9.5 18 20 6.5"></path>
         </svg>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { BusyLabel } from "@/components/ui/spinner";
 import { addStageAction } from "./actions";
 
 export default function AddStageButton({ eventId }: { eventId: string }) {
@@ -59,7 +60,7 @@ export default function AddStageButton({ eventId }: { eventId: string }) {
           disabled={!name.trim() || pending}
           className="text-xs font-semibold text-white bg-brand rounded-md px-3 py-1.5 disabled:opacity-50"
         >
-          {pending ? "Adding…" : "Add stage"}
+          <BusyLabel busy={pending} busyText="Adding…">Add stage</BusyLabel>
         </button>
       </div>
     </div>

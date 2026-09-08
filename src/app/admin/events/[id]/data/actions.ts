@@ -11,8 +11,10 @@ export async function resetVotesAction(eventId: string) {
   if (!session) return { ok: false, error: "Not authenticated" };
 
   const stages = await prisma.stage.findMany({ where: { eventId }, select: { id: true } });
-  await prisma.vote.deleteMany({ where: { stageId: { in: stages.map((s) => s.id) } } });
-  await logAudit(eventId, "All votes reset", session.name);
+  const stageIds = stages.map((s) => s.id);
+  await prisma.vote.deleteMany({ where: { stageId: { in: stageIds } } });
+  await prisma.stageCheckIn.deleteMany({ where: { stageId: { in: stageIds } } });
+  await logAudit(eventId, "All votes and check-ins reset", session.name);
 
   revalidatePath(`/admin/events/${eventId}/data`);
   revalidatePath(`/admin/events/${eventId}/monitor`);
@@ -29,12 +31,16 @@ export async function fullResetAction(eventId: string) {
 
   await prisma.$transaction([
     prisma.vote.deleteMany({ where: { stage: { eventId } } }),
+    prisma.stageCheckIn.deleteMany({ where: { stage: { eventId } } }),
     // Stage 1's candidate list is the admin's original ballot; every later stage's list
-    // was populated during the run (auto-selected or added live), so it goes with the reset.
+    // was populated during the run (promoted or added live), so it goes with the reset.
     prisma.candidate.deleteMany({ where: { stageId: { in: laterStageIds } } }),
     prisma.candidate.updateMany({ where: { stage: { eventId } }, data: { photo: null } }),
     prisma.participant.deleteMany({ where: { eventId } }),
-    prisma.stage.updateMany({ where: { eventId }, data: { status: "NOT_STARTED", startedAt: null, completedAt: null } }),
+    prisma.stage.updateMany({
+      where: { eventId },
+      data: { status: "NOT_STARTED", startedAt: null, completedAt: null, resultsOpen: false },
+    }),
     prisma.event.update({ where: { id: eventId }, data: { resultsRevealed: false } }),
   ]);
   await logAudit(

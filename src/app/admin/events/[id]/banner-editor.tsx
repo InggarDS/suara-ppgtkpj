@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { compressImage } from "@/lib/compress-image";
+import { Spinner } from "@/components/ui/spinner";
 import { updateBannerAction } from "../../actions";
 
 export default function BannerEditor({ eventId, bannerImage }: { eventId: string; bannerImage: string | null }) {
@@ -40,12 +41,14 @@ export default function BannerEditor({ eventId, bannerImage }: { eventId: string
         <div className="text-[13px] font-semibold text-ink">Event banner</div>
         <div className="text-[11.5px] text-faint">Shown at the top of the participant registration screen.</div>
       </div>
-      <label className="text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(150,170,255,.16)]">
+      <label className="inline-flex items-center gap-1.5 text-[12.5px] font-medium text-ink bg-border-5 border border-border-1 rounded-lg px-3.5 py-2 cursor-pointer hover:bg-[rgba(27,77,228,.12)]">
         <input type="file" accept="image/*" className="hidden" onChange={onChange} />
+        {(busy || pending) && <Spinner className="w-3.5 h-3.5 text-brand" />}
         {busy || pending ? "Saving…" : banner ? "Change" : "Upload"}
       </label>
       {banner && (
-        <button onClick={remove} disabled={pending} className="text-[12.5px] text-faint hover:text-danger cursor-pointer">
+        <button onClick={remove} disabled={pending} className="inline-flex items-center gap-1 text-[12.5px] text-faint hover:text-danger cursor-pointer disabled:opacity-50">
+          {pending && <Spinner className="w-3 h-3" />}
           Remove
         </button>
       )}

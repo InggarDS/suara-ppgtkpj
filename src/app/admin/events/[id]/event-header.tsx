@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { Toggle } from "@/components/ui/toggle";
+import { Spinner } from "@/components/ui/spinner";
 import { toggleEventStatusAction } from "../../actions";
 
 export default function EventHeader({
@@ -28,8 +29,17 @@ export default function EventHeader({
         <div className="flex items-center gap-2 bg-paper-2 border border-border-1 rounded-[16px] px-2.5 py-1.5">
           <span className="text-xs text-body">Event access</span>
           <Toggle on={active} disabled={pending} onToggle={() => startTransition(() => { void toggleEventStatusAction(eventId); })} />
-          <span className={`text-xs font-semibold w-11 ${active ? "text-brand" : "text-faint"}`}>
-            {active ? "Open" : "Closed"}
+          <span className={`inline-flex items-center gap-1 text-xs font-semibold w-16 ${active ? "text-brand" : "text-faint"}`}>
+            {pending ? (
+              <>
+                <Spinner className="w-3 h-3" />
+                …
+              </>
+            ) : active ? (
+              "Open"
+            ) : (
+              "Closed"
+            )}
           </span>
         </div>
       </div>
