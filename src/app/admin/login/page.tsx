@@ -34,10 +34,10 @@ export default function LoginPage() {
             <span className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm">
               <PpgtLogo size={36} />
             </span>
-            <span className="text-lg font-semibold tracking-tight text-white">Suara</span>
+            <span className="text-lg font-semibold tracking-tight text-white">Suara PPGT KPJ</span>
           </span>
           <h1 className="text-5xl font-extrabold tracking-tight leading-[1.05] text-white">
-            Hey, Hello!
+            Kader Siap Utus, Teguh dalam Kristus !
           </h1>
           <p className="text-base font-medium text-white/85 max-w-sm">
             Suara Kita Untuk Pelayanan

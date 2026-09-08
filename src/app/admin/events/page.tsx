@@ -46,11 +46,10 @@ export default async function EventsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-[34px] sm:text-[42px] font-extrabold text-ink tracking-tight leading-none m-0 mb-2">
-            Events
+            List Acara
           </h1>
-          <p className="text-[13px] text-body m-0 max-w-[56ch] text-justify">
-            Semua pemilihan yang Anda jalankan, baik aktif maupun arsip. Seret tiket untuk mengurutkan,
-            klik salah satu untuk membukanya.
+          <p className="text-[13px] text-body m-0 max-w-[100ch] text-justify">
+            Kelola seluruh pemilihan aktif dan arsip. Atur urutan sesuai kebutuhan dan klik untuk melihat detail pemilihan.
           </p>
         </div>
       </div>
