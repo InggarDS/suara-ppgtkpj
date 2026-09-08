@@ -47,6 +47,8 @@ model Event {
   resultsRevealed   Boolean     @default(false)
   tokenPrefix       String      @default("TOK-")
   tokenSuffix       String      @default("")
+  tokenEmailSubject String?
+  tokenEmailBody    String?
   useCredentials    Boolean     @default(false)
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt

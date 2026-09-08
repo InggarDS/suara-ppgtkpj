@@ -108,6 +108,23 @@ function inviteUrl(publicId: string) {
   return `${process.env.NEXT_PUBLIC_APP_URL || ""}/event/${publicId}`;
 }
 
+/** Save (or clear) the per-event token-email template. Empty strings reset to the built-in default. */
+export async function updateTokenEmailTemplateAction(eventId: string, subject: string, body: string) {
+  const session = await getAdminSession();
+  if (!session) return { ok: false as const, error: "Not authenticated" };
+
+  await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      tokenEmailSubject: subject.trim() || null,
+      tokenEmailBody: body.trim() || null,
+    },
+  });
+  await logAudit(eventId, body.trim() ? "Template email token diperbarui" : "Template email token dikembalikan ke bawaan", session.name);
+  revalidatePath(`/admin/events/${eventId}/tokens`);
+  return { ok: true as const };
+}
+
 export async function updateParticipantEmailAction(eventId: string, participantId: string, email: string) {
   const session = await getAdminSession();
   if (!session) return { ok: false as const, error: "Not authenticated" };
@@ -131,7 +148,10 @@ export async function sendTokenEmailAction(eventId: string, participantId: strin
   if (!session) return { ok: false as const, error: "Not authenticated" };
   if (!isEmailConfigured()) return { ok: false as const, error: "Layanan email belum dikonfigurasi di server." };
 
-  const event = await prisma.event.findUniqueOrThrow({ where: { id: eventId }, select: { name: true, publicId: true } });
+  const event = await prisma.event.findUniqueOrThrow({
+    where: { id: eventId },
+    select: { name: true, publicId: true, tokenEmailSubject: true, tokenEmailBody: true },
+  });
   const participant = await prisma.participant.findUnique({ where: { id: participantId } });
   if (!participant || participant.eventId !== eventId) return { ok: false as const, error: "Peserta tidak ditemukan." };
   if (!participant.email) return { ok: false as const, error: "Peserta belum memiliki alamat email." };
@@ -139,8 +159,11 @@ export async function sendTokenEmailAction(eventId: string, participantId: strin
   const mail = buildTokenEmail({
     eventName: event.name,
     recipientName: participant.name,
+    recipientJemaat: participant.jemaat,
     token: participant.token,
     inviteUrl: inviteUrl(event.publicId),
+    subjectTemplate: event.tokenEmailSubject,
+    bodyTemplate: event.tokenEmailBody,
   });
   const report = await sendEmails([{ ...mail, to: participant.email, toName: participant.name ?? undefined }]);
 
@@ -159,16 +182,27 @@ export async function sendAllTokenEmailsAction(eventId: string) {
   if (!session) return { ok: false as const, error: "Not authenticated" };
   if (!isEmailConfigured()) return { ok: false as const, error: "Layanan email belum dikonfigurasi di server." };
 
-  const event = await prisma.event.findUniqueOrThrow({ where: { id: eventId }, select: { name: true, publicId: true } });
+  const event = await prisma.event.findUniqueOrThrow({
+    where: { id: eventId },
+    select: { name: true, publicId: true, tokenEmailSubject: true, tokenEmailBody: true },
+  });
   const participants = await prisma.participant.findMany({
     where: { eventId, email: { not: null } },
-    select: { id: true, name: true, token: true, email: true },
+    select: { id: true, name: true, jemaat: true, token: true, email: true },
   });
   if (!participants.length) return { ok: false as const, error: "Tidak ada peserta dengan alamat email." };
 
   const link = inviteUrl(event.publicId);
   const emails = participants.map((p) => {
-    const mail = buildTokenEmail({ eventName: event.name, recipientName: p.name, token: p.token, inviteUrl: link });
+    const mail = buildTokenEmail({
+      eventName: event.name,
+      recipientName: p.name,
+      recipientJemaat: p.jemaat,
+      token: p.token,
+      inviteUrl: link,
+      subjectTemplate: event.tokenEmailSubject,
+      bodyTemplate: event.tokenEmailBody,
+    });
     return { ...mail, to: p.email!, toName: p.name ?? undefined };
   });
 
