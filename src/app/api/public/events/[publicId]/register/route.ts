@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { generateToken } from "@/lib/ids";
+import { publish } from "@/lib/realtime";
 import { z } from "zod";
 
 const schema = z.object({
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
             registeredAt: participant.registeredAt ?? new Date(),
           },
         });
+        publish(event.id);
         return NextResponse.json({ ok: true, token: participant.token });
       }
     }
@@ -74,6 +76,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
       data: { participantId: participant.id, usedAt: new Date() },
     });
 
+    publish(event.id);
     return NextResponse.json({ ok: true, token: participant.token });
   }
 
@@ -100,5 +103,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
     },
   });
 
+  publish(event.id);
   return NextResponse.json({ ok: true, token: participant.token });
 }

@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { destroyAdminSession, getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { publish } from "@/lib/realtime";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -88,5 +89,6 @@ export async function toggleEventStatusAction(eventId: string) {
 
   revalidatePath("/admin/events");
   revalidatePath(`/admin/events/${eventId}`);
+  publish(eventId);
   return { ok: true, status: next };
 }

@@ -16,12 +16,17 @@ export async function getMonitorSnapshot(eventId: string) {
   if (!event) return null;
 
   const participantCount = event.participants.length;
-  const denom = event.expectedParticipants || participantCount || 1;
+  const registered = await prisma.participant.count({ where: { eventId, registeredAt: { not: null } } });
+  const totalVoters = registered;
+  const denom = totalVoters || 1;
   const liveStage = event.stages.find((s) => s.status === "CHECK_IN" || s.status === "VOTING");
   const phase = liveStage ? (liveStage.status === "VOTING" ? "voting" : "checkin") : null;
   const votedThisStage = liveStage?._count.votes ?? 0;
   const checkedInThisStage = liveStage?._count.checkIns ?? 0;
   const participation = pct(votedThisStage, denom);
+  const checkInPct = pct(checkedInThisStage, denom);
+  const votingPct = pct(votedThisStage, denom);
+  const canOpenResult = votedThisStage >= totalVoters && totalVoters > 0;
 
   const recentVotes = liveStage && phase === "voting"
     ? await prisma.vote.findMany({
@@ -53,6 +58,10 @@ export async function getMonitorSnapshot(eventId: string) {
     pct: participation,
     voted: votedThisStage,
     checkedIn: checkedInThisStage,
+    totalVoters,
+    checkInPct,
+    votingPct,
+    canOpenResult,
     denom,
     phase,
     liveStageName: liveStage?.name ?? null,

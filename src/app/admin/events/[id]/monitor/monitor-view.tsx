@@ -1,15 +1,11 @@
 "use client";
 
-import useSWR from "swr";
 import { MonitorSnapshot } from "@/lib/monitor";
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+import { useEventStream } from "@/hooks/use-event-stream";
 
 export default function MonitorView({ eventId, initial }: { eventId: string; initial: MonitorSnapshot | null }) {
-  const { data } = useSWR<MonitorSnapshot>(`/api/admin/events/${eventId}/monitor`, fetcher, {
-    fallbackData: initial ?? undefined,
-    refreshInterval: 3000,
-  });
+  const stream = useEventStream<{ monitor: MonitorSnapshot | null }>(`/api/admin/events/${eventId}/stream`);
+  const data = stream?.monitor ?? initial ?? null;
 
   if (!data) return null;
 

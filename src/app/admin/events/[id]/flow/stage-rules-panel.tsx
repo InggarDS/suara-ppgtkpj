@@ -16,7 +16,17 @@ type Stage = {
   _count: { votes: number; checkIns: number };
 };
 
-export default function StageRulesPanel({ eventId, stage }: { eventId: string; stage: Stage }) {
+export default function StageRulesPanel({
+  eventId,
+  stage,
+  totalVoters,
+  locked = false,
+}: {
+  eventId: string;
+  stage: Stage;
+  totalVoters: number;
+  locked?: boolean;
+}) {
   const [pending, startTransition] = useTransition();
 
   const toggles: { key: "allowAbstain" | "requireFingerprint"; label: string; hint: string }[] = [
@@ -46,6 +56,8 @@ export default function StageRulesPanel({ eventId, stage }: { eventId: string; s
         stage={{ id: stage.id, name: stage.name, status: stage.status, resultsOpen: stage.resultsOpen }}
         checkedInCount={stage._count.checkIns}
         votesCount={stage._count.votes}
+        totalVoters={totalVoters}
+        locked={locked}
       />
 
       <div className="h-px bg-border-4" />

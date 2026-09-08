@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import useSWR from "swr";
 import { ResultsSnapshot } from "@/lib/results";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useStageQrVisibility } from "@/components/ui/invite-qr";
-import { setRevealAction } from "./actions";
+import { useEventStream } from "@/hooks/use-event-stream";
 import ProjectorBoard from "./projector-board";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const PHASE_LABEL: Record<string, string> = {
+  idle: "Belum dimulai",
+  checkin: "Check-in",
+  voting: "Voting berjalan",
+  result: "Hasil dibuka",
+};
 
 export default function ResultsView({
   eventId,
@@ -21,30 +23,11 @@ export default function ResultsView({
   inviteUrl: string;
   initial: ResultsSnapshot | null;
 }) {
-  const { data } = useSWR<ResultsSnapshot>(`/api/admin/events/${eventId}/results`, fetcher, {
-    fallbackData: initial ?? undefined,
-    refreshInterval: 3000,
-  });
-  const [confirmKind, setConfirmKind] = useState<"reveal" | "hide" | null>(null);
+  const stream = useEventStream<{ results: ResultsSnapshot | null }>(`/api/admin/events/${eventId}/stream`);
+  const data = stream?.results ?? initial ?? null;
   const [showQr, setShowQr] = useStageQrVisibility(eventId);
 
   if (!data) return null;
-  const revealed = data.revealed;
-
-  const kind =
-    confirmKind === "reveal"
-      ? {
-          title: "Unlock candidate identities?",
-          body: "Names are hidden on the shared screen until you unlock them. Everyone in the hall will see who each bar belongs to — this is recorded in the audit trail.",
-          word: "REVEAL",
-          cta: "Unlock names",
-        }
-      : {
-          title: "Hide candidate identities again?",
-          body: "The shared screen returns to percentages only. Bars keep their position and colour.",
-          word: "HIDE",
-          cta: "Hide names",
-        };
 
   function presentFullscreen() {
     const w = window.open(
@@ -61,7 +44,14 @@ export default function ResultsView({
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
           <path d="M3 4.5h18v12H3zM9 20.5h6"></path>
         </svg>
-        <span className="flex-1 text-[13px] text-ink-soft">Projector output — participants never see results on their own device.</span>
+        <span className="flex-1 text-[13px] text-ink-soft">
+          Projector output — participants never see results on their own device.
+        </span>
+        <span className="text-[11.5px] font-medium text-brand bg-brand-soft rounded-full px-2.5 py-1">
+          {PHASE_LABEL[data.phase] ?? data.phase}
+          {data.phase === "voting" ? ` · ${data.votingPct}%` : ""}
+          {data.phase === "checkin" ? ` · ${data.checkInPct}%` : ""}
+        </span>
         <button
           onClick={() => setShowQr(!showQr)}
           className={`flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border cursor-pointer ${
@@ -71,22 +61,14 @@ export default function ResultsView({
           {showQr ? "Hide QR" : "Show QR"}
         </button>
         <button
-          onClick={() => setConfirmKind(revealed ? "hide" : "reveal")}
-          className={`flex items-center gap-1.5 text-[12.5px] font-medium rounded-lg px-3.5 py-2 border cursor-pointer ${
-            revealed ? "bg-brand-soft text-brand border-border-1" : "bg-card text-ink-soft border-border-1"
-          }`}
-        >
-          {revealed ? "Lock names" : "Unlock names"}
-        </button>
-        <button
           onClick={presentFullscreen}
-          className="flex items-center gap-1.5 text-[12.5px] font-semibold rounded-full px-3.5 py-2 border-none bg-brand-accent-2 text-white cursor-pointer hover:brightness-110"
+          className="flex items-center gap-1.5 text-[12.5px] font-semibold rounded-full px-3.5 py-2 border-none btn-gradient cursor-pointer"
         >
           Present fullscreen
         </button>
       </div>
 
-      <div className="elevated bg-stage-dark rounded-[28px] px-13 py-11 text-[#F4F7FF] relative overflow-hidden flex items-center justify-center">
+      <div className="elevated bg-stage-dark rounded-[28px] px-13 py-11 text-white relative overflow-hidden flex items-center justify-center">
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ backgroundImage: "radial-gradient(rgba(255,255,255,.05) 1px,transparent 1px)", backgroundSize: "22px 22px" }}
@@ -94,16 +76,10 @@ export default function ResultsView({
         <ProjectorBoard eventName={eventName} data={data} inviteUrl={inviteUrl} showQr={showQr} />
       </div>
 
-      <ConfirmDialog
-        open={confirmKind !== null}
-        onClose={() => setConfirmKind(null)}
-        title={kind.title}
-        body={kind.body}
-        confirmWord={kind.word}
-        ctaLabel={kind.cta}
-        danger={false}
-        action={async () => setRevealAction(eventId, confirmKind === "reveal")}
-      />
+      <p className="text-[11.5px] text-faint px-1">
+        Result masking and the “Buka hasil” action live on the <strong>Voting flow</strong> tab and unlock only
+        when voting reaches 100%.
+      </p>
     </div>
   );
 }

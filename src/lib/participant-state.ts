@@ -1,0 +1,86 @@
+import { prisma } from "@/lib/prisma";
+
+/**
+ * The participant-facing view of an event's live state. Shared by the REST
+ * endpoint and the SSE stream so there is one source of truth.
+ * Returns `null` when the event does not exist.
+ */
+export async function getParticipantState(publicId: string, rawToken?: string | null) {
+  const token = rawToken?.trim().toUpperCase() || null;
+
+  const event = await prisma.event.findUnique({
+    where: { publicId },
+    include: {
+      stages: {
+        orderBy: { order: "asc" },
+        include: { candidates: { orderBy: { order: "asc" } } },
+      },
+    },
+  });
+  if (!event) return null;
+
+  const activeStage = event.stages.find((s) => s.status === "CHECK_IN" || s.status === "VOTING") ?? null;
+  const phase: "checkin" | "voting" | null = activeStage
+    ? activeStage.status === "VOTING"
+      ? "voting"
+      : "checkin"
+    : null;
+  const stoppedStages = event.stages.filter((s) => s.status === "STOPPED" || s.status === "CLOSED");
+  const lastStoppedStage = stoppedStages.length ? stoppedStages[stoppedStages.length - 1] : null;
+  const eventFinished =
+    event.stages.length > 0 &&
+    !activeStage &&
+    event.stages.some((s) => s.status === "STOPPED" || s.status === "CLOSED");
+
+  const base = {
+    eventName: event.name,
+    eventStatus: event.status,
+    bannerImage: event.bannerImage,
+    useCredentials: event.useCredentials,
+    closed: event.status !== "ACTIVE",
+    totalStages: event.stages.length,
+    stages: event.stages.map((s) => ({ order: s.order, name: s.name, status: s.status })),
+    lastCompletedStage: lastStoppedStage ? { order: lastStoppedStage.order, name: lastStoppedStage.name } : null,
+    eventFinished,
+    liveStage: activeStage
+      ? {
+          id: activeStage.id,
+          order: activeStage.order,
+          name: activeStage.name,
+          phase,
+          allowAbstain: activeStage.allowAbstain,
+          candidates:
+            phase === "voting"
+              ? activeStage.candidates.map((c) => ({ id: c.id, name: c.name, note: c.note, photo: c.photo }))
+              : [],
+        }
+      : null,
+  };
+
+  if (!token) return { ...base, valid: false as const };
+
+  const participant = await prisma.participant.findFirst({
+    where: { eventId: event.id, token },
+    include: { votes: true },
+  });
+  if (!participant) return { ...base, valid: false as const };
+
+  const votedLiveStage = activeStage ? participant.votes.some((v) => v.stageId === activeStage.id) : false;
+  const checkedIn = activeStage
+    ? Boolean(
+        await prisma.stageCheckIn.findUnique({
+          where: { stageId_participantId: { stageId: activeStage.id, participantId: participant.id } },
+        })
+      )
+    : false;
+
+  return {
+    ...base,
+    valid: true as const,
+    registered: Boolean(participant.registeredAt),
+    name: participant.name,
+    token: participant.token,
+    votedLiveStage,
+    checkedIn,
+  };
+}

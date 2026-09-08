@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import useSWR from "swr";
 import { ResultsSnapshot } from "@/lib/results";
 import { useStageQrVisibility } from "@/components/ui/invite-qr";
+import { useEventStream } from "@/hooks/use-event-stream";
 import ProjectorBoard from "@/app/admin/events/[id]/results/projector-board";
-
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function PresentView({
   eventId,
@@ -19,10 +17,8 @@ export default function PresentView({
   inviteUrl: string;
   initial: ResultsSnapshot | null;
 }) {
-  const { data } = useSWR<ResultsSnapshot>(`/api/admin/events/${eventId}/results`, fetcher, {
-    fallbackData: initial ?? undefined,
-    refreshInterval: 3000,
-  });
+  const stream = useEventStream<{ results: ResultsSnapshot | null }>(`/api/admin/events/${eventId}/stream`);
+  const data = stream?.results ?? initial ?? null;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showQr] = useStageQrVisibility(eventId);
 

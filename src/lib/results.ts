@@ -2,22 +2,38 @@ import { prisma } from "@/lib/prisma";
 import { initials } from "@/lib/ids";
 import { pct } from "@/lib/format";
 
+export type ResultRow = {
+  id: string;
+  name: string;
+  jemaat: string | null;
+  note: string | null;
+  photo: string | null;
+  initials: string | null;
+  votes: number;
+  pct: number;
+};
+
 export async function getResultsSnapshot(eventId: string) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
       stages: {
         orderBy: { order: "desc" },
-        include: { candidates: { orderBy: { order: "asc" } }, votes: true },
+        include: {
+          candidates: {
+            orderBy: { order: "asc" },
+            include: { participant: { select: { jemaat: true } } },
+          },
+          votes: true,
+          _count: { select: { checkIns: true } },
+        },
       },
-      _count: { select: { participants: true } },
     },
   });
   if (!event) return null;
 
   const registered = await prisma.participant.count({ where: { eventId, registeredAt: { not: null } } });
-  const denom = event.expectedParticipants || event._count.participants || 1;
-  const registrationPct = pct(registered, denom);
+  const totalVoters = registered;
 
   const stageSequence = [...event.stages]
     .sort((a, b) => a.order - b.order)
@@ -25,29 +41,46 @@ export async function getResultsSnapshot(eventId: string) {
   const maxOrder = stageSequence.length ? Math.max(...stageSequence.map((s) => s.order)) : 0;
 
   // stages arrive ordered by `order: "desc"`, so the first match is the latest.
+  const resultStage = event.stages.find((s) => s.resultsOpen);
   const votingStage = event.stages.find((s) => s.status === "VOTING");
-  const openResultStage = event.stages.find((s) => s.resultsOpen);
-  const targetStage = openResultStage ?? votingStage ?? event.stages[0];
+  const checkInStage = event.stages.find((s) => s.status === "CHECK_IN");
+  const stoppedStage = event.stages.find((s) => s.status === "STOPPED" || s.status === "CLOSED");
+  const targetStage = resultStage ?? votingStage ?? checkInStage ?? stoppedStage ?? event.stages[0] ?? null;
 
-  // Shared screen only shows bars once the admin explicitly opens a stage's results.
-  const resultsOpen = Boolean(targetStage?.resultsOpen);
-  const notStarted = !openResultStage && !votingStage;
+  const phase: "idle" | "checkin" | "voting" | "result" = !targetStage
+    ? "idle"
+    : targetStage.resultsOpen
+      ? "result"
+      : targetStage.status === "VOTING"
+        ? "voting"
+        : targetStage.status === "CHECK_IN"
+          ? "checkin"
+          : "idle";
+
+  const notStarted = phase === "idle";
 
   if (!targetStage) {
     return {
-      revealed: event.resultsRevealed,
+      phase,
+      revealed: false,
       resultsOpen: false,
+      canOpenResult: false,
       stageName: null,
       stageOrder: 0,
       isFinalStage: false,
       stageSequence,
-      notStarted,
+      notStarted: true,
       live: false,
+      totalVoters,
       totalVotes: 0,
-      denom,
+      votedCount: 0,
+      checkedInCount: 0,
+      checkInPct: 0,
+      votingPct: 0,
+      denom: totalVoters || 1,
       registered,
-      registrationPct,
-      results: [],
+      registrationPct: 0,
+      results: [] as ResultRow[],
       winnerId: null,
       winnerName: null,
       winnerNote: null,
@@ -62,39 +95,76 @@ export async function getResultsSnapshot(eventId: string) {
     else if (v.candidateId) votesByCandidate.set(v.candidateId, (votesByCandidate.get(v.candidateId) ?? 0) + 1);
   }
   const totalVotes = targetStage.votes.length;
+  const votedCount = totalVotes;
+  const checkedInCount = targetStage._count.checkIns;
+  const revealed = phase === "result";
 
-  const results = targetStage.candidates
-    .map((c) => {
+  type RawRow = { id: string; name: string; jemaat: string | null; note: string | null; photo: string | null; votes: number };
+  const raw: RawRow[] = targetStage.candidates
+    .map((c): RawRow => {
       const votes = votesByCandidate.get(c.id) ?? 0;
-      return { id: c.id, name: c.name, note: c.note, photo: c.photo, votes, pct: pct(votes, totalVotes || 1) };
+      return {
+        id: c.id,
+        name: c.name,
+        jemaat: c.participant?.jemaat ?? (c.note || null),
+        note: c.note || null,
+        photo: c.photo,
+        votes,
+      };
     })
     .concat(
       targetStage.allowAbstain
-        ? [{ id: "abstain", name: "Golput", note: "", photo: null, votes: abstainCount, pct: pct(abstainCount, totalVotes || 1) }]
+        ? [{ id: "abstain", name: "Golput", jemaat: null, note: null, photo: null, votes: abstainCount }]
         : []
-    );
+    )
+    .sort((a, b) => b.votes - a.votes);
 
-  const winner = results.reduce((max, r) => (r.votes > (max?.votes ?? -1) ? r : max), results[0]);
+  const results: ResultRow[] = raw.map((r, i) => {
+    const p = pct(r.votes, totalVotes || 1);
+    if (revealed) {
+      return { ...r, initials: initials(r.name), pct: p };
+    }
+    // Voting phase: mask name / jemaat / photo, keep the live vote count + ranking.
+    return {
+      id: r.id,
+      name: r.id === "abstain" ? "Golput" : `Anonymous ${String(i + 1).padStart(2, "0")}`,
+      jemaat: null,
+      note: null,
+      photo: null,
+      initials: null,
+      votes: r.votes,
+      pct: p,
+    };
+  });
+
+  const winner = raw[0] ?? null;
   const isFinalStage = targetStage.order === maxOrder;
 
   return {
-    revealed: event.resultsRevealed,
-    resultsOpen,
+    phase,
+    revealed,
+    resultsOpen: Boolean(targetStage.resultsOpen),
+    canOpenResult: votedCount >= totalVoters && totalVoters > 0,
     stageName: targetStage.name,
     stageOrder: targetStage.order,
     isFinalStage,
     stageSequence,
     notStarted,
     live: targetStage.status === "VOTING",
+    totalVoters,
     totalVotes,
-    denom,
+    votedCount,
+    checkedInCount,
+    checkInPct: pct(checkedInCount, totalVoters || 1),
+    votingPct: pct(votedCount, totalVoters || 1),
+    denom: totalVoters || 1,
     registered,
-    registrationPct,
-    results: results.map((r) => ({ ...r, initials: initials(r.name) })),
-    winnerId: winner?.id ?? null,
-    winnerName: winner?.name ?? null,
-    winnerNote: winner?.note ?? null,
-    winnerPhoto: winner?.photo ?? null,
+    registrationPct: pct(registered, totalVoters || 1),
+    results,
+    winnerId: revealed ? winner?.id ?? null : null,
+    winnerName: revealed ? winner?.name ?? null : null,
+    winnerNote: revealed ? winner?.note ?? null : null,
+    winnerPhoto: revealed ? winner?.photo ?? null : null,
   };
 }
 

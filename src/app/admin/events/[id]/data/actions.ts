@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
+import { publish } from "@/lib/realtime";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -18,6 +19,7 @@ export async function resetVotesAction(eventId: string) {
 
   revalidatePath(`/admin/events/${eventId}/data`);
   revalidatePath(`/admin/events/${eventId}/monitor`);
+  publish(eventId);
   return { ok: true };
 }
 
@@ -51,6 +53,7 @@ export async function fullResetAction(eventId: string) {
 
   revalidatePath(`/admin/events/${eventId}`);
   revalidatePath(`/admin/events/${eventId}/flow`);
+  publish(eventId);
   return { ok: true };
 }
 

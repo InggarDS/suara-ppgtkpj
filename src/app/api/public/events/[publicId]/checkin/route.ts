@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { publish } from "@/lib/realtime";
 import { z } from "zod";
 
 const schema = z.object({ token: z.string().min(1) });
@@ -30,6 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
     create: { stageId: stage.id, participantId: participant.id },
     update: {},
   });
+  publish(event.id);
 
   return NextResponse.json({ ok: true });
 }

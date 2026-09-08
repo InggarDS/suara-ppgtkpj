@@ -6,6 +6,7 @@ import AddStageButton from "./add-stage-button";
 import CandidateEditor from "./candidate-editor";
 import StageControls from "./stage-controls";
 import PromoteCandidateButton from "./promote-candidate-button";
+import FlowRealtime from "./flow-realtime";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
     select: { id: true, name: true, jemaat: true },
     orderBy: { name: "asc" },
   });
+  const totalVoters = registeredParticipants.length;
 
   return (
     <>
@@ -50,6 +52,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
         subtitle="Every stage is under manual control: open it for check-in, start voting, stop, restart, then open the result."
         status={event.status}
       />
+      <FlowRealtime eventId={event.id} />
       <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-6.5 pb-10 bg-paper">
         <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "minmax(0,1fr) 320px" }}>
           <div
@@ -59,6 +62,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
             <div className="flex flex-col">
               {event.stages.map((stage, i) => {
                 const live = stage.status === "VOTING" || stage.status === "CHECK_IN";
+                const stageLocked = Boolean(activeStage) && stage.id !== activeStage!.id && stage.status === "NOT_STARTED";
                 const nextStage = event.stages[i + 1];
                 return (
                   <div key={stage.id}>
@@ -71,7 +75,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                     <div
                       className={`bg-card rounded-[20px] px-4.5 py-4 ${
                         live ? "border-[1.5px] border-brand shadow-sm" : "border-[1.5px] border-border-1"
-                      }`}
+                      } ${stageLocked ? "opacity-60" : ""}`}
                     >
                       <div className="flex items-center gap-2.5 mb-3 flex-wrap">
                         <span
@@ -88,7 +92,9 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                           </span>
                         )}
                         <span className="flex-1" />
-                        <span className="text-[11.5px] font-medium text-faint">{STATUS_LABEL[stage.status]}</span>
+                        <span className="text-[11.5px] font-medium text-faint">
+                          {stageLocked ? "🔒 Locked" : STATUS_LABEL[stage.status]}
+                        </span>
                       </div>
 
                       <StageControls
@@ -96,6 +102,8 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                         stage={{ id: stage.id, name: stage.name, status: stage.status, resultsOpen: stage.resultsOpen }}
                         checkedInCount={stage._count.checkIns}
                         votesCount={stage._count.votes}
+                        totalVoters={totalVoters}
+                        locked={Boolean(activeStage) && stage.id !== activeStage!.id}
                       />
 
                       <div className="flex gap-2 flex-wrap mt-3">
@@ -147,7 +155,12 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
 
           <div className="sticky top-5">
             {focusStage ? (
-              <StageRulesPanel eventId={event.id} stage={focusStage} />
+              <StageRulesPanel
+                eventId={event.id}
+                stage={focusStage}
+                totalVoters={totalVoters}
+                locked={Boolean(activeStage) && focusStage.id !== activeStage!.id}
+              />
             ) : (
               <div className="bg-card border border-border-1 rounded-xl p-4.5">
                 <div className="text-[13px] font-semibold text-ink mb-1">No stages yet</div>

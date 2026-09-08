@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import useSWR from "swr";
 import { compressImage } from "@/lib/compress-image";
 import { initials } from "@/lib/ids";
 import { parseDeviceLabel } from "@/lib/device";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Spinner, BusyLabel } from "@/components/ui/spinner";
+import { useEventStream } from "@/hooks/use-event-stream";
 
 type StateResp = {
   eventName: string;
@@ -34,8 +34,6 @@ type StateResp = {
   checkedIn?: boolean;
 };
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
-
 function getDeviceId() {
   if (typeof window === "undefined") return "";
   let id = localStorage.getItem("suara_device_id");
@@ -61,15 +59,14 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
     setClient({ hydrated: true, deviceId: getDeviceId(), token: localStorage.getItem(`suara_token_${publicId}`) });
   }, [publicId]);
 
-  const stateUrl = hydrated
-    ? `/api/public/events/${publicId}/state${token ? `?token=${encodeURIComponent(token)}` : ""}`
+  const streamUrl = hydrated
+    ? `/api/public/events/${publicId}/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`
     : null;
-  const { data, mutate } = useSWR<StateResp>(stateUrl, fetcher, { refreshInterval: 3000 });
+  const data = useEventStream<StateResp>(streamUrl);
 
   function handleRegistered(tok: string) {
     localStorage.setItem(`suara_token_${publicId}`, tok);
-    setToken(tok);
-    mutate();
+    setToken(tok); // token change reconnects the stream with the new token
   }
 
   let screen: "loading" | "register" | "closed" | "waiting" | "checkin" | "checkedin" | "booth" | "done" =
@@ -138,14 +135,13 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             stageName={data.liveStage.name}
             phase={data.liveStage.phase}
             name={data.name ?? ""}
-            onCheckedIn={() => mutate()}
           />
         )}
         {screen === "checkedin" && data && (
           <CheckedInScreen eventName={eventName} name={data.name ?? ""} stageName={data.liveStage?.name ?? ""} />
         )}
         {screen === "booth" && data?.liveStage && token && (
-          <BoothScreen publicId={publicId} token={token} stage={data.liveStage} totalStages={data.totalStages} onVoted={() => mutate()} />
+          <BoothScreen publicId={publicId} token={token} stage={data.liveStage} totalStages={data.totalStages} onVoted={() => {}} />
         )}
         {screen === "done" && data && <DoneScreen token={data.token ?? ""} stageName={data.liveStage?.name ?? ""} />}
       </div>
@@ -415,7 +411,6 @@ function CheckInScreen({
   stageName,
   phase,
   name,
-  onCheckedIn,
 }: {
   publicId: string;
   token: string;
@@ -423,9 +418,9 @@ function CheckInScreen({
   stageName: string;
   phase: "checkin" | "voting" | null;
   name: string;
-  onCheckedIn: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
   async function checkIn() {
@@ -442,11 +437,13 @@ function CheckInScreen({
         setError(json.error || "Check-in gagal.");
         return;
       }
-      onCheckedIn();
+      setDone(true); // instant local confirmation; the stream flips the real screen shortly
     } finally {
       setBusy(false);
     }
   }
+
+  if (done) return <CheckedInScreen eventName={eventName} name={name} stageName={stageName} />;
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-6 text-center">

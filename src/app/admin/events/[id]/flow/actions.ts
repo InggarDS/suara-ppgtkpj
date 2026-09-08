@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
+import { revalidateAndPublish } from "@/lib/realtime";
 
 async function requireSession() {
   const session = await getAdminSession();
@@ -11,11 +12,11 @@ async function requireSession() {
   return session;
 }
 
-function revalidateEvent(eventId: string) {
-  revalidatePath(`/admin/events/${eventId}/flow`);
-  revalidatePath(`/admin/events/${eventId}/monitor`);
-  revalidatePath(`/admin/events/${eventId}/results`);
-  revalidatePath(`/admin/events/${eventId}`);
+const revalidateEvent = revalidateAndPublish;
+
+/** Registered participants are the voter pool the 100% gates are measured against. */
+function totalVoters(eventId: string) {
+  return prisma.participant.count({ where: { eventId, registeredAt: { not: null } } });
 }
 
 export type StageRulePatch = Partial<{
@@ -30,17 +31,18 @@ export async function updateStageRulesAction(eventId: string, stageId: string, p
   return { ok: true };
 }
 
-/** Open a stage for check-in. Any other active stage is stopped. */
+/** Open a stage for check-in. Only one stage may be active at a time. */
 export async function openStageAction(eventId: string, stageId: string) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
   if (stage.status === "CLOSED") return { ok: false, error: "This stage is closed." };
 
+  const otherActive = await prisma.stage.findFirst({
+    where: { eventId, status: { in: ["CHECK_IN", "VOTING"] }, NOT: { id: stageId } },
+  });
+  if (otherActive) return { ok: false, error: `"${otherActive.name}" is still active. Stop or close it first.` };
+
   await prisma.$transaction([
-    prisma.stage.updateMany({
-      where: { eventId, status: { in: ["CHECK_IN", "VOTING"] }, NOT: { id: stageId } },
-      data: { status: "STOPPED", completedAt: new Date() },
-    }),
     prisma.stageCheckIn.deleteMany({ where: { stageId } }),
     prisma.stage.update({
       where: { id: stageId },
@@ -54,16 +56,28 @@ export async function openStageAction(eventId: string, stageId: string) {
   return { ok: true };
 }
 
-export async function startVotingAction(eventId: string, stageId: string) {
+export async function startVotingAction(eventId: string, stageId: string, opts?: { force?: boolean }) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
   if (stage.status === "CLOSED") return { ok: false, error: "This stage is closed." };
+
+  const [total, checkedIn] = await Promise.all([
+    totalVoters(eventId),
+    prisma.stageCheckIn.count({ where: { stageId } }),
+  ]);
+  if (!opts?.force && (total === 0 || checkedIn < total)) {
+    return { ok: false, error: `Check-in is at ${checkedIn}/${total}. Wait for 100% or start anyway.` };
+  }
 
   await prisma.stage.update({
     where: { id: stageId },
     data: { status: "VOTING", startedAt: new Date(), completedAt: null },
   });
-  await logAudit(eventId, `Voting started for "${stage.name}"`, session.name);
+  await logAudit(
+    eventId,
+    `Voting started for "${stage.name}"${opts?.force && checkedIn < total ? ` (forced at ${checkedIn}/${total} checked in)` : ""}`,
+    session.name
+  );
   revalidateEvent(eventId);
   return { ok: true };
 }
@@ -114,14 +128,32 @@ export async function restartVotingAction(eventId: string, stageId: string) {
   return { ok: true };
 }
 
-export async function openResultsAction(eventId: string, stageId: string, open: boolean) {
+export async function openResultsAction(
+  eventId: string,
+  stageId: string,
+  open: boolean,
+  opts?: { force?: boolean }
+) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
 
-  await prisma.stage.update({ where: { id: stageId }, data: { resultsOpen: open } });
+  if (open && stage.status !== "CLOSED") {
+    const [total, voted] = await Promise.all([
+      totalVoters(eventId),
+      prisma.vote.count({ where: { stageId } }),
+    ]);
+    if (!opts?.force && (total === 0 || voted < total)) {
+      return { ok: false, error: `Voting is at ${voted}/${total}. Wait for 100% or open anyway.` };
+    }
+  }
+
+  await prisma.$transaction([
+    prisma.stage.update({ where: { id: stageId }, data: { resultsOpen: open } }),
+    prisma.event.update({ where: { id: eventId }, data: { resultsRevealed: open } }),
+  ]);
   await logAudit(
     eventId,
-    open ? `Results opened for "${stage.name}"` : `Results hidden for "${stage.name}"`,
+    open ? `Results opened for "${stage.name}"${opts?.force ? " (forced)" : ""}` : `Results hidden for "${stage.name}"`,
     session.name
   );
   revalidateEvent(eventId);
