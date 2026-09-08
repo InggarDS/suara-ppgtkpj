@@ -17,16 +17,19 @@ export default function CandidateEditor({
   stageId,
   candidates,
   participants,
+  disabled = false,
 }: {
   eventId: string;
   stageId: string;
   candidates: Candidate[];
   participants: Participant[];
+  disabled?: boolean;
 }) {
   const [mode, setMode] = useState<"participant" | "manual">(participants.length ? "participant" : "manual");
   const [name, setName] = useState("");
   const [selected, setSelected] = useState("");
   const [pending, startTransition] = useTransition();
+  const busy = pending || disabled;
 
   const alreadyAdded = new Set(candidates.map((c) => c.name));
   const availableParticipants = participants.filter((p) => p.name && !alreadyAdded.has(p.name));
@@ -44,7 +47,7 @@ export default function CandidateEditor({
             )}
           </span>
           <button
-            disabled={pending}
+            disabled={busy}
             onClick={() => startTransition(() => { void removeCandidateAction(eventId, c.id); })}
             className="inline-flex items-center gap-1 text-[11px] text-faint hover:text-danger disabled:opacity-50"
           >
@@ -79,7 +82,8 @@ export default function CandidateEditor({
             <select
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
-              className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand bg-card"
+              disabled={disabled}
+              className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand bg-card disabled:opacity-50"
             >
               <option value="">
                 {availableParticipants.length ? "Select a registered participant…" : "No registered participants left"}
@@ -92,7 +96,7 @@ export default function CandidateEditor({
               ))}
             </select>
             <button
-              disabled={!selected || pending}
+              disabled={!selected || busy}
               onClick={() =>
                 startTransition(async () => {
                   const res = await addCandidateFromParticipantAction(eventId, stageId, selected);
@@ -106,7 +110,7 @@ export default function CandidateEditor({
           </div>
           {availableParticipants.length > 1 && (
             <button
-              disabled={pending}
+              disabled={busy}
               onClick={() =>
                 startTransition(() => {
                   void addAllParticipantsAsCandidatesAction(
@@ -129,10 +133,11 @@ export default function CandidateEditor({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Add candidate name"
-            className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand"
+            disabled={disabled}
+            className="flex-1 border border-border-1 rounded-md px-2.5 py-1.5 text-xs outline-none focus:border-brand disabled:opacity-50"
           />
           <button
-            disabled={!name.trim() || pending}
+            disabled={!name.trim() || busy}
             onClick={() =>
               startTransition(async () => {
                 const res = await addCandidateAction(eventId, stageId, name, "");

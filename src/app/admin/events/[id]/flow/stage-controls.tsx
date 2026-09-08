@@ -21,6 +21,7 @@ export default function StageControls({
   votesCount,
   totalVoters,
   locked = false,
+  disabled = false,
 }: {
   eventId: string;
   stage: Stage;
@@ -28,8 +29,10 @@ export default function StageControls({
   votesCount: number;
   totalVoters: number;
   locked?: boolean;
+  disabled?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
+  const busy = pending || disabled;
   const [confirmRestart, setConfirmRestart] = useState(false);
   const [confirmClose, setConfirmClose] = useState(false);
   const [confirmForceStart, setConfirmForceStart] = useState(false);
@@ -62,7 +65,7 @@ export default function StageControls({
   return (
     <div className="flex flex-wrap items-center gap-2">
       {stage.status === "NOT_STARTED" && (
-        <button disabled={pending} onClick={() => run(() => openStageAction(eventId, stage.id))} className={primary}>
+        <button disabled={busy} onClick={() => run(() => openStageAction(eventId, stage.id))} className={primary}>
           <BusyLabel busy={pending} busyText="Opening…">Open stage</BusyLabel>
         </button>
       )}
@@ -73,7 +76,7 @@ export default function StageControls({
             {checkedInCount} / {totalVoters} checked in{totalVoters > 0 ? ` · ${Math.round((checkedInCount / totalVoters) * 100)}%` : ""}
           </span>
           <button
-            disabled={pending || !checkInComplete}
+            disabled={busy || !checkInComplete}
             onClick={() => run(() => startVotingAction(eventId, stage.id))}
             className={primary}
             title={checkInComplete ? undefined : "Waiting for 100% check-in"}
@@ -81,7 +84,7 @@ export default function StageControls({
             <BusyLabel busy={pending} busyText="Starting…">Start voting</BusyLabel>
           </button>
           {!checkInComplete && (
-            <button disabled={pending} onClick={() => setConfirmForceStart(true)} className={ghost}>
+            <button disabled={busy} onClick={() => setConfirmForceStart(true)} className={ghost}>
               Start anyway
             </button>
           )}
@@ -93,10 +96,10 @@ export default function StageControls({
           <span className={`${chip} ${votingComplete ? "text-brand bg-brand-soft" : "text-faint bg-border-5"}`}>
             {votesCount} / {totalVoters} voted{totalVoters > 0 ? ` · ${Math.round((votesCount / totalVoters) * 100)}%` : ""}
           </span>
-          <button disabled={pending} onClick={() => run(() => stopVotingAction(eventId, stage.id))} className={ghost}>
+          <button disabled={busy} onClick={() => run(() => stopVotingAction(eventId, stage.id))} className={ghost}>
             <BusyLabel busy={pending} busyText="Stopping…">Stop voting</BusyLabel>
           </button>
-          <button disabled={pending} onClick={() => setConfirmRestart(true)} className={danger}>
+          <button disabled={busy} onClick={() => setConfirmRestart(true)} className={danger}>
             Restart voting
           </button>
         </>
@@ -107,13 +110,13 @@ export default function StageControls({
           <span className={`${chip} text-faint bg-border-5`}>
             {votesCount} / {totalVoters} voted · stopped
           </span>
-          <button disabled={pending} onClick={() => run(() => openStageAction(eventId, stage.id))} className={ghost}>
+          <button disabled={busy} onClick={() => run(() => openStageAction(eventId, stage.id))} className={ghost}>
             <BusyLabel busy={pending} busyText="Opening…">Re-open check-in</BusyLabel>
           </button>
-          <button disabled={pending} onClick={() => run(() => startVotingAction(eventId, stage.id, { force: true }))} className={ghost}>
+          <button disabled={busy} onClick={() => run(() => startVotingAction(eventId, stage.id, { force: true }))} className={ghost}>
             <BusyLabel busy={pending} busyText="Starting…">Resume voting</BusyLabel>
           </button>
-          <button disabled={pending} onClick={() => setConfirmRestart(true)} className={danger}>
+          <button disabled={busy} onClick={() => setConfirmRestart(true)} className={danger}>
             Restart voting
           </button>
         </>
@@ -127,7 +130,7 @@ export default function StageControls({
         <>
           {stage.resultsOpen || votingComplete || stage.status === "CLOSED" ? (
             <button
-              disabled={pending}
+              disabled={busy}
               onClick={() => run(() => openResultsAction(eventId, stage.id, !stage.resultsOpen))}
               className={stage.resultsOpen ? ghost : primary}
             >
@@ -140,7 +143,7 @@ export default function StageControls({
               <button disabled className={ghost} title="Voting must reach 100% first">
                 Open result — {votesCount}/{totalVoters}
               </button>
-              <button disabled={pending} onClick={() => setConfirmForceResult(true)} className={ghost}>
+              <button disabled={busy} onClick={() => setConfirmForceResult(true)} className={ghost}>
                 Open anyway
               </button>
             </>
@@ -149,7 +152,7 @@ export default function StageControls({
       )}
 
       {(stage.status === "VOTING" || stage.status === "STOPPED") && (
-        <button disabled={pending} onClick={() => setConfirmClose(true)} className={ghost}>
+        <button disabled={busy} onClick={() => setConfirmClose(true)} className={ghost}>
           Close stage
         </button>
       )}

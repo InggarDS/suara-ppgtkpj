@@ -21,11 +21,13 @@ export default function StageRulesPanel({
   stage,
   totalVoters,
   locked = false,
+  disabled = false,
 }: {
   eventId: string;
   stage: Stage;
   totalVoters: number;
   locked?: boolean;
+  disabled?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
 
@@ -58,6 +60,7 @@ export default function StageRulesPanel({
         votesCount={stage._count.votes}
         totalVoters={totalVoters}
         locked={locked}
+        disabled={disabled}
       />
 
       <div className="h-px bg-border-4" />
@@ -70,7 +73,7 @@ export default function StageRulesPanel({
           </span>
           <Toggle
             on={stage[t.key]}
-            disabled={pending || stage.status !== "NOT_STARTED"}
+            disabled={pending || disabled || stage.status !== "NOT_STARTED"}
             onToggle={() =>
               startTransition(() => {
                 void updateStageRulesAction(eventId, stage.id, { [t.key]: !stage[t.key] });

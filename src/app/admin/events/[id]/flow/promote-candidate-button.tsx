@@ -8,10 +8,12 @@ export default function PromoteCandidateButton({
   eventId,
   candidateId,
   nextStageName,
+  disabled = false,
 }: {
   eventId: string;
   candidateId: string;
   nextStageName: string;
+  disabled?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [done, setDone] = useState(false);
@@ -23,7 +25,7 @@ export default function PromoteCandidateButton({
   return (
     <button
       type="button"
-      disabled={pending}
+      disabled={pending || disabled}
       title={`Send to "${nextStageName}"`}
       onClick={() =>
         startTransition(async () => {

@@ -34,6 +34,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
   });
   if (!event) notFound();
 
+  const accessInactive = event.status !== "ACTIVE";
   const activeStage = event.stages.find((s) => s.status === "CHECK_IN" || s.status === "VOTING");
   const focusStage = activeStage ?? event.stages.find((s) => s.status === "NOT_STARTED") ?? event.stages[0];
   const multiStage = event.stages.length > 1;
@@ -54,6 +55,16 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
       />
       <FlowRealtime eventId={event.id} />
       <div className="flex-1 min-h-0 overflow-y-auto px-8 pt-6.5 pb-10 bg-paper">
+        {accessInactive && (
+          <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-amber-border bg-amber-bg px-4 py-3 text-[12.5px] text-amber-text">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" className="flex-none">
+              <rect x="4" y="10.5" width="16" height="10" rx="2" />
+              <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
+            </svg>
+            Event access is closed. Flow actions are disabled — turn on{" "}
+            <span className="font-semibold">Event access</span> in the header to make changes.
+          </div>
+        )}
         <div className="grid gap-6 items-start" style={{ gridTemplateColumns: "minmax(0,1fr) 320px" }}>
           <div
             className="bg-card border border-border-1 rounded-xl p-6.5"
@@ -104,6 +115,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                         votesCount={stage._count.votes}
                         totalVoters={totalVoters}
                         locked={Boolean(activeStage) && stage.id !== activeStage!.id}
+                        disabled={accessInactive}
                       />
 
                       <div className="flex gap-2 flex-wrap mt-3">
@@ -127,6 +139,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                                 eventId={event.id}
                                 candidateId={c.id}
                                 nextStageName={nextStage.name}
+                                disabled={accessInactive}
                               />
                             )}
                           </span>
@@ -139,6 +152,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                           stageId={stage.id}
                           candidates={stage.candidates}
                           participants={registeredParticipants}
+                          disabled={accessInactive}
                         />
                       )}
                     </div>
@@ -149,7 +163,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-stretch gap-3.5 pl-[30px]">
                 <div className="w-0.5 bg-border-2 h-8.5" />
               </div>
-              <AddStageButton eventId={event.id} />
+              <AddStageButton eventId={event.id} disabled={accessInactive} />
             </div>
           </div>
 
@@ -160,6 +174,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                 stage={focusStage}
                 totalVoters={totalVoters}
                 locked={Boolean(activeStage) && focusStage.id !== activeStage!.id}
+                disabled={accessInactive}
               />
             ) : (
               <div className="bg-card border border-border-1 rounded-xl p-4.5">

@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import { BusyLabel } from "@/components/ui/spinner";
 import { addStageAction } from "./actions";
 
-export default function AddStageButton({ eventId }: { eventId: string }) {
+export default function AddStageButton({
+  eventId,
+  disabled = false,
+}: {
+  eventId: string;
+  disabled?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [candidates, setCandidates] = useState("");
@@ -25,7 +31,8 @@ export default function AddStageButton({ eventId }: { eventId: string }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="self-start border border-dashed border-border-2 bg-transparent rounded-[18px] px-4 py-2.5 text-[13px] text-faint cursor-pointer flex items-center gap-2 hover:border-brand hover:text-brand"
+        disabled={disabled}
+        className="self-start border border-dashed border-border-2 bg-transparent rounded-[18px] px-4 py-2.5 text-[13px] text-faint cursor-pointer flex items-center gap-2 hover:border-brand hover:text-brand disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-border-2 disabled:hover:text-faint"
       >
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
           <path d="M12 5v14M5 12h14"></path>
