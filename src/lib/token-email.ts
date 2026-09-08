@@ -4,43 +4,29 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-/**
- * Placeholders an admin can use in a custom token-email template. Case-insensitive,
- * square brackets — e.g. `Berikut token untuk [nama]: [token]`.
- */
-export const EMAIL_PLACEHOLDERS = ["nama", "jemaat", "token", "acara", "link"] as const;
-
-function fillPlaceholders(tpl: string, values: Record<(typeof EMAIL_PLACEHOLDERS)[number], string>): string {
-  return tpl.replace(/\[(nama|jemaat|token|acara|link)\]/gi, (_m, key: string) => values[key.toLowerCase() as keyof typeof values]);
-}
-
-type BuildInput = {
-  eventName: string;
-  recipientName?: string | null;
-  recipientJemaat?: string | null;
-  token: string;
-  inviteUrl: string;
-  /** Custom template — when both are set, they replace the built-in copy. */
-  subjectTemplate?: string | null;
-  bodyTemplate?: string | null;
-};
-
 const BRAND = "PPGT Klasis Pulau Jawa";
 const BLUE = "#1b4de4";
 
-function originOf(url: string): string {
+/**
+ * Only a public https origin can host the logo image so a recipient's email
+ * client can load it — a localhost / http `NEXT_PUBLIC_APP_URL` would just show
+ * a broken image, so in that case we drop the <img> and keep the text header.
+ */
+function publicHttpsOrigin(url: string): string {
   try {
-    return new URL(url).origin;
+    const u = new URL(url);
+    if (u.protocol !== "https:") return "";
+    if (/^(localhost$|127\.|0\.0\.0\.0$|\[?::1\]?$)/.test(u.hostname)) return "";
+    return u.origin;
   } catch {
     return "";
   }
 }
 
-/** Centered logo + brand line at the top of the email. */
 function headerHtml(inviteUrl: string): string {
-  const origin = originOf(inviteUrl);
+  const origin = publicHttpsOrigin(inviteUrl);
   const logo = origin
-    ? `<img src="${origin}/ppgt-logo.png" alt="PPGT" width="60" height="60" style="display:inline-block;border:0;outline:none;text-decoration:none" />`
+    ? `<img src="${origin}/ppgt-logo.png" alt="PPGT" width="60" height="60" style="display:inline-block;border:0;outline:none;text-decoration:none" /><br />`
     : "";
   return `<div style="text-align:center;margin:0 0 20px">
     ${logo}
@@ -48,7 +34,6 @@ function headerHtml(inviteUrl: string): string {
   </div>`;
 }
 
-/** The big, centered token block. */
 function tokenBlockHtml(token: string): string {
   return `<div style="text-align:center;margin:26px 0 4px">
     <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8b95b8;margin-bottom:12px">Token Anda</div>
@@ -72,40 +57,15 @@ function shell(inviteUrl: string, inner: string): string {
 }
 
 /** The token-invite email sent to a participant. */
-export function buildTokenEmail(input: BuildInput): OutgoingEmail & { to: string } {
+export function buildTokenEmail(input: {
+  eventName: string;
+  recipientName?: string | null;
+  token: string;
+  inviteUrl: string;
+}): OutgoingEmail & { to: string } {
   const name = input.recipientName?.trim() || "Peserta";
-  const jemaat = input.recipientJemaat?.trim() || "-";
   const { eventName, token, inviteUrl } = input;
 
-  const subjectTpl = input.subjectTemplate?.trim();
-  const bodyTpl = input.bodyTemplate?.trim();
-
-  // --- custom template path -------------------------------------------------
-  if (bodyTpl) {
-    const plain = { nama: name, jemaat, token, acara: eventName, link: inviteUrl };
-    const subject = subjectTpl ? fillPlaceholders(subjectTpl, plain) : `Token Anda untuk ${eventName}`;
-    const filledText = fillPlaceholders(bodyTpl, plain);
-    const hasToken = /\[token\]/i.test(bodyTpl);
-
-    // Escape the admin's copy first, then swap placeholders for styled fragments.
-    const bold = (v: string) => `<strong>${escapeHtml(v)}</strong>`;
-    const tokenChip = `<span style="display:inline-block;font-family:'Courier New',Courier,monospace;font-size:20px;
-                        font-weight:700;letter-spacing:.12em;color:${BLUE};background:#eaf0ff;
-                        border:1px solid rgba(27,77,228,.28);border-radius:9px;padding:3px 12px">${escapeHtml(token)}</span>`;
-    const filledBody = fillPlaceholders(escapeHtml(bodyTpl), {
-      nama: bold(name),
-      jemaat: bold(jemaat),
-      acara: bold(eventName),
-      token: tokenChip,
-      link: `<a href="${escapeHtml(inviteUrl)}" style="color:${BLUE};font-weight:600">${escapeHtml(inviteUrl)}</a>`,
-    });
-
-    const inner = `<div style="font-size:14px;line-height:1.9;white-space:pre-wrap">${filledBody}</div>
-      ${hasToken ? "" : tokenBlockHtml(token)}`;
-    return { to: "", subject, text: filledText, html: shell(inviteUrl, inner) };
-  }
-
-  // --- built-in default --------------------------------------------------------
   const text = [
     `Halo ${name},`,
     ``,

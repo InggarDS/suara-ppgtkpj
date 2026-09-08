@@ -11,7 +11,6 @@ import DeleteParticipantButton from "./delete-participant-button";
 import CredentialsPanel from "./credentials-panel";
 import TokenEmailCell from "./token-email-cell";
 import SendAllTokensButton from "./send-all-tokens-button";
-import TokenEmailTemplate from "./token-email-template";
 
 export const dynamic = "force-dynamic";
 
@@ -85,12 +84,6 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
                 <span className="font-mono">RESEND_FROM_EMAIL</span> pada environment server untuk mengaktifkan pengiriman.
               </p>
             )}
-
-            <TokenEmailTemplate
-              eventId={event.id}
-              subject={event.tokenEmailSubject}
-              body={event.tokenEmailBody}
-            />
           </div>
 
           {event.useCredentials && (
