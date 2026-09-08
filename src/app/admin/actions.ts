@@ -21,7 +21,7 @@ export type CreateEventInput = {
   stageNames: string[];
   bannerImage?: string | null;
   useCredentials?: boolean;
-  credentials?: { name: string; jemaat: string }[];
+  credentials?: { name: string; jemaat: string; email?: string }[];
 };
 
 export async function createEventAction(input: CreateEventInput) {
@@ -48,7 +48,7 @@ export async function createEventAction(input: CreateEventInput) {
       })),
     },
     credentials: input.useCredentials
-      ? { create: input.credentials!.map((c) => ({ name: c.name, jemaat: c.jemaat })) }
+      ? { create: input.credentials!.map((c) => ({ name: c.name, jemaat: c.jemaat, email: c.email?.trim() || null })) }
       : undefined,
   };
 

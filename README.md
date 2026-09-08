@@ -21,6 +21,7 @@ Admin dashboard + mobile participant flow for running multi-stage organizational
    - `SESSION_SECRET` — random string, e.g. `openssl rand -base64 32`
    - `ADMIN_EMAIL` / `ADMIN_PASSWORD` / `ADMIN_NAME` — used only by the seed script to create your first admin login
    - `NEXT_PUBLIC_APP_URL` — `http://localhost:3000` locally, your production URL once deployed (used to build the participant invite link shown to admins)
+   - `MAILJET_API_KEY` / `MAILJET_SECRET_KEY` / `MAILJET_FROM_EMAIL` / `MAILJET_FROM_NAME` — optional; set these to email participants their token from **Access & tokens → Kirim token via email**. The sender address must be a verified Mailjet sender. Leave blank to disable — the UI shows a "not configured" state.
 3. Install dependencies and push the schema:
    ```
    npm install

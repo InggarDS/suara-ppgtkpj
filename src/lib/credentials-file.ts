@@ -1,6 +1,6 @@
-import { parseCredentialsCsv, rowsToCredentials } from "@/lib/csv";
+import { parseCredentialsCsv, rowsToCredentials, type CredentialRow } from "@/lib/csv";
 
-export async function parseCredentialsFile(file: File): Promise<{ name: string; jemaat: string }[]> {
+export async function parseCredentialsFile(file: File): Promise<CredentialRow[]> {
   const isXlsx = /\.xlsx?$/i.test(file.name) || file.type.includes("spreadsheet") || file.type.includes("ms-excel");
 
   if (isXlsx) {

@@ -64,6 +64,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
         eventId: event.id,
         name: credential.name,
         jemaat: credential.jemaat,
+        email: credential.email,
         token,
         photo: photo ?? null,
         deviceId,

@@ -6,7 +6,7 @@ import { addCredentialsAction, deleteCredentialAction } from "./actions";
 import { Pill } from "@/components/ui/pill";
 import { Spinner } from "@/components/ui/spinner";
 
-type Credential = { id: string; name: string; jemaat: string; registered: boolean };
+type Credential = { id: string; name: string; jemaat: string; email: string | null; registered: boolean };
 
 export default function CredentialsPanel({ eventId, credentials }: { eventId: string; credentials: Credential[] }) {
   const [error, setError] = useState<string | undefined>();
@@ -44,7 +44,7 @@ export default function CredentialsPanel({ eventId, credentials }: { eventId: st
           onChange={onFile}
         />
         {pending && <Spinner className="w-3.5 h-3.5 text-brand" />}
-        {pending ? "Uploading…" : "Upload more (CSV or Excel: Nama, Jemaat)"}
+        {pending ? "Uploading…" : "Upload more (CSV or Excel: Nama, Jemaat, Email opsional)"}
       </label>
       {error && <p className="text-xs text-danger mt-2">{error}</p>}
 
@@ -52,8 +52,11 @@ export default function CredentialsPanel({ eventId, credentials }: { eventId: st
         <div className="mt-4 border border-border-4 rounded-lg overflow-hidden max-h-[280px] overflow-y-auto">
           {credentials.map((c) => (
             <div key={c.id} className="flex items-center gap-3 px-3.5 py-2 border-b border-border-5 last:border-b-0">
-              <span className="flex-1 text-[12.5px] text-ink font-medium">{c.name}</span>
-              <span className="text-xs text-body w-[130px] overflow-hidden text-ellipsis whitespace-nowrap">{c.jemaat}</span>
+              <span className="flex-1 text-[12.5px] text-ink font-medium truncate">{c.name}</span>
+              <span className="text-xs text-body w-[110px] overflow-hidden text-ellipsis whitespace-nowrap">{c.jemaat}</span>
+              <span className="text-[11px] text-faint w-[150px] overflow-hidden text-ellipsis whitespace-nowrap" title={c.email ?? ""}>
+                {c.email || "—"}
+              </span>
               <Pill kind={c.registered ? "Registered" : "Not sent"} />
               <DeleteCredentialButton eventId={eventId} credentialId={c.id} />
             </div>

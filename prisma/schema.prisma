@@ -63,6 +63,7 @@ model Credential {
   event         Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
   name          String
   jemaat        String
+  email         String?
   participantId String?      @unique
   participant   Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
   usedAt        DateTime?
@@ -125,11 +126,13 @@ model Participant {
   name         String?
   jemaat       String?
   token        String    @unique
+  email        String?
   photo        String?
   deviceId     String?
   deviceLabel  String?
   registeredAt DateTime?
   validatedAt  DateTime?
+  tokenSentAt  DateTime?
   createdAt    DateTime  @default(now())
 
   votes      Vote[]

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { initials } from "@/lib/ids";
+import { isMailjetConfigured } from "@/lib/mailjet";
 import { Pill } from "@/components/ui/pill";
 import { CopyButton } from "@/components/ui/copy-button";
 import EventHeader from "../event-header";
@@ -8,6 +9,8 @@ import GenerateTokensButton from "./generate-tokens-button";
 import TokenFormatSettings from "./token-format-settings";
 import DeleteParticipantButton from "./delete-participant-button";
 import CredentialsPanel from "./credentials-panel";
+import TokenEmailCell from "./token-email-cell";
+import SendAllTokensButton from "./send-all-tokens-button";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +29,8 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
   const liveStageId = event.stages[0]?.id;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const inviteLink = `${baseUrl}/event/${event.publicId}`;
+  const mailjetReady = isMailjetConfigured();
+  const withEmailCount = event.participants.filter((p) => p.email).length;
 
   return (
     <>
@@ -64,21 +69,45 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
 
           <TokenFormatSettings eventId={event.id} tokenPrefix={event.tokenPrefix} tokenSuffix={event.tokenSuffix} />
 
+          <div className="bg-card border border-border-1 rounded-xl p-5">
+            <div className="text-sm font-semibold text-ink mb-1">Kirim token via email</div>
+            <p className="m-0 mb-3.5 text-xs leading-relaxed text-body">
+              Kirim token pribadi ke email masing-masing peserta lewat Mailjet. Tambahkan alamat email di kolom
+              <span className="font-medium"> Token email</span> pada tabel, atau lewat kolom{" "}
+              <span className="font-mono">Email</span> pada berkas kredensial.
+            </p>
+            {mailjetReady ? (
+              <SendAllTokensButton eventId={event.id} withEmailCount={withEmailCount} mailjetReady={mailjetReady} />
+            ) : (
+              <p className="text-[12px] text-amber-text bg-amber-bg border border-amber-border rounded-md px-3 py-2">
+                Mailjet belum dikonfigurasi. Isi <span className="font-mono">MAILJET_API_KEY</span>,{" "}
+                <span className="font-mono">MAILJET_SECRET_KEY</span>, dan{" "}
+                <span className="font-mono">MAILJET_FROM_EMAIL</span> pada environment server untuk mengaktifkan pengiriman.
+              </p>
+            )}
+          </div>
+
           {event.useCredentials && (
             <CredentialsPanel
               eventId={event.id}
-              credentials={event.credentials.map((c) => ({ id: c.id, name: c.name, jemaat: c.jemaat, registered: Boolean(c.participantId) }))}
+              credentials={event.credentials.map((c) => ({
+                id: c.id,
+                name: c.name,
+                jemaat: c.jemaat,
+                email: c.email,
+                registered: Boolean(c.participantId),
+              }))}
             />
           )}
 
           <div className="bg-card border border-border-1 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-3.5 px-4.5 py-3 border-b border-border-4 bg-paper-2">
-              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase flex-1">Participant</span>
-              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[130px]">Jemaat</span>
-              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[110px]">Token</span>
-              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[110px]">Status</span>
-              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[140px]">Device</span>
-              <span className="w-[64px]" />
+            <div className="flex items-center gap-3 px-4.5 py-3 border-b border-border-4 bg-paper-2">
+              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase flex-1 min-w-[130px]">Participant</span>
+              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[100px]">Jemaat</span>
+              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[95px]">Token</span>
+              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[85px]">Status</span>
+              <span className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase w-[240px]">Token email</span>
+              <span className="w-[56px]" />
             </div>
             {event.participants.length === 0 && (
               <div className="p-5 text-sm text-faint">
@@ -89,20 +118,28 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
               const voted = liveStageId ? p.votes.some((v) => v.stageId === liveStageId) : false;
               const status = voted ? "Voted" : p.registeredAt ? "Registered" : "Not sent";
               return (
-                <div key={p.id} className="flex items-center gap-3.5 px-4.5 py-2.5 border-b border-border-5 last:border-b-0">
-                  <span className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div key={p.id} className="flex items-center gap-3 px-4.5 py-2.5 border-b border-border-5 last:border-b-0">
+                  <span className="flex items-center gap-2.5 flex-1 min-w-[130px]">
                     <span className="w-6.5 h-6.5 rounded-full bg-border-4 text-body text-[10px] font-semibold flex items-center justify-center flex-none">
                       {p.name ? initials(p.name) : "—"}
                     </span>
-                    <span className="text-[13px] text-ink font-medium">{p.name ?? <span className="text-faint font-normal">Not registered</span>}</span>
+                    <span className="text-[13px] text-ink font-medium truncate">{p.name ?? <span className="text-faint font-normal">Not registered</span>}</span>
                   </span>
-                  <span className="text-xs text-body w-[130px] overflow-hidden text-ellipsis whitespace-nowrap">{p.jemaat ?? "—"}</span>
-                  <span className="font-mono text-xs text-ink-soft w-[110px]">{p.token}</span>
-                  <span className="w-[110px]">
+                  <span className="text-xs text-body w-[100px] overflow-hidden text-ellipsis whitespace-nowrap">{p.jemaat ?? "—"}</span>
+                  <span className="font-mono text-xs text-ink-soft w-[95px] truncate">{p.token}</span>
+                  <span className="w-[85px]">
                     <Pill kind={status} />
                   </span>
-                  <span className="text-xs text-body w-[140px] overflow-hidden text-ellipsis whitespace-nowrap">{p.deviceLabel ?? "—"}</span>
-                  <span className="w-[64px] flex justify-end">
+                  <span className="w-[240px]">
+                    <TokenEmailCell
+                      eventId={event.id}
+                      participantId={p.id}
+                      email={p.email}
+                      tokenSentAt={p.tokenSentAt ? p.tokenSentAt.toISOString() : null}
+                      mailjetReady={mailjetReady}
+                    />
+                  </span>
+                  <span className="w-[56px] flex justify-end">
                     <DeleteParticipantButton eventId={event.id} participantId={p.id} />
                   </span>
                 </div>
