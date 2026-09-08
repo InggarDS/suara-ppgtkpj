@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { initials } from "@/lib/ids";
-import { isMailjetConfigured } from "@/lib/mailjet";
+import { isEmailConfigured } from "@/lib/email";
 import { Pill } from "@/components/ui/pill";
 import { CopyButton } from "@/components/ui/copy-button";
 import EventHeader from "../event-header";
@@ -29,7 +29,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
   const liveStageId = event.stages[0]?.id;
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "";
   const inviteLink = `${baseUrl}/event/${event.publicId}`;
-  const mailjetReady = isMailjetConfigured();
+  const emailReady = isEmailConfigured();
   const withEmailCount = event.participants.filter((p) => p.email).length;
 
   return (
@@ -72,17 +72,16 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
           <div className="bg-card border border-border-1 rounded-xl p-5">
             <div className="text-sm font-semibold text-ink mb-1">Kirim token via email</div>
             <p className="m-0 mb-3.5 text-xs leading-relaxed text-body">
-              Kirim token pribadi ke email masing-masing peserta lewat Mailjet. Tambahkan alamat email di kolom
+              Kirim token pribadi ke email masing-masing peserta lewat Resend. Tambahkan alamat email di kolom
               <span className="font-medium"> Token email</span> pada tabel, atau lewat kolom{" "}
               <span className="font-mono">Email</span> pada berkas kredensial.
             </p>
-            {mailjetReady ? (
-              <SendAllTokensButton eventId={event.id} withEmailCount={withEmailCount} mailjetReady={mailjetReady} />
+            {emailReady ? (
+              <SendAllTokensButton eventId={event.id} withEmailCount={withEmailCount} emailReady={emailReady} />
             ) : (
               <p className="text-[12px] text-amber-text bg-amber-bg border border-amber-border rounded-md px-3 py-2">
-                Mailjet belum dikonfigurasi. Isi <span className="font-mono">MAILJET_API_KEY</span>,{" "}
-                <span className="font-mono">MAILJET_SECRET_KEY</span>, dan{" "}
-                <span className="font-mono">MAILJET_FROM_EMAIL</span> pada environment server untuk mengaktifkan pengiriman.
+                Layanan email belum dikonfigurasi. Isi <span className="font-mono">RESEND_API_KEY</span> dan{" "}
+                <span className="font-mono">RESEND_FROM_EMAIL</span> pada environment server untuk mengaktifkan pengiriman.
               </p>
             )}
           </div>
@@ -136,7 +135,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
                       participantId={p.id}
                       email={p.email}
                       tokenSentAt={p.tokenSentAt ? p.tokenSentAt.toISOString() : null}
-                      mailjetReady={mailjetReady}
+                      emailReady={emailReady}
                     />
                   </span>
                   <span className="w-[56px] flex justify-end">

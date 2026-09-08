@@ -10,13 +10,13 @@ export default function TokenEmailCell({
   participantId,
   email,
   tokenSentAt,
-  mailjetReady,
+  emailReady,
 }: {
   eventId: string;
   participantId: string;
   email: string | null;
   tokenSentAt: string | null;
-  mailjetReady: boolean;
+  emailReady: boolean;
 }) {
   const [value, setValue] = useState(email ?? "");
   const [editing, setEditing] = useState(false);
@@ -91,9 +91,9 @@ export default function TokenEmailCell({
       </span>
       <span className="flex items-center gap-2">
         <button
-          disabled={sending || !mailjetReady}
+          disabled={sending || !emailReady}
           onClick={send}
-          title={mailjetReady ? undefined : "Mailjet belum dikonfigurasi"}
+          title={emailReady ? undefined : "Layanan email belum dikonfigurasi"}
           className="inline-flex items-center gap-1 text-[11px] font-semibold text-white bg-brand rounded-md px-2.5 py-1 cursor-pointer disabled:opacity-50 hover:bg-brand-hover"
         >
           {sending && <Spinner className="w-3 h-3" />}

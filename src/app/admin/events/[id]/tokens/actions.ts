@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { generateToken } from "@/lib/ids";
-import { isMailjetConfigured, sendEmails } from "@/lib/mailjet";
+import { isEmailConfigured, sendEmails } from "@/lib/email";
 import { buildTokenEmail } from "@/lib/token-email";
 import { revalidatePath } from "next/cache";
 
@@ -101,7 +101,7 @@ export async function deleteParticipantAction(eventId: string, participantId: st
 }
 
 /* -------------------------------------------------------------------------- */
-/* Emailing tokens to participants (Mailjet)                                 */
+/* Emailing tokens to participants (Resend)                                 */
 /* -------------------------------------------------------------------------- */
 
 function inviteUrl(publicId: string) {
@@ -129,7 +129,7 @@ export async function updateParticipantEmailAction(eventId: string, participantI
 export async function sendTokenEmailAction(eventId: string, participantId: string) {
   const session = await getAdminSession();
   if (!session) return { ok: false as const, error: "Not authenticated" };
-  if (!isMailjetConfigured()) return { ok: false as const, error: "Mailjet belum dikonfigurasi di server." };
+  if (!isEmailConfigured()) return { ok: false as const, error: "Layanan email belum dikonfigurasi di server." };
 
   const event = await prisma.event.findUniqueOrThrow({ where: { id: eventId }, select: { name: true, publicId: true } });
   const participant = await prisma.participant.findUnique({ where: { id: participantId } });
@@ -157,7 +157,7 @@ export async function sendTokenEmailAction(eventId: string, participantId: strin
 export async function sendAllTokenEmailsAction(eventId: string) {
   const session = await getAdminSession();
   if (!session) return { ok: false as const, error: "Not authenticated" };
-  if (!isMailjetConfigured()) return { ok: false as const, error: "Mailjet belum dikonfigurasi di server." };
+  if (!isEmailConfigured()) return { ok: false as const, error: "Layanan email belum dikonfigurasi di server." };
 
   const event = await prisma.event.findUniqueOrThrow({ where: { id: eventId }, select: { name: true, publicId: true } });
   const participants = await prisma.participant.findMany({

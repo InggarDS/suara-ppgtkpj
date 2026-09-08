@@ -1,4 +1,4 @@
-import type { OutgoingEmail } from "@/lib/mailjet";
+import type { OutgoingEmail } from "@/lib/email";
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);

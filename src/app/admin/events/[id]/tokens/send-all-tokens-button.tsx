@@ -8,11 +8,11 @@ import { sendAllTokenEmailsAction } from "./actions";
 export default function SendAllTokensButton({
   eventId,
   withEmailCount,
-  mailjetReady,
+  emailReady,
 }: {
   eventId: string;
   withEmailCount: number;
-  mailjetReady: boolean;
+  emailReady: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -21,14 +21,14 @@ export default function SendAllTokensButton({
   return (
     <div className="flex items-center gap-2.5">
       <button
-        disabled={!mailjetReady || withEmailCount === 0}
+        disabled={!emailReady || withEmailCount === 0}
         onClick={() => {
           setNotice(null);
           setOpen(true);
         }}
         title={
-          !mailjetReady
-            ? "Mailjet belum dikonfigurasi di server"
+          !emailReady
+            ? "Layanan email belum dikonfigurasi"
             : withEmailCount === 0
               ? "Belum ada peserta dengan alamat email"
               : undefined
