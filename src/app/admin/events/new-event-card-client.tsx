@@ -80,7 +80,7 @@ export default function NewEventCardClient() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="border-2 border-dashed border-border-2 rounded-2xl bg-transparent h-full min-h-[292px] flex flex-col items-center justify-center gap-2 cursor-pointer text-faint hover:border-brand hover:text-brand transition-colors"
+        className="w-full border-2 border-dashed border-border-2 rounded-2xl bg-transparent py-7 flex flex-row items-center justify-center gap-2 cursor-pointer text-faint hover:border-brand hover:text-brand transition-colors"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round">
           <path d="M12 5v14M5 12h14"></path>

@@ -78,6 +78,30 @@ export async function updateBannerAction(eventId: string, bannerImage: string | 
   return { ok: true };
 }
 
+export async function reorderEventsAction(orderedIds: string[]) {
+  const session = await getAdminSession();
+  if (!session) return { ok: false, error: "Not authenticated" };
+
+  await prisma.$transaction(
+    orderedIds.map((id, i) =>
+      prisma.event.update({ where: { id }, data: { order: i + 1 } })
+    )
+  );
+
+  revalidatePath("/admin/events");
+  return { ok: true };
+}
+
+export async function deleteEventFromListAction(eventId: string) {
+  const session = await getAdminSession();
+  if (!session) return { ok: false, error: "Not authenticated" };
+
+  await prisma.event.delete({ where: { id: eventId } });
+
+  revalidatePath("/admin/events");
+  return { ok: true };
+}
+
 export async function toggleEventStatusAction(eventId: string) {
   const session = await getAdminSession();
   if (!session) throw new Error("Not authenticated");

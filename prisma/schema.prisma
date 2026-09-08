@@ -42,6 +42,7 @@ model Event {
   description       String      @default("")
   bannerImage       String?
   status            EventStatus @default(INACTIVE)
+  order             Int         @default(0)
   expectedParticipants Int      @default(0)
   resultsRevealed   Boolean     @default(false)
   tokenPrefix       String      @default("TOK-")
