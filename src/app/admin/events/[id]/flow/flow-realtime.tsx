@@ -7,7 +7,7 @@ import { useEventStream } from "@/hooks/use-event-stream";
 /** Refreshes the server-rendered flow page whenever the event's data changes. */
 export default function FlowRealtime({ eventId }: { eventId: string }) {
   const router = useRouter();
-  const snap = useEventStream<unknown>(`/api/admin/events/${eventId}/stream`);
+  const snap = useEventStream<unknown>(`/api/admin/events/${eventId}/stream`, `/api/admin/events/${eventId}/live`);
   const seen = useRef<string>("");
 
   useEffect(() => {

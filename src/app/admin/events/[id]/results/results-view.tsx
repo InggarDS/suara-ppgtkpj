@@ -23,7 +23,10 @@ export default function ResultsView({
   inviteUrl: string;
   initial: ResultsSnapshot | null;
 }) {
-  const stream = useEventStream<{ results: ResultsSnapshot | null }>(`/api/admin/events/${eventId}/stream`);
+  const stream = useEventStream<{ results: ResultsSnapshot | null }>(
+    `/api/admin/events/${eventId}/stream`,
+    `/api/admin/events/${eventId}/live`
+  );
   const data = stream?.results ?? initial ?? null;
   const [showQr, setShowQr] = useStageQrVisibility(eventId);
 
@@ -48,9 +51,9 @@ export default function ResultsView({
           Projector output — participants never see results on their own device.
         </span>
         <span className="text-[11.5px] font-medium text-brand bg-brand-soft rounded-full px-2.5 py-1">
-          {PHASE_LABEL[data.phase] ?? data.phase}
-          {data.phase === "voting" ? ` · ${data.votingPct}%` : ""}
-          {data.phase === "checkin" ? ` · ${data.checkInPct}%` : ""}
+          {data.votingComplete ? "Voting selesai" : PHASE_LABEL[data.phase] ?? data.phase}
+          {!data.votingComplete && data.phase === "voting" ? ` · ${data.votingPct}%` : ""}
+          {!data.votingComplete && data.phase === "checkin" ? ` · ${data.checkInPct}%` : ""}
         </span>
         <button
           onClick={() => setShowQr(!showQr)}

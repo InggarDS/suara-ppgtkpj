@@ -17,7 +17,10 @@ export default function PresentView({
   inviteUrl: string;
   initial: ResultsSnapshot | null;
 }) {
-  const stream = useEventStream<{ results: ResultsSnapshot | null }>(`/api/admin/events/${eventId}/stream`);
+  const stream = useEventStream<{ results: ResultsSnapshot | null }>(
+    `/api/admin/events/${eventId}/stream`,
+    `/api/admin/events/${eventId}/live`
+  );
   const data = stream?.results ?? initial ?? null;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showQr] = useStageQrVisibility(eventId);

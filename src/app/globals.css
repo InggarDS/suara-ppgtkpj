@@ -388,3 +388,31 @@ textarea {
 .animate-celebrate {
   animation: celebratePop 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
+
+/* indeterminate progress bar for in-flight participant actions */
+@keyframes indeterminateBar {
+  0% {
+    transform: translateX(-100%) scaleX(0.4);
+  }
+  50% {
+    transform: translateX(20%) scaleX(0.6);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.4);
+  }
+}
+.progress-indeterminate {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  overflow: hidden;
+  z-index: 20;
+}
+.progress-indeterminate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--gradient-brand);
+  transform-origin: left;
+  animation: indeterminateBar 1.15s ease-in-out infinite;
+}

@@ -17,6 +17,31 @@ export default function ProjectorBoard({
 }) {
   const showWinnerReveal = data.isFinalStage && data.phase === "result" && Boolean(data.winnerName);
 
+  if (data.votingComplete) {
+    return (
+      <div className="relative w-full max-w-[980px] flex flex-col items-center gap-8 py-12 animate-rise-in">
+        <span className="font-mono text-[12px] tracking-[.25em] uppercase text-stage-dimmer">{eventName}</span>
+        <div className="w-[92px] h-[92px] rounded-full flex items-center justify-center" style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 60px -12px rgba(27,77,228,.6)" }}>
+          <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12.5 9.5 18 20 6.5" />
+          </svg>
+        </div>
+        <div className="text-[72px] font-semibold tracking-tight leading-none text-center">Voting Telah Selesai</div>
+        <div className="text-lg text-stage-dim text-center max-w-[40ch]">
+          Terima kasih atas partisipasi Anda. Seluruh tahapan pemilihan sudah ditutup.
+        </div>
+        {data.phase === "result" && data.results.length > 0 && (
+          <div className="w-full max-w-[760px] pt-6 border-t border-stage-dark-3">
+            <div className="font-mono text-[10.5px] tracking-[.12em] uppercase text-stage-dimmer mb-3 text-center">
+              Hasil Akhir · {data.stageName}
+            </div>
+            <VotingTable rows={data.results} tone="dark" />
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (data.phase === "idle") {
     return (
       <div className="w-full max-w-[980px] flex flex-col items-center justify-center gap-5 py-16 text-center animate-rise-in">

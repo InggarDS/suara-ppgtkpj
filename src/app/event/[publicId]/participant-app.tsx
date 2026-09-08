@@ -6,6 +6,7 @@ import { initials } from "@/lib/ids";
 import { parseDeviceLabel } from "@/lib/device";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Spinner, BusyLabel } from "@/components/ui/spinner";
+import { TopProgress } from "@/components/ui/top-progress";
 import { useEventStream } from "@/hooks/use-event-stream";
 
 type StateResp = {
@@ -52,6 +53,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
   });
   const { hydrated, deviceId, token } = client;
   const setToken = (t: string) => setClient((c) => ({ ...c, token: t }));
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     // Reading localStorage requires the client; this mount-only sync is the standard escape hatch.
@@ -59,10 +61,9 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
     setClient({ hydrated: true, deviceId: getDeviceId(), token: localStorage.getItem(`suara_token_${publicId}`) });
   }, [publicId]);
 
-  const streamUrl = hydrated
-    ? `/api/public/events/${publicId}/stream${token ? `?token=${encodeURIComponent(token)}` : ""}`
-    : null;
-  const data = useEventStream<StateResp>(streamUrl);
+  const q = token ? `?token=${encodeURIComponent(token)}` : "";
+  const streamUrl = hydrated ? `/api/public/events/${publicId}/stream${q}` : null;
+  const data = useEventStream<StateResp>(streamUrl, hydrated ? `/api/public/events/${publicId}/state${q}` : undefined);
 
   function handleRegistered(tok: string) {
     localStorage.setItem(`suara_token_${publicId}`, tok);
@@ -84,7 +85,8 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
   return (
     <div className="min-h-screen bg-app-bg flex flex-col items-center py-8 px-4">
       <div className="flex-1 flex items-start sm:items-center justify-center w-full">
-      <div className="elevated w-full max-w-[420px] bg-paper rounded-[34px] border border-border-1 min-h-[600px] flex flex-col overflow-hidden">
+      <div className="elevated relative w-full max-w-[420px] bg-paper rounded-[34px] border border-border-1 min-h-[600px] flex flex-col overflow-hidden">
+        <TopProgress active={processing || screen === "loading"} />
         <div className="flex items-center gap-2 px-6 pt-5 pb-1">
           <div className="w-[22px] h-[22px] rounded-[9px] bg-brand flex items-center justify-center">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -114,6 +116,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             useCredentials={data?.useCredentials ?? false}
             deviceId={deviceId}
             onDone={handleRegistered}
+            onBusyChange={setProcessing}
           />
         )}
         {screen === "closed" && <ClosedScreen eventName={eventName} publicId={publicId} />}
@@ -135,13 +138,21 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             stageName={data.liveStage.name}
             phase={data.liveStage.phase}
             name={data.name ?? ""}
+            onBusyChange={setProcessing}
           />
         )}
         {screen === "checkedin" && data && (
           <CheckedInScreen eventName={eventName} name={data.name ?? ""} stageName={data.liveStage?.name ?? ""} />
         )}
         {screen === "booth" && data?.liveStage && token && (
-          <BoothScreen publicId={publicId} token={token} stage={data.liveStage} totalStages={data.totalStages} onVoted={() => {}} />
+          <BoothScreen
+            publicId={publicId}
+            token={token}
+            stage={data.liveStage}
+            totalStages={data.totalStages}
+            onVoted={() => {}}
+            onBusyChange={setProcessing}
+          />
         )}
         {screen === "done" && data && <DoneScreen token={data.token ?? ""} stageName={data.liveStage?.name ?? ""} />}
       </div>
@@ -158,6 +169,7 @@ function RegisterScreen({
   useCredentials,
   deviceId,
   onDone,
+  onBusyChange,
 }: {
   publicId: string;
   eventName: string;
@@ -165,6 +177,7 @@ function RegisterScreen({
   useCredentials: boolean;
   deviceId: string;
   onDone: (token: string) => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [name, setName] = useState("");
   const [jemaat, setJemaat] = useState("");
@@ -173,6 +186,12 @@ function RegisterScreen({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [credentialMatch, setCredentialMatch] = useState<"idle" | "checking" | "found" | "not-found">("idle");
+
+  const working = busy || (useCredentials && name.trim() !== "" && credentialMatch === "checking");
+  useEffect(() => {
+    onBusyChange?.(working);
+    return () => onBusyChange?.(false);
+  }, [working, onBusyChange]);
 
   useEffect(() => {
     if (!useCredentials) return;
@@ -411,6 +430,7 @@ function CheckInScreen({
   stageName,
   phase,
   name,
+  onBusyChange,
 }: {
   publicId: string;
   token: string;
@@ -418,10 +438,16 @@ function CheckInScreen({
   stageName: string;
   phase: "checkin" | "voting" | null;
   name: string;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | undefined>();
+
+  useEffect(() => {
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [busy, onBusyChange]);
 
   async function checkIn() {
     setBusy(true);
@@ -567,6 +593,7 @@ function BoothScreen({
   stage,
   totalStages,
   onVoted,
+  onBusyChange,
 }: {
   publicId: string;
   token: string;
@@ -579,10 +606,16 @@ function BoothScreen({
   };
   totalStages: number;
   onVoted: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const [choice, setChoice] = useState<string | null>(null);
   const [abstain, setAbstain] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    onBusyChange?.(busy);
+    return () => onBusyChange?.(false);
+  }, [busy, onBusyChange]);
 
   async function submit() {
     if (!choice && !abstain) return;

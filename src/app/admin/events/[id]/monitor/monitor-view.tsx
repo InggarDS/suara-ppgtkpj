@@ -4,7 +4,10 @@ import { MonitorSnapshot } from "@/lib/monitor";
 import { useEventStream } from "@/hooks/use-event-stream";
 
 export default function MonitorView({ eventId, initial }: { eventId: string; initial: MonitorSnapshot | null }) {
-  const stream = useEventStream<{ monitor: MonitorSnapshot | null }>(`/api/admin/events/${eventId}/stream`);
+  const stream = useEventStream<{ monitor: MonitorSnapshot | null }>(
+    `/api/admin/events/${eventId}/stream`,
+    `/api/admin/events/${eventId}/live`
+  );
   const data = stream?.monitor ?? initial ?? null;
 
   if (!data) return null;

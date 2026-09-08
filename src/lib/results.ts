@@ -40,6 +40,10 @@ export async function getResultsSnapshot(eventId: string) {
     .map((s) => ({ order: s.order, name: s.name, status: s.status }));
   const maxOrder = stageSequence.length ? Math.max(...stageSequence.map((s) => s.order)) : 0;
 
+  // The whole process is finished once the last stage has been closed.
+  const finalStage = event.stages.find((s) => s.order === maxOrder);
+  const votingComplete = Boolean(finalStage && finalStage.status === "CLOSED");
+
   // stages arrive ordered by `order: "desc"`, so the first match is the latest.
   const resultStage = event.stages.find((s) => s.resultsOpen);
   const votingStage = event.stages.find((s) => s.status === "VOTING");
@@ -62,6 +66,7 @@ export async function getResultsSnapshot(eventId: string) {
   if (!targetStage) {
     return {
       phase,
+      votingComplete,
       revealed: false,
       resultsOpen: false,
       canOpenResult: false,
@@ -142,6 +147,7 @@ export async function getResultsSnapshot(eventId: string) {
 
   return {
     phase,
+    votingComplete,
     revealed,
     resultsOpen: Boolean(targetStage.resultsOpen),
     canOpenResult: votedCount >= totalVoters && totalVoters > 0,
