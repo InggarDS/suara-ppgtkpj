@@ -386,7 +386,7 @@ function StageTrack({
       {stages.map((s, i) => {
         const isFinal = s.order === maxOrder;
         const active = s.order === currentOrder;
-        const done = s.status === "STOPPED";
+        const done = s.status === "STOPPED" || s.status === "CLOSED";
         return (
           <div key={s.order} className="flex items-center gap-1.5 flex-none">
             <span

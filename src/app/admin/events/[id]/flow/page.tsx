@@ -14,6 +14,7 @@ const STATUS_LABEL: Record<string, string> = {
   CHECK_IN: "Check-in open",
   VOTING: "Voting live",
   STOPPED: "Stopped",
+  CLOSED: "Closed",
 };
 
 export default async function FlowPage({ params }: { params: Promise<{ id: string }> }) {

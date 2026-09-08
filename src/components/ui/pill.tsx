@@ -8,6 +8,7 @@ const MAP: Record<string, string> = {
   CHECK_IN: "pill-soft",
   VOTING: "pill-gradient",
   STOPPED: "bg-border-5 text-faint",
+  CLOSED: "bg-border-5 text-faint",
   NOT_STARTED: "bg-border-5 text-faint",
 };
 

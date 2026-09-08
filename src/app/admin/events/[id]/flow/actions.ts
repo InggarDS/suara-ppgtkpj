@@ -34,6 +34,7 @@ export async function updateStageRulesAction(eventId: string, stageId: string, p
 export async function openStageAction(eventId: string, stageId: string) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
+  if (stage.status === "CLOSED") return { ok: false, error: "This stage is closed." };
 
   await prisma.$transaction([
     prisma.stage.updateMany({
@@ -56,12 +57,28 @@ export async function openStageAction(eventId: string, stageId: string) {
 export async function startVotingAction(eventId: string, stageId: string) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
+  if (stage.status === "CLOSED") return { ok: false, error: "This stage is closed." };
 
   await prisma.stage.update({
     where: { id: stageId },
     data: { status: "VOTING", startedAt: new Date(), completedAt: null },
   });
   await logAudit(eventId, `Voting started for "${stage.name}"`, session.name);
+  revalidateEvent(eventId);
+  return { ok: true };
+}
+
+/** Permanently finish a stage. Votes and the result are kept; it can no longer
+ *  be reopened or restarted from the flow. */
+export async function closeStageAction(eventId: string, stageId: string) {
+  const session = await requireSession();
+  const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
+
+  await prisma.stage.update({
+    where: { id: stageId },
+    data: { status: "CLOSED", completedAt: stage.completedAt ?? new Date() },
+  });
+  await logAudit(eventId, `Stage "${stage.name}" closed (final)`, session.name);
   revalidateEvent(eventId);
   return { ok: true };
 }
@@ -83,6 +100,7 @@ export async function stopVotingAction(eventId: string, stageId: string) {
 export async function restartVotingAction(eventId: string, stageId: string) {
   const session = await requireSession();
   const stage = await prisma.stage.findUniqueOrThrow({ where: { id: stageId } });
+  if (stage.status === "CLOSED") return { ok: false, error: "This stage is closed." };
 
   await prisma.$transaction([
     prisma.vote.deleteMany({ where: { stageId } }),

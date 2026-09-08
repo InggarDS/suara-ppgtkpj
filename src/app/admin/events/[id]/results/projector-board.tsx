@@ -176,7 +176,8 @@ function StageSequenceBar({ stages }: { stages: ResultsSnapshot["stageSequence"]
     <div className="flex items-center gap-2 mb-6 flex-none flex-wrap">
       {stages.map((s, i) => {
         const isFinal = s.order === maxOrder;
-        const state = s.status === "VOTING" ? "live" : s.status === "STOPPED" ? "done" : "upcoming";
+        const state =
+          s.status === "VOTING" ? "live" : s.status === "STOPPED" || s.status === "CLOSED" ? "done" : "upcoming";
         return (
           <div key={s.order} className="flex items-center gap-2">
             <span

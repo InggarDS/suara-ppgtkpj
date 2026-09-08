@@ -72,7 +72,7 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
                         ? "bg-brand-accent"
                         : st.status === "CHECK_IN"
                           ? "bg-brand"
-                          : st.status === "STOPPED"
+                          : st.status === "STOPPED" || st.status === "CLOSED"
                             ? "bg-brand-muted"
                             : "bg-border-2"
                     }`}
@@ -90,7 +90,9 @@ export default async function EventOverviewPage({ params }: { params: Promise<{ 
                         ? "Check-in open"
                         : st.status === "STOPPED"
                           ? "Stopped"
-                          : "Not started"}
+                          : st.status === "CLOSED"
+                            ? "Closed"
+                            : "Not started"}
                   </span>
                 </div>
               ))}

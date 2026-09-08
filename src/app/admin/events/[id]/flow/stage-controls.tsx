@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { BusyLabel } from "@/components/ui/spinner";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
+  closeStageAction,
   openResultsAction,
   openStageAction,
   restartVotingAction,
@@ -26,6 +27,7 @@ export default function StageControls({
 }) {
   const [pending, startTransition] = useTransition();
   const [confirmRestart, setConfirmRestart] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
   const run = (fn: () => Promise<unknown>) => startTransition(() => void fn());
 
   const btn = "inline-flex items-center justify-center gap-1.5 text-[12px] font-semibold rounded-full px-3.5 py-2 cursor-pointer disabled:opacity-50 transition-colors";
@@ -83,7 +85,13 @@ export default function StageControls({
         </>
       )}
 
-      {(stage.status === "VOTING" || stage.status === "STOPPED") && (
+      {stage.status === "CLOSED" && (
+        <span className="text-[11.5px] font-medium text-faint bg-border-5 rounded-full px-2.5 py-1">
+          {votesCount} votes · stage closed
+        </span>
+      )}
+
+      {(stage.status === "VOTING" || stage.status === "STOPPED" || stage.status === "CLOSED") && (
         <button
           disabled={pending}
           onClick={() => run(() => openResultsAction(eventId, stage.id, !stage.resultsOpen))}
@@ -95,6 +103,12 @@ export default function StageControls({
         </button>
       )}
 
+      {(stage.status === "VOTING" || stage.status === "STOPPED") && (
+        <button disabled={pending} onClick={() => setConfirmClose(true)} className={ghost}>
+          Close stage
+        </button>
+      )}
+
       <ConfirmDialog
         open={confirmRestart}
         onClose={() => setConfirmRestart(false)}
@@ -103,6 +117,16 @@ export default function StageControls({
         confirmWord="RESTART"
         ctaLabel="Restart voting"
         action={async () => restartVotingAction(eventId, stage.id)}
+      />
+
+      <ConfirmDialog
+        open={confirmClose}
+        onClose={() => setConfirmClose(false)}
+        title={`Close "${stage.name}" for good?`}
+        body="The stage is marked final. Its votes and result are kept, but it can no longer be reopened, resumed or restarted from the flow."
+        confirmWord="CLOSE"
+        ctaLabel="Close stage"
+        action={async () => closeStageAction(eventId, stage.id)}
       />
     </div>
   );

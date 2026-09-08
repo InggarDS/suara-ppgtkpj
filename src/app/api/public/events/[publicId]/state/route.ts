@@ -22,10 +22,12 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
       ? "voting"
       : "checkin"
     : null;
-  const stoppedStages = event.stages.filter((s) => s.status === "STOPPED");
+  const stoppedStages = event.stages.filter((s) => s.status === "STOPPED" || s.status === "CLOSED");
   const lastStoppedStage = stoppedStages.length ? stoppedStages[stoppedStages.length - 1] : null;
   const eventFinished =
-    event.stages.length > 0 && !activeStage && event.stages.some((s) => s.status === "STOPPED");
+    event.stages.length > 0 &&
+    !activeStage &&
+    event.stages.some((s) => s.status === "STOPPED" || s.status === "CLOSED");
 
   const base = {
     eventName: event.name,
