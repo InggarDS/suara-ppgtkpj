@@ -48,6 +48,14 @@ export default function ProjectorBoard({
         <span className="font-mono text-[13px] tracking-[.25em] uppercase text-stage-dimmer">{eventName}</span>
         <div className="text-[64px] font-semibold tracking-tight leading-tight max-w-[16ch]">Voting Belum Dimulai</div>
         <div className="text-lg text-stage-dim">Menunggu admin membuka stage pertama.</div>
+        {inviteUrl && showQr && (
+          <div className="flex flex-col items-center gap-3 mt-4">
+            <div className="bg-white rounded-2xl p-3.5">
+              <QrImage url={inviteUrl} size={190} />
+            </div>
+            <span className="font-mono text-[11px] text-stage-dimmer uppercase tracking-[.1em]">Scan untuk bergabung</span>
+          </div>
+        )}
       </div>
     );
   }
