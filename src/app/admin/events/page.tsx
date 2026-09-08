@@ -45,18 +45,19 @@ export default async function EventsPage() {
     <div className="px-6.5 py-7 max-w-[1240px] mx-auto flex flex-col gap-6.5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[22px] font-semibold text-ink tracking-tight m-0 mb-1">Events</h1>
-          <p className="text-[13px] text-body m-0 max-w-[56ch]">
-            Every ballot you run, live or archived. Drag a ticket to reorder; click one to open it.
+          <h1 className="text-[34px] sm:text-[42px] font-extrabold text-ink tracking-tight leading-none m-0 mb-2">
+            Events
+          </h1>
+          <p className="text-[13px] text-body m-0 max-w-[56ch] text-justify">
+            Semua pemilihan yang Anda jalankan, baik aktif maupun arsip. Seret tiket untuk mengurutkan,
+            klik salah satu untuk membukanya.
           </p>
         </div>
       </div>
 
       <EventsBoard key={board.map((e) => e.id).join(",")} events={board} />
 
-      <div className="max-w-[520px]">
-        <NewEventCardClient />
-      </div>
+      <NewEventCardClient />
 
       <div>
         <div className="font-mono text-[10px] tracking-[.09em] text-fainter uppercase mb-2.5">Archive</div>

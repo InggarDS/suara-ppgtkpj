@@ -90,7 +90,10 @@ export default function NewEventCardClient() {
 
       {open && (
         <div className="fixed inset-0 bg-black/42 flex items-center justify-center z-[60] p-8">
-          <div className="elevated bg-card rounded-3xl max-w-[620px] w-full max-h-[88vh] overflow-auto animate-rise-in">
+          <div
+            className="elevated bg-card rounded-none max-w-[880px] w-full max-h-[88vh] overflow-y-auto overflow-x-hidden overscroll-contain animate-rise-in"
+            style={{ scrollbarGutter: "stable" }}
+          >
             <div className="px-7 pt-6 pb-4.5 border-b border-border-4 flex items-start gap-4">
               <div className="flex-1">
                 <div className="text-lg font-semibold text-ink tracking-tight mb-1">New event</div>
@@ -107,7 +110,7 @@ export default function NewEventCardClient() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Pemilihan Ketua Umum 2026"
-                  className="w-full border border-border-1 rounded-[18px] px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
+                  className="w-full border border-border-1 rounded-lg px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
                 />
               </div>
               <div>
@@ -118,7 +121,7 @@ export default function NewEventCardClient() {
                   value={desc}
                   onChange={(e) => setDesc(e.target.value)}
                   placeholder="One line participants will see on the registration screen"
-                  className="w-full border border-border-1 rounded-[18px] px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
+                  className="w-full border border-border-1 rounded-lg px-3.5 py-3 text-sm text-ink bg-paper outline-none focus:border-brand"
                 />
               </div>
 
@@ -127,7 +130,7 @@ export default function NewEventCardClient() {
                   Banner image <span className="text-fainter font-normal">optional, shown to participants</span>
                 </label>
                 <label
-                  className={`flex items-center w-full rounded-[18px] p-3 cursor-pointer transition-all ${
+                  className={`flex items-center w-full rounded-lg p-3 cursor-pointer transition-all ${
                     banner ? "bg-[rgba(27,77,228,.12)] border-[1.5px] border-brand-soft-border-2" : "bg-paper border-[1.5px] border-dashed border-border-2"
                   }`}
                 >
@@ -175,7 +178,7 @@ export default function NewEventCardClient() {
                   </button>
                 </div>
                 {useCredentials && (
-                  <label className="flex items-center w-full rounded-[18px] p-3 cursor-pointer bg-card border-[1.5px] border-dashed border-border-2">
+                  <label className="flex items-center w-full rounded-lg p-3 cursor-pointer bg-card border-[1.5px] border-dashed border-border-2">
                     <input
                       type="file"
                       accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
@@ -222,7 +225,7 @@ export default function NewEventCardClient() {
                           setStageNames(next);
                         }}
                         placeholder="Stage name"
-                        className="flex-1 border border-border-1 rounded-[16px] px-3 py-2.5 text-[13px] text-ink bg-paper outline-none focus:border-brand"
+                        className="flex-1 border border-border-1 rounded-lg px-3 py-2.5 text-[13px] text-ink bg-paper outline-none focus:border-brand"
                       />
                     </div>
                   ))}
@@ -234,7 +237,7 @@ export default function NewEventCardClient() {
                 <input
                   value={participants}
                   onChange={(e) => setParticipants(e.target.value)}
-                  className="w-full border border-border-1 rounded-[18px] px-3 py-2.5 font-mono text-sm text-ink bg-paper outline-none focus:border-brand"
+                  className="w-full border border-border-1 rounded-lg px-3 py-2.5 font-mono text-sm text-ink bg-paper outline-none focus:border-brand"
                 />
               </div>
 
