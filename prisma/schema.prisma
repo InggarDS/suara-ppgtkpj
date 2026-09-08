@@ -129,6 +129,7 @@ model Participant {
   deviceId     String?
   deviceLabel  String?
   registeredAt DateTime?
+  validatedAt  DateTime?
   createdAt    DateTime  @default(now())
 
   votes      Vote[]
