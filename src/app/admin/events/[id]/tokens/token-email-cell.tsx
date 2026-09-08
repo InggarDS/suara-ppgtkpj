@@ -82,14 +82,18 @@ export default function TokenEmailCell({
   return (
     <span className="flex flex-col gap-1 w-full">
       <span className="flex items-center gap-1.5">
-        <span className="flex-1 min-w-0 text-[11.5px] text-ink-soft truncate" title={savedEmail}>
-          {savedEmail}
-        </span>
-        <button onClick={() => setEditing(true)} className="text-[10.5px] text-faint hover:text-ink px-1">
+        <input
+          readOnly
+          value={savedEmail}
+          title={savedEmail}
+          onClick={() => setEditing(true)}
+          className="flex-1 min-w-0 border border-transparent rounded-md px-2 py-1 text-[11.5px] text-ink-soft bg-transparent outline-none cursor-pointer"
+        />
+        <button onClick={() => setEditing(true)} className="text-[10.5px] text-faint hover:text-ink px-1 flex-none">
           Ubah
         </button>
       </span>
-      <span className="flex items-center gap-2">
+      <span className="flex items-center gap-2 px-2">
         <button
           disabled={sending || !emailReady}
           onClick={send}
