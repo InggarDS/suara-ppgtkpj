@@ -1,5 +1,6 @@
 "use server";
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { destroyAdminSession, getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
@@ -31,31 +32,54 @@ export async function createEventAction(input: CreateEventInput) {
     return { ok: false, error: "Upload a credential sheet before creating the event." };
   }
 
-  const count = await prisma.event.count();
-  const publicId = "evt_" + String(count + 1).padStart(3, "0");
-
   const stageNames = input.stageNames.filter((n) => n.trim().length > 0);
 
-  const event = await prisma.event.create({
-    data: {
-      publicId,
-      name: input.name.trim(),
-      description: input.description.trim(),
-      bannerImage: input.bannerImage || null,
-      status: input.openNow ? "ACTIVE" : "INACTIVE",
-      expectedParticipants: input.expectedParticipants,
-      useCredentials: Boolean(input.useCredentials),
-      stages: {
-        create: (stageNames.length ? stageNames : ["Stage 1"]).map((name, i) => ({
-          order: i + 1,
-          name,
-        })),
-      },
-      credentials: input.useCredentials
-        ? { create: input.credentials!.map((c) => ({ name: c.name, jemaat: c.jemaat })) }
-        : undefined,
+  const eventData = {
+    name: input.name.trim(),
+    description: input.description.trim(),
+    bannerImage: input.bannerImage || null,
+    status: input.openNow ? ("ACTIVE" as const) : ("INACTIVE" as const),
+    expectedParticipants: input.expectedParticipants,
+    useCredentials: Boolean(input.useCredentials),
+    stages: {
+      create: (stageNames.length ? stageNames : ["Stage 1"]).map((name, i) => ({
+        order: i + 1,
+        name,
+      })),
     },
-  });
+    credentials: input.useCredentials
+      ? { create: input.credentials!.map((c) => ({ name: c.name, jemaat: c.jemaat })) }
+      : undefined,
+  };
+
+  // publicIds look like "evt_003"; derive the next free number from the highest
+  // existing one (not the row count — events can be deleted, leaving gaps) and
+  // retry on the off chance of a concurrent create racing us to the same id.
+  const existing = await prisma.event.findMany({ select: { publicId: true } });
+  let nextNum =
+    existing.reduce((max, e) => {
+      const m = /^evt_(\d+)$/.exec(e.publicId);
+      return m ? Math.max(max, Number(m[1])) : max;
+    }, 0) + 1;
+
+  let event;
+  for (let attempt = 0; ; attempt++) {
+    const publicId = "evt_" + String(nextNum).padStart(3, "0");
+    try {
+      event = await prisma.event.create({ data: { publicId, ...eventData } });
+      break;
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002" &&
+        attempt < 25
+      ) {
+        nextNum++;
+        continue;
+      }
+      throw err;
+    }
+  }
 
   await logAudit(
     event.id,
