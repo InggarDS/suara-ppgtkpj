@@ -49,12 +49,17 @@ This app is built to deploy straight to **Vercel**:
 
 1. Push this repo to GitHub and import it in Vercel.
 2. Add the environment variables from `.env` in the Vercel project settings (a fresh `SESSION_SECRET`, `NEXT_PUBLIC_APP_URL` = your domain, the Resend keys, …).
-3. **Database connections on serverless.** Vercel runs many concurrent function instances, each with its own Prisma pool, so a small Postgres will hit `FATAL: too many connections`. Point the production **`DATABASE_URL` at a connection pooler** and cap it:
-   - Aiven: *Pools* tab → create a transaction-mode pool → use its URI as `DATABASE_URL` with `?sslmode=require&pgbouncer=true&connection_limit=1`.
-   - Neon/Supabase: use their pooled connection string, likewise with `connection_limit=1`.
-   - Set `DIRECT_DATABASE_URL` to the **non-pooled** URL (migrations run through it).
-4. Vercel runs `npm run build` (which runs `prisma generate` first) automatically.
-5. Run `npm run db:push && npm run db:seed` once against the production `DIRECT_DATABASE_URL` to create the schema and your first admin login.
+3. **Database connections on serverless.** Vercel runs many concurrent function instances, each with its own Prisma pool, so a small Postgres will hit `FATAL: too many connections`. Point the production **`DATABASE_URL` at a connection pooler** (PgBouncer / pgbouncer-compatible):
+   - Aiven: *Pools* tab → create a transaction-mode pool → use its URI as `DATABASE_URL`.
+   - Self-hosted (VPS): run PgBouncer in `transaction` mode on port `6432` and connect through it.
+   - Neon/Supabase: use their pooled connection string.
+   - Append these params to the pooled `DATABASE_URL`:
+     `?sslmode=require&pgbouncer=true&connection_limit=3&pool_timeout=20&connect_timeout=15`
+     (`pgbouncer=true` disables prepared statements, required for transaction pooling. `connection_limit=3` keeps a single function instance from serializing its own queries while staying well under the DB's `max_connections` — PgBouncer is the real pool. Raise `pool_timeout` / `connect_timeout` so a slow/distant DB doesn't surface as an unhandled 500.)
+   - Set `DIRECT_DATABASE_URL` to a working non-pooled (or same pooled) URL — `prisma generate` needs it present or the build fails.
+4. **Function region.** If the database is not in a US region, pin the functions next to it or every request pays a cross-region round trip per query (intermittent pool-timeout 500s: *"A server error occurred. Reload to try again."*). `vercel.json` sets `"regions": ["sin1"]` (Singapore) — change it to whichever [Vercel region](https://vercel.com/docs/edge-network/regions) is closest to your Postgres. Hobby plan allows exactly one region.
+5. Vercel runs `npm run build` (which runs `prisma generate` first) automatically.
+6. Run `npm run db:push && npm run db:seed` once against the production `DIRECT_DATABASE_URL` to create the schema and your first admin login.
 
 ## Notes / intentional simplifications
 
