@@ -48,9 +48,13 @@ Admin dashboard + mobile participant flow for running multi-stage organizational
 This app is built to deploy straight to **Vercel**:
 
 1. Push this repo to GitHub and import it in Vercel.
-2. Add the same environment variables from `.env` in the Vercel project settings (use your Neon/production Postgres URL, a fresh `SESSION_SECRET`, and set `NEXT_PUBLIC_APP_URL` to your Vercel domain).
-3. Vercel runs `npm run build` (which runs `prisma generate` first) automatically.
-4. Run `npm run db:push && npm run db:seed` once against the production `DATABASE_URL` (e.g. from your local machine with the prod URL set) to create the schema and your first admin login.
+2. Add the environment variables from `.env` in the Vercel project settings (a fresh `SESSION_SECRET`, `NEXT_PUBLIC_APP_URL` = your domain, the Resend keys, …).
+3. **Database connections on serverless.** Vercel runs many concurrent function instances, each with its own Prisma pool, so a small Postgres will hit `FATAL: too many connections`. Point the production **`DATABASE_URL` at a connection pooler** and cap it:
+   - Aiven: *Pools* tab → create a transaction-mode pool → use its URI as `DATABASE_URL` with `?sslmode=require&pgbouncer=true&connection_limit=1`.
+   - Neon/Supabase: use their pooled connection string, likewise with `connection_limit=1`.
+   - Set `DIRECT_DATABASE_URL` to the **non-pooled** URL (migrations run through it).
+4. Vercel runs `npm run build` (which runs `prisma generate` first) automatically.
+5. Run `npm run db:push && npm run db:seed` once against the production `DIRECT_DATABASE_URL` to create the schema and your first admin login.
 
 ## Notes / intentional simplifications
 
