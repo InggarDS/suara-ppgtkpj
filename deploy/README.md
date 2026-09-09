@@ -56,13 +56,22 @@ steps 2–3 (repo + `.env` + host DB reachable from the bridge), before step 4.4
 
 ### 1.1 [vps] Create the schema on the host DB
 
+`prisma/schema.sql` is the full DDL, generated from `prisma/schema.prisma`
+(regenerate after any schema change with:
+`npx prisma migrate diff --from-empty --to-schema-datamodel prisma/schema.prisma --script > prisma/schema.sql`).
+Apply it with `psql` (already installed on the host with Postgres 12) — this
+avoids needing the Prisma CLI in the container:
+
 ```bash
 cd /opt/suara
-docker compose run --rm app node node_modules/prisma/build/index.js db push --skip-generate
+
+# fresh schema, owned by the app role (data comes from Aiven in 1.2)
+sudo -u postgres psql -d suara -c \
+  "DROP SCHEMA public CASCADE; CREATE SCHEMA public AUTHORIZATION suara;"
+psql "postgresql://suara:PW@127.0.0.1:5432/suara" -f prisma/schema.sql
 ```
 
-Uses `DIRECT_DATABASE_URL` (port 5432) from `.env` — correct, `db push` must not
-go through PgBouncer.
+Connect as `suara` (not `postgres`) so the tables are owned by the app role.
 
 ### 1.2 [vps] Copy every row from Aiven
 
@@ -201,11 +210,9 @@ export TAG=latest        # or a specific 12-char sha
 docker compose pull
 ```
 
-### 4.3 [vps] Push schema from inside the container (optional if step 1.1 done)
+### 4.3 [vps] Schema (skip if step 1.1 already done)
 
-```bash
-docker compose run --rm app node node_modules/prisma/build/index.js db push --skip-generate
-```
+See step 1.1 — apply `prisma/schema.sql` with `psql`.
 
 ### 4.4 [vps] Start the stack
 
@@ -259,7 +266,8 @@ git add -A && git commit -m "..." && git push        # CI builds + pushes image
 cd /opt/suara && git pull --ff-only
 export TAG=$(git rev-parse --short=12 HEAD)
 docker compose pull app
-docker compose run --rm app node node_modules/prisma/build/index.js db push --skip-generate   # only if schema changed
+# only if the schema changed this release — the image carries the full Prisma CLI:
+docker compose run --rm app npx prisma db push --skip-generate
 docker compose up -d
 docker image prune -f
 ```
