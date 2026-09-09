@@ -28,8 +28,11 @@ services:
         condition: service_started
     expose:
       - "3000"
-    mem_limit: 420m
-    memswap_limit: 900m          # allow spill to host swap under burst
+    # No hard mem_limit: on a 1 GB host without swap-accounting cgroups a cap
+    # means OOM-kill with no swap cushion. NODE_OPTIONS caps the JS heap; the
+    # host's 2 GB swap is the real safety net. redis/caddy stay capped since
+    # they never grow. If you enable swapaccount=1 in GRUB, add back:
+    #   mem_limit: 512m
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
       interval: 30s
