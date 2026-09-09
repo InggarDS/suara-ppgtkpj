@@ -2,6 +2,7 @@
 
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ensureCredentialParticipants } from "@/lib/credentials";
 import { destroyAdminSession, getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { publish } from "@/lib/realtime";
@@ -80,6 +81,8 @@ export async function createEventAction(input: CreateEventInput) {
       throw err;
     }
   }
+
+  if (input.useCredentials) await ensureCredentialParticipants(event.id);
 
   await logAudit(
     event.id,

@@ -162,6 +162,60 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
   );
 }
 
+function PhotoField({
+  photo,
+  uploading,
+  onChange,
+}: {
+  photo: string | null;
+  uploading: boolean;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-body mb-1.5">Foto profil</label>
+      <label
+        className={`flex items-center w-full rounded-[22px] p-3.5 transition-all ${
+          uploading ? "cursor-wait" : "cursor-pointer"
+        } ${
+          photo ? "bg-[rgba(27,77,228,.12)] border-[1.5px] border-brand-soft-border-2" : "bg-card border-[1.5px] border-dashed border-border-2"
+        }`}
+      >
+        <input type="file" accept="image/*" capture="user" className="hidden" onChange={onChange} disabled={uploading} />
+        {photo ? (
+          <span className="flex items-center gap-3 w-full">
+            <img src={photo} alt="" className="w-12 h-12 rounded-xl object-cover flex-none" />
+            <span className="flex-1 text-left min-w-0">
+              <span className="block text-[13px] font-medium text-ink">Foto terpilih</span>
+              <span className="block font-mono text-[11.5px] leading-relaxed text-brand">
+                {uploading ? "mengompres…" : "terkompresi"}
+              </span>
+            </span>
+            {uploading ? (
+              <Spinner className="w-4 h-4 text-brand flex-none" />
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a5cf0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
+                <path d="M4 12.5 9.5 18 20 6.5"></path>
+              </svg>
+            )}
+          </span>
+        ) : (
+          <span className="flex flex-col items-center gap-1.5 w-full py-2">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C76A0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path>
+            </svg>
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-soft">
+              {uploading && <Spinner className="w-3.5 h-3.5 text-brand" />}
+              {uploading ? "Mengompres…" : "Ambil atau unggah foto"}
+            </span>
+            <span className="text-[11.5px] text-faint">Dikompresi hingga ≤ 500 KB di ponsel Anda</span>
+          </span>
+        )}
+      </label>
+    </div>
+  );
+}
+
 function RegisterScreen({
   publicId,
   eventName,
@@ -179,76 +233,125 @@ function RegisterScreen({
   onDone: (token: string) => void;
   onBusyChange?: (busy: boolean) => void;
 }) {
+  const [step, setStep] = useState<"name" | "token">("name");
   const [name, setName] = useState("");
   const [jemaat, setJemaat] = useState("");
   const [tokenInput, setTokenInput] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [credentialMatch, setCredentialMatch] = useState<"idle" | "checking" | "found" | "not-found">("idle");
 
-  const working = busy || (useCredentials && name.trim() !== "" && credentialMatch === "checking");
+  // action-specific loading — never one global flag
+  const [isUploadingPhoto, setUploadingPhoto] = useState(false);
+  const [isSubmitting, setSubmitting] = useState(false);
+  const [isResendingToken, setResendingToken] = useState(false);
+
+  // "Belum mendapatkan token?"
+  const [showResend, setShowResend] = useState(false);
+  const [resendEmail, setResendEmail] = useState("");
+  const [resendMsg, setResendMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
+
+  const isValidatingName = useCredentials && name.trim() !== "" && credentialMatch === "checking";
+  const working = isUploadingPhoto || isSubmitting || isResendingToken || isValidatingName;
   useEffect(() => {
     onBusyChange?.(working);
     return () => onBusyChange?.(false);
   }, [working, onBusyChange]);
 
   useEffect(() => {
-    if (!useCredentials) return;
+    if (!useCredentials || step !== "name") return;
     const trimmed = name.trim();
     if (!trimmed) return;
     const handle = setTimeout(async () => {
       setCredentialMatch("checking");
-      const res = await fetch(`/api/public/events/${publicId}/credential-lookup?name=${encodeURIComponent(trimmed)}`);
-      const json = await res.json();
-      if (json.found) {
-        setCredentialMatch("found");
-        setJemaat(json.jemaat);
-      } else {
+      try {
+        const res = await fetch(`/api/public/events/${publicId}/credential-lookup?name=${encodeURIComponent(trimmed)}`);
+        const json = await res.json();
+        if (json.found) {
+          setCredentialMatch("found");
+          setJemaat(json.jemaat);
+        } else {
+          setCredentialMatch("not-found");
+          setJemaat("");
+        }
+      } catch {
         setCredentialMatch("not-found");
-        setJemaat("");
       }
     }, 500);
     return () => clearTimeout(handle);
-  }, [name, publicId, useCredentials]);
+  }, [name, publicId, useCredentials, step]);
 
   const effectiveCredentialMatch = name.trim() ? credentialMatch : "idle";
   const displayJemaat = name.trim() ? jemaat : "";
 
   async function onPhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setBusy(true);
+    e.target.value = "";
+    if (!file || isUploadingPhoto) return;
+    setUploadingPhoto(true);
     try {
-      const compressed = await compressImage(file);
-      setPhoto(compressed);
+      setPhoto(await compressImage(file));
+    } catch {
+      setError("Gagal memproses foto. Coba lagi.");
     } finally {
-      setBusy(false);
+      setUploadingPhoto(false);
     }
   }
 
-  async function submit() {
+  const nameValidated = Boolean(name.trim()) && credentialMatch === "found";
+
+  function goToToken() {
     setError(undefined);
-    if (useCredentials) {
-      if (!name.trim()) {
-        setError("Masukkan nama Anda.");
-        return;
-      }
-      if (credentialMatch !== "found") {
-        setError("Nama tidak sesuai kredensi");
-        return;
-      }
-    } else if (!name.trim() || !jemaat.trim() || !tokenInput.trim()) {
+    if (!name.trim()) return setError("Masukkan nama Anda.");
+    if (!nameValidated) return setError("Nama tidak sesuai kredensi.");
+    setStep("token");
+  }
+
+  async function resendToken() {
+    if (isResendingToken) return;
+    setResendMsg(null);
+    if (!resendEmail.trim()) {
+      setResendMsg({ kind: "err", text: "Masukkan alamat email." });
+      return;
+    }
+    setResendingToken(true);
+    try {
+      const res = await fetch(`/api/public/events/${publicId}/resend-token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: resendEmail.trim() }),
+      });
+      const json = await res.json();
+      setResendMsg(
+        json.ok
+          ? { kind: "ok", text: "Token telah dikirim kembali ke email Anda." }
+          : { kind: "err", text: json.error || "Email tidak terdaftar." }
+      );
+    } catch {
+      setResendMsg({ kind: "err", text: "Gagal mengirim. Coba lagi nanti." });
+    } finally {
+      setResendingToken(false);
+    }
+  }
+
+  async function submit(payloadToken: string | undefined) {
+    if (isSubmitting) return;
+    setError(undefined);
+    if (!useCredentials && (!name.trim() || !jemaat.trim() || !tokenInput.trim())) {
       setError("Masukkan nama, jemaat, dan token pribadi Anda.");
       return;
     }
-    setBusy(true);
+    if (useCredentials && !tokenInput.trim()) {
+      setError("Masukkan token Anda.");
+      return;
+    }
+    setSubmitting(true);
     try {
       const res = await fetch(`/api/public/events/${publicId}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token: useCredentials ? undefined : tokenInput.trim(),
+          token: payloadToken,
           name: name.trim(),
           jemaat: useCredentials ? undefined : jemaat.trim(),
           photo,
@@ -262,26 +365,125 @@ function RegisterScreen({
         return;
       }
       onDone(json.token);
+    } catch {
+      setError("Registrasi gagal. Periksa koneksi Anda.");
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   }
 
+  const header = (
+    <div className={bannerImage ? "px-6" : "px-6 pt-3.5"}>
+      <div className="font-mono text-[10px] tracking-[.1em] text-faint uppercase mb-2">{publicId}</div>
+      <div className="text-[13px] font-semibold text-brand mb-1">Selamat datang di</div>
+      <h2 className="m-0 mb-1.5 text-2xl font-semibold tracking-tight text-ink leading-tight text-pretty">{eventName}</h2>
+      <p className="m-0 text-[13.5px] leading-relaxed text-body">
+        {useCredentials
+          ? step === "name"
+            ? "Masukkan nama persis seperti yang terdaftar di panitia. Jemaat akan terisi otomatis."
+            : "Masukkan token yang dikirim ke email Anda."
+          : "Daftar sekali untuk menerima surat suara Anda. Token Anda telah dikirim bersama undangan."}
+      </p>
+    </div>
+  );
+
+  /* ---------- credential mode: step 2 — token ---------- */
+  if (useCredentials && step === "token") {
+    return (
+      <div className="flex-1 overflow-auto flex flex-col gap-5 pb-6.5">
+        {bannerImage && <img src={bannerImage} alt="" className="w-full h-36 object-cover flex-none" />}
+        {header}
+
+        <div className="flex flex-col gap-3.5 px-6">
+          <div className="w-full bg-card border border-border-1 rounded-[22px] p-3.5 flex items-center gap-3">
+            <span className="w-10.5 h-10.5 rounded-[20px] bg-border-4 text-body text-[13px] font-semibold flex items-center justify-center flex-none">
+              {initials(name)}
+            </span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-sm font-semibold text-ink truncate">{name}</span>
+              <span className="block text-[11.5px] text-faint truncate">{jemaat}</span>
+            </span>
+            <button
+              onClick={() => {
+                setStep("name");
+                setError(undefined);
+              }}
+              className="text-[11.5px] text-brand font-medium px-1 flex-none"
+            >
+              Ubah
+            </button>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-body mb-1.5">Token</label>
+            <input
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
+              placeholder="TOK-0000"
+              autoFocus
+              className="w-full border border-border-1 rounded-[20px] px-3.5 py-3.5 font-mono text-[15px] tracking-[.06em] text-ink bg-card outline-none focus:border-brand"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setShowResend((v) => !v);
+                setResendMsg(null);
+              }}
+              className="mt-2 text-[12.5px] font-medium text-brand underline decoration-dotted"
+            >
+              Belum mendapatkan token?
+            </button>
+          </div>
+
+          {showResend && (
+            <div className="flex flex-col gap-2 bg-paper-2 border border-border-3 rounded-[20px] p-3.5">
+              <label className="block text-xs font-medium text-body">Email terdaftar</label>
+              <input
+                value={resendEmail}
+                onChange={(e) => setResendEmail(e.target.value)}
+                placeholder="email@contoh.com"
+                inputMode="email"
+                className="w-full border border-border-1 rounded-[16px] px-3 py-2.5 text-[14px] text-ink bg-card outline-none focus:border-brand"
+              />
+              <button
+                onClick={resendToken}
+                disabled={isResendingToken}
+                className="btn-gradient w-full rounded-full py-2.5 text-[13.5px] font-semibold cursor-pointer disabled:opacity-60"
+              >
+                <BusyLabel busy={isResendingToken} busyText="Mengirim…" spinnerClassName="w-3.5 h-3.5">
+                  Kirim Kembali Token
+                </BusyLabel>
+              </button>
+              {resendMsg && (
+                <p className={`m-0 text-[12px] ${resendMsg.kind === "ok" ? "text-brand" : "text-danger"}`}>
+                  {resendMsg.text}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {error && <p className="text-xs text-danger m-0 px-6">{error}</p>}
+
+        <div className="mt-auto flex flex-col gap-2.5 px-6">
+          <button
+            onClick={() => submit(tokenInput.trim())}
+            disabled={isSubmitting || !tokenInput.trim()}
+            className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer disabled:opacity-60"
+          >
+            <BusyLabel busy={isSubmitting} busyText="Memproses…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
+          </button>
+          <p className="m-0 text-[11.5px] leading-relaxed text-faint text-center">Satu perangkat, satu token, satu suara per stage.</p>
+        </div>
+      </div>
+    );
+  }
+
+  /* ---------- credential mode: step 1 — name / non-credential: single screen ---------- */
   return (
     <div className="flex-1 overflow-auto flex flex-col gap-5 pb-6.5">
-      {bannerImage && (
-        <img src={bannerImage} alt="" className="w-full h-36 object-cover flex-none" />
-      )}
-      <div className={bannerImage ? "px-6" : "px-6 pt-3.5"}>
-        <div className="font-mono text-[10px] tracking-[.1em] text-faint uppercase mb-2">{publicId}</div>
-        <div className="text-[13px] font-semibold text-brand mb-1">Selamat datang di</div>
-        <h2 className="m-0 mb-1.5 text-2xl font-semibold tracking-tight text-ink leading-tight text-pretty">{eventName}</h2>
-        <p className="m-0 text-[13.5px] leading-relaxed text-body">
-          {useCredentials
-            ? "Daftar sekali untuk menerima surat suara Anda. Masukkan nama persis seperti yang terdaftar di panitia."
-            : "Daftar sekali untuk menerima surat suara Anda. Token Anda telah dikirim bersama undangan."}
-        </p>
-      </div>
+      {bannerImage && <img src={bannerImage} alt="" className="w-full h-36 object-cover flex-none" />}
+      {header}
 
       <div className="flex flex-col gap-3.5 px-6">
         <div>
@@ -319,14 +521,7 @@ function RegisterScreen({
             }`}
           />
         </div>
-        {useCredentials ? (
-          <div>
-            <label className="block text-xs font-medium text-body mb-1.5">Token pribadi</label>
-            <div className="w-full border border-dashed border-border-2 rounded-[20px] px-3.5 py-3.5 text-[13.5px] text-faint bg-border-5">
-              Token di generate otomatis
-            </div>
-          </div>
-        ) : (
+        {!useCredentials && (
           <div>
             <label className="block text-xs font-medium text-body mb-1.5">Token pribadi</label>
             <input
@@ -337,51 +532,29 @@ function RegisterScreen({
             />
           </div>
         )}
-        <div>
-          <label className="block text-xs font-medium text-body mb-1.5">Foto profil</label>
-          <label
-            className={`flex items-center w-full rounded-[22px] p-3.5 cursor-pointer transition-all ${
-              photo ? "bg-[rgba(27,77,228,.12)] border-[1.5px] border-brand-soft-border-2" : "bg-card border-[1.5px] border-dashed border-border-2"
-            }`}
-          >
-            <input type="file" accept="image/*" capture="user" className="hidden" onChange={onPhotoChange} />
-            {photo ? (
-              <span className="flex items-center gap-3 w-full">
-                <img src={photo} alt="" className="w-12 h-12 rounded-xl object-cover flex-none" />
-                <span className="flex-1 text-left min-w-0">
-                  <span className="block text-[13px] font-medium text-ink">Foto terpilih</span>
-                  <span className="block font-mono text-[11.5px] leading-relaxed text-brand">terkompresi</span>
-                </span>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2a5cf0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-none">
-                  <path d="M4 12.5 9.5 18 20 6.5"></path>
-                </svg>
-              </span>
-            ) : (
-              <span className="flex flex-col items-center gap-1.5 w-full py-2">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6C76A0" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"></path>
-                </svg>
-                <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-soft">
-                  {busy && <Spinner className="w-3.5 h-3.5 text-brand" />}
-                  {busy ? "Mengompres…" : "Ambil atau unggah foto"}
-                </span>
-                <span className="text-[11.5px] text-faint">Dikompresi hingga ≤ 500 KB di ponsel Anda</span>
-              </span>
-            )}
-          </label>
-        </div>
+        <PhotoField photo={photo} uploading={isUploadingPhoto} onChange={onPhotoChange} />
       </div>
 
       {error && <p className="text-xs text-danger m-0 px-6">{error}</p>}
 
       <div className="mt-auto flex flex-col gap-2.5 px-6">
-        <button
-          onClick={submit}
-          disabled={busy}
-          className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer"
-        >
-          <BusyLabel busy={busy} busyText="Mohon tunggu…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
-        </button>
+        {useCredentials ? (
+          <button
+            onClick={goToToken}
+            disabled={isValidatingName || isUploadingPhoto || !nameValidated}
+            className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer disabled:opacity-60"
+          >
+            <BusyLabel busy={isValidatingName} busyText="Memeriksa…" spinnerClassName="w-4 h-4">Lanjut</BusyLabel>
+          </button>
+        ) : (
+          <button
+            onClick={() => submit(tokenInput.trim())}
+            disabled={isSubmitting || isUploadingPhoto}
+            className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer disabled:opacity-60"
+          >
+            <BusyLabel busy={isSubmitting} busyText="Memproses…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
+          </button>
+        )}
         <p className="m-0 text-[11.5px] leading-relaxed text-faint text-center">Satu perangkat, satu token, satu suara per stage.</p>
       </div>
     </div>
@@ -440,17 +613,18 @@ function CheckInScreen({
   name: string;
   onBusyChange?: (busy: boolean) => void;
 }) {
-  const [busy, setBusy] = useState(false);
+  const [isCheckingIn, setCheckingIn] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    onBusyChange?.(busy);
+    onBusyChange?.(isCheckingIn);
     return () => onBusyChange?.(false);
-  }, [busy, onBusyChange]);
+  }, [isCheckingIn, onBusyChange]);
 
   async function checkIn() {
-    setBusy(true);
+    if (isCheckingIn) return;
+    setCheckingIn(true);
     setError(undefined);
     try {
       const res = await fetch(`/api/public/events/${publicId}/checkin`, {
@@ -464,8 +638,10 @@ function CheckInScreen({
         return;
       }
       setDone(true); // instant local confirmation; the stream flips the real screen shortly
+    } catch {
+      setError("Check-in gagal. Periksa koneksi Anda.");
     } finally {
-      setBusy(false);
+      setCheckingIn(false);
     }
   }
 
@@ -498,10 +674,10 @@ function CheckInScreen({
       {error && <p className="text-xs text-danger m-0">{error}</p>}
       <button
         onClick={checkIn}
-        disabled={busy}
-        className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer"
+        disabled={isCheckingIn}
+        className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer disabled:opacity-60"
       >
-        <BusyLabel busy={busy} busyText="Mengirim…" spinnerClassName="w-4 h-4">Konfirmasi kehadiran</BusyLabel>
+        <BusyLabel busy={isCheckingIn} busyText="Memproses…" spinnerClassName="w-4 h-4">Konfirmasi kehadiran</BusyLabel>
       </button>
     </div>
   );
@@ -610,25 +786,34 @@ function BoothScreen({
 }) {
   const [choice, setChoice] = useState<string | null>(null);
   const [abstain, setAbstain] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [isSubmittingVote, setSubmittingVote] = useState(false);
+  const [error, setError] = useState<string | undefined>();
 
   useEffect(() => {
-    onBusyChange?.(busy);
+    onBusyChange?.(isSubmittingVote);
     return () => onBusyChange?.(false);
-  }, [busy, onBusyChange]);
+  }, [isSubmittingVote, onBusyChange]);
 
   async function submit() {
-    if (!choice && !abstain) return;
-    setBusy(true);
+    if (isSubmittingVote || (!choice && !abstain)) return;
+    setSubmittingVote(true);
+    setError(undefined);
     try {
-      await fetch(`/api/public/events/${publicId}/vote`, {
+      const res = await fetch(`/api/public/events/${publicId}/vote`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, candidateId: choice ?? undefined, abstain }),
       });
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (!json.ok) {
+        setError(json.error || "Gagal mengirim suara. Coba lagi.");
+        return;
+      }
       onVoted();
+    } catch {
+      setError("Gagal mengirim suara. Periksa koneksi Anda.");
     } finally {
-      setBusy(false);
+      setSubmittingVote(false);
     }
   }
 
@@ -708,14 +893,15 @@ function BoothScreen({
       </div>
 
       <div className="flex-none px-6 pt-3.5 pb-6.5 border-t border-border-4 bg-paper">
+        {error && <p className="text-xs text-danger m-0 mb-2 text-center">{error}</p>}
         <button
           onClick={submit}
-          disabled={!canSubmit || busy}
+          disabled={!canSubmit || isSubmittingVote}
           className={`w-full rounded-full py-4 text-[15px] font-semibold border-none transition-colors ${
-            canSubmit ? "btn-gradient cursor-pointer" : "bg-border-4 text-fainter cursor-not-allowed"
+            canSubmit ? "btn-gradient cursor-pointer disabled:opacity-60" : "bg-border-4 text-fainter cursor-not-allowed"
           }`}
         >
-          <BusyLabel busy={busy} busyText="Mengirim…" spinnerClassName="w-4 h-4">
+          <BusyLabel busy={isSubmittingVote} busyText="Mengirim…" spinnerClassName="w-4 h-4">
             {canSubmit ? "Kirim suara" : "Pilih kandidat"}
           </BusyLabel>
         </button>

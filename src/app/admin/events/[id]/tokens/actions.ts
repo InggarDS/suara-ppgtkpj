@@ -6,6 +6,7 @@ import { logAudit } from "@/lib/audit";
 import { generateToken } from "@/lib/ids";
 import { isEmailConfigured, sendEmails } from "@/lib/email";
 import { buildTokenEmail } from "@/lib/token-email";
+import { ensureCredentialParticipants } from "@/lib/credentials";
 import { revalidatePath } from "next/cache";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -66,6 +67,7 @@ export async function addCredentialsAction(
       email: c.email?.trim() ? c.email.trim() : null,
     })),
   });
+  await ensureCredentialParticipants(eventId);
   await logAudit(eventId, `${credentials.length} credentials uploaded`, session.name);
 
   revalidatePath(`/admin/events/${eventId}/tokens`);
@@ -161,6 +163,8 @@ export async function sendAllTokenEmailsAction(eventId: string) {
   const session = await getAdminSession();
   if (!session) return { ok: false as const, error: "Not authenticated" };
   if (!isEmailConfigured()) return { ok: false as const, error: "Layanan email belum dikonfigurasi di server." };
+
+  await ensureCredentialParticipants(eventId);
 
   const event = await prisma.event.findUniqueOrThrow({
     where: { id: eventId },

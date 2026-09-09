@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { generateToken } from "@/lib/ids";
 import { publish } from "@/lib/realtime";
+import { ensureCredentialParticipants } from "@/lib/credentials";
 import { z } from "zod";
 
 const schema = z.object({
@@ -12,15 +12,6 @@ const schema = z.object({
   deviceId: z.string().min(1),
   deviceLabel: z.string().max(80).optional(),
 });
-
-async function uniqueToken(prefix: string, suffix: string) {
-  for (let i = 0; i < 10; i++) {
-    const token = generateToken(prefix, suffix);
-    const existing = await prisma.participant.findUnique({ where: { token } });
-    if (!existing) return token;
-  }
-  throw new Error("Could not generate a unique token.");
-}
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ publicId: string }> }) {
   const { publicId } = await params;
@@ -33,48 +24,47 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
   if (event.status !== "ACTIVE") return NextResponse.json({ ok: false, error: "Pendaftaran untuk acara ini belum dibuka." }, { status: 403 });
 
   if (event.useCredentials) {
-    const credential = await prisma.credential.findFirst({
+    let credential = await prisma.credential.findFirst({
       where: { eventId: event.id, name: { equals: name.trim(), mode: "insensitive" } },
+      include: { participant: true },
     });
     if (!credential) return NextResponse.json({ ok: false, error: "Nama tidak sesuai kredensi" }, { status: 404 });
 
-    if (credential.participantId) {
-      const participant = await prisma.participant.findUnique({ where: { id: credential.participantId } });
-      if (participant) {
-        if (participant.deviceId && participant.deviceId !== deviceId) {
-          return NextResponse.json({ ok: false, error: "Nama ini sudah terdaftar di perangkat lain." }, { status: 409 });
-        }
-        await prisma.participant.update({
-          where: { id: participant.id },
-          data: {
-            photo: photo ?? participant.photo,
-            deviceId,
-            deviceLabel: deviceLabel ?? participant.deviceLabel,
-            registeredAt: participant.registeredAt ?? new Date(),
-          },
-        });
-        publish(event.id);
-        return NextResponse.json({ ok: true, token: participant.token });
-      }
+    // Every credential owns a participant (with a token) — materialise on the fly
+    // for events created before token pairing, then re-read.
+    if (!credential.participant) {
+      await ensureCredentialParticipants(event.id);
+      credential = await prisma.credential.findUnique({
+        where: { id: credential.id },
+        include: { participant: true },
+      });
+    }
+    const participant = credential?.participant;
+    if (!participant) {
+      return NextResponse.json({ ok: false, error: "Token belum diterbitkan untuk nama ini. Hubungi panitia." }, { status: 409 });
     }
 
-    const token = await uniqueToken(event.tokenPrefix, event.tokenSuffix);
-    const participant = await prisma.participant.create({
+    const entered = body.data.token?.trim().toUpperCase();
+    if (!entered) return NextResponse.json({ ok: false, error: "Masukkan token Anda." }, { status: 400 });
+    if (entered !== participant.token) {
+      return NextResponse.json({ ok: false, error: "Token tidak sesuai dengan nama Anda." }, { status: 403 });
+    }
+    if (participant.registeredAt && participant.deviceId && participant.deviceId !== deviceId) {
+      return NextResponse.json({ ok: false, error: "Nama ini sudah terdaftar di perangkat lain." }, { status: 409 });
+    }
+
+    await prisma.participant.update({
+      where: { id: participant.id },
       data: {
-        eventId: event.id,
-        name: credential.name,
-        jemaat: credential.jemaat,
-        email: credential.email,
-        token,
-        photo: photo ?? null,
+        photo: photo ?? participant.photo,
         deviceId,
-        deviceLabel: deviceLabel ?? null,
-        registeredAt: new Date(),
+        deviceLabel: deviceLabel ?? participant.deviceLabel,
+        registeredAt: participant.registeredAt ?? new Date(),
       },
     });
     await prisma.credential.update({
-      where: { id: credential.id },
-      data: { participantId: participant.id, usedAt: new Date() },
+      where: { id: credential!.id },
+      data: { usedAt: credential!.usedAt ?? new Date() },
     });
 
     publish(event.id);
