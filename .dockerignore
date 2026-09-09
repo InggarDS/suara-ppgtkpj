@@ -1,0 +1,16 @@
+.git
+.github
+node_modules
+.next
+out
+build
+coverage
+npm-debug.log*
+*.tsbuildinfo
+.vercel
+.env*
+!.env.example
+README.md
+deploy/README.md
+scripts/check-neon.mjs
+.DS_Store

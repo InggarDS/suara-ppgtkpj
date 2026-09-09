@@ -1,0 +1,25 @@
+# Caddy auto-provisions and renews TLS for these names via Let's Encrypt.
+# `flush_interval -1` disables response buffering — REQUIRED for the SSE
+# endpoints (/api/public/events/*/stream, /api/admin/events/*/stream) to
+# stream in real time instead of arriving in one buffered chunk.
+
+www.suarappgtkpj.site {
+	encode zstd gzip
+
+	@sse path /api/public/events/*/stream /api/admin/events/*/stream
+	reverse_proxy @sse app:3000 {
+		flush_interval -1
+		transport http {
+			read_timeout 24h
+			write_timeout 24h
+		}
+	}
+
+	reverse_proxy app:3000 {
+		flush_interval -1
+	}
+}
+
+suarappgtkpj.site {
+	redir https://www.suarappgtkpj.site{uri} permanent
+}

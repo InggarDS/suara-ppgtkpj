@@ -1,0 +1,64 @@
+# Production stack for a single VPS.
+#
+#   app    – Next.js standalone server (image built by CI, pulled from GHCR)
+#   redis  – ephemeral cache for the participant-state snapshot (Phase 2)
+#   caddy  – TLS termination + reverse proxy, unbuffered for SSE
+#
+# Postgres and PgBouncer stay on the HOST (already installed and tuned):
+#   app -> host.docker.internal:6432 (PgBouncer, pooled)  -> localhost:5432 (Postgres)
+#
+# Copy deploy/env.example to .env on the VPS and fill it in before `up`.
+
+services:
+  app:
+    image: ${IMAGE:-ghcr.io/inggards/suara-ppgtkpj}:${TAG:-latest}
+    restart: always
+    env_file: [.env]
+    environment:
+      REDIS_URL: "redis://redis:6379"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_started
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - "256mb"
+      - --maxmemory-policy
+      - allkeys-lru
+    expose:
+      - "6379"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:
