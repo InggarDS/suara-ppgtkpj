@@ -132,28 +132,52 @@ In `/etc/pgbouncer/pgbouncer.ini`:
 [pgbouncer]
 listen_addr = 127.0.0.1, 172.17.0.1
 pool_mode = transaction
-max_client_conn = 500
-default_pool_size = 40
+max_client_conn = 300
+default_pool_size = 15
+reserve_pool_size = 5
+reserve_pool_timeout = 3
 ```
 
 ```bash
 sudo systemctl restart pgbouncer
 ```
 
-### 3.3 [vps] Tune Postgres (scale to your RAM; example for 4 GB)
+On a 2 GB+ box you can raise `default_pool_size` to 40 and `max_client_conn`
+to 500.
 
-`/etc/postgresql/12/main/postgresql.conf`:
+### 3.3 [vps] Tune Postgres for the box size
+
+`/etc/postgresql/12/main/postgresql.conf` — **1 GB VPS sharing the box with
+Docker** (this is the conservative default):
 
 ```ini
-shared_buffers = 1GB
-effective_cache_size = 3GB
-work_mem = 16MB
-max_connections = 200
+shared_buffers = 128MB
+effective_cache_size = 384MB
+work_mem = 4MB
+maintenance_work_mem = 32MB
+max_connections = 50
+wal_buffers = 4MB
 ```
+
+For reference, a dedicated 4 GB box would use `shared_buffers = 1GB`,
+`effective_cache_size = 3GB`, `work_mem = 16MB`, `max_connections = 200`.
 
 ```bash
 sudo systemctl restart postgresql
 ```
+
+### 3.4 [vps] Swap is mandatory on a 1 GB box
+
+```bash
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+grep -q /swapfile /etc/fstab || echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+echo 'vm.swappiness=10' | sudo tee /etc/sysctl.d/99-swap.conf && sudo sysctl -p /etc/sysctl.d/99-swap.conf
+```
+
+The compose file caps the containers (app 420 MB, redis 96 MB, caddy 64 MB) so
+they cannot collectively OOM the host. Never run `docker build` / `npm run
+build` on a 1 GB box — CI builds the image, the VPS only pulls it.
 
 ---
 
