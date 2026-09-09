@@ -4,6 +4,8 @@ import { publish } from "@/lib/realtime";
 import { ensureCredentialParticipants } from "@/lib/credentials";
 import { z } from "zod";
 
+export const maxDuration = 60;
+
 const schema = z.object({
   token: z.string().optional(),
   name: z.string().min(1).max(120),

@@ -13,15 +13,49 @@ import TokenEmailCell from "./token-email-cell";
 import SendAllTokensButton from "./send-all-tokens-button";
 
 export const dynamic = "force-dynamic";
+// Server actions on this page (bulk token email, credential materialisation)
+// can run for a while — give them more than the default serverless budget.
+export const maxDuration = 60;
 
 export default async function TokensPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // select only what the page renders — participant photos and the event banner
+  // are base64 and would bloat the RSC payload (and can break the response on
+  // serverless) for an event with many registered participants.
   const event = await prisma.event.findUnique({
     where: { id },
-    include: {
-      stages: { where: { status: "VOTING" } },
-      participants: { orderBy: { createdAt: "asc" }, include: { votes: true } },
-      credentials: { orderBy: { name: "asc" } },
+    select: {
+      id: true,
+      name: true,
+      publicId: true,
+      status: true,
+      useCredentials: true,
+      tokenPrefix: true,
+      tokenSuffix: true,
+      stages: { where: { status: "VOTING" }, select: { id: true } },
+      participants: {
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          name: true,
+          jemaat: true,
+          token: true,
+          email: true,
+          registeredAt: true,
+          tokenSentAt: true,
+          votes: { select: { stageId: true } },
+        },
+      },
+      credentials: {
+        orderBy: { name: "asc" },
+        select: {
+          id: true,
+          name: true,
+          jemaat: true,
+          email: true,
+          participant: { select: { registeredAt: true } },
+        },
+      },
     },
   });
   if (!event) notFound();
@@ -94,7 +128,7 @@ export default async function TokensPage({ params }: { params: Promise<{ id: str
                 name: c.name,
                 jemaat: c.jemaat,
                 email: c.email,
-                registered: Boolean(c.participantId),
+                registered: Boolean(c.participant?.registeredAt),
               }))}
             />
           )}

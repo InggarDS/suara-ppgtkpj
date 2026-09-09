@@ -72,7 +72,13 @@ export async function sendEmails(emails: OutgoingEmail[]): Promise<SendReport> {
     const body = JSON.stringify(payload.length === 1 ? payload[0] : payload);
 
     try {
-      const res = await fetch(url, { method: "POST", headers, body, cache: "no-store" });
+      const res = await fetch(url, {
+        method: "POST",
+        headers,
+        body,
+        cache: "no-store",
+        signal: AbortSignal.timeout(15000),
+      });
       if (res.ok) {
         sent += batch.length;
       } else {

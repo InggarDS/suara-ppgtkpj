@@ -5,6 +5,8 @@ import { isEmailConfigured, sendEmails } from "@/lib/email";
 import { buildTokenEmail } from "@/lib/token-email";
 import { z } from "zod";
 
+export const maxDuration = 60;
+
 const schema = z.object({ email: z.string().min(1).max(160) });
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
