@@ -244,6 +244,7 @@ function RegisterScreen({
   // action-specific loading — never one global flag
   const [isUploadingPhoto, setUploadingPhoto] = useState(false);
   const [isSubmitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false); // held after success until the stream swaps the screen
   const [isResendingToken, setResendingToken] = useState(false);
 
   // "Belum mendapatkan token?"
@@ -252,7 +253,8 @@ function RegisterScreen({
   const [resendMsg, setResendMsg] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
   const isValidatingName = useCredentials && name.trim() !== "" && credentialMatch === "checking";
-  const working = isUploadingPhoto || isSubmitting || isResendingToken || isValidatingName;
+  const submitBusy = isSubmitting || submitted;
+  const working = isUploadingPhoto || submitBusy || isResendingToken || isValidatingName;
   useEffect(() => {
     onBusyChange?.(working);
     return () => onBusyChange?.(false);
@@ -335,7 +337,7 @@ function RegisterScreen({
   }
 
   async function submit(payloadToken: string | undefined) {
-    if (isSubmitting) return;
+    if (submitBusy) return;
     setError(undefined);
     if (!useCredentials && (!name.trim() || !jemaat.trim() || !tokenInput.trim())) {
       setError("Masukkan nama, jemaat, dan token pribadi Anda.");
@@ -364,6 +366,7 @@ function RegisterScreen({
         setError(json.error || "Registrasi gagal.");
         return;
       }
+      setSubmitted(true); // keep the button busy until the stream swaps to the next screen
       onDone(json.token);
     } catch {
       setError("Registrasi gagal. Periksa koneksi Anda.");
@@ -468,10 +471,10 @@ function RegisterScreen({
         <div className="mt-auto flex flex-col gap-2.5 px-6">
           <button
             onClick={() => submit(tokenInput.trim())}
-            disabled={isSubmitting || !tokenInput.trim()}
+            disabled={submitBusy || !tokenInput.trim()}
             className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer disabled:opacity-60"
           >
-            <BusyLabel busy={isSubmitting} busyText="Memproses…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
+            <BusyLabel busy={submitBusy} busyText="Memproses…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
           </button>
           <p className="m-0 text-[11.5px] leading-relaxed text-faint text-center">Satu perangkat, satu token, satu suara per stage.</p>
         </div>
@@ -549,10 +552,10 @@ function RegisterScreen({
         ) : (
           <button
             onClick={() => submit(tokenInput.trim())}
-            disabled={isSubmitting || isUploadingPhoto}
+            disabled={submitBusy || isUploadingPhoto}
             className="btn-gradient w-full rounded-full py-4 text-[15px] font-semibold cursor-pointer disabled:opacity-60"
           >
-            <BusyLabel busy={isSubmitting} busyText="Memproses…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
+            <BusyLabel busy={submitBusy} busyText="Memproses…" spinnerClassName="w-4 h-4">Daftar</BusyLabel>
           </button>
         )}
         <p className="m-0 text-[11.5px] leading-relaxed text-faint text-center">Satu perangkat, satu token, satu suara per stage.</p>
@@ -616,14 +619,15 @@ function CheckInScreen({
   const [isCheckingIn, setCheckingIn] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const checkInBusy = isCheckingIn || done; // stay busy past success until the stream swaps the screen
 
   useEffect(() => {
-    onBusyChange?.(isCheckingIn);
+    onBusyChange?.(checkInBusy);
     return () => onBusyChange?.(false);
-  }, [isCheckingIn, onBusyChange]);
+  }, [checkInBusy, onBusyChange]);
 
   async function checkIn() {
-    if (isCheckingIn) return;
+    if (checkInBusy) return;
     setCheckingIn(true);
     setError(undefined);
     try {
@@ -787,15 +791,17 @@ function BoothScreen({
   const [choice, setChoice] = useState<string | null>(null);
   const [abstain, setAbstain] = useState(false);
   const [isSubmittingVote, setSubmittingVote] = useState(false);
+  const [voteSent, setVoteSent] = useState(false); // held after success until the stream swaps to the done screen
   const [error, setError] = useState<string | undefined>();
+  const voteBusy = isSubmittingVote || voteSent;
 
   useEffect(() => {
-    onBusyChange?.(isSubmittingVote);
+    onBusyChange?.(voteBusy);
     return () => onBusyChange?.(false);
-  }, [isSubmittingVote, onBusyChange]);
+  }, [voteBusy, onBusyChange]);
 
   async function submit() {
-    if (isSubmittingVote || (!choice && !abstain)) return;
+    if (voteBusy || (!choice && !abstain)) return;
     setSubmittingVote(true);
     setError(undefined);
     try {
@@ -809,6 +815,7 @@ function BoothScreen({
         setError(json.error || "Gagal mengirim suara. Coba lagi.");
         return;
       }
+      setVoteSent(true);
       onVoted();
     } catch {
       setError("Gagal mengirim suara. Periksa koneksi Anda.");
@@ -839,13 +846,14 @@ function BoothScreen({
           return (
             <button
               key={c.id}
+              disabled={voteBusy}
               onClick={() => {
                 setChoice(c.id);
                 setAbstain(false);
               }}
-              className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card ${
+              className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card disabled:cursor-not-allowed ${
                 on ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(27,77,228,.14)]" : "border-[1.5px] border-border-1"
-              }`}
+              } ${voteBusy && !on ? "opacity-55" : ""}`}
             >
               {c.photo ? (
                 <img src={c.photo} alt="" className="w-11.5 h-11.5 rounded-full object-cover flex-none" />
@@ -871,13 +879,14 @@ function BoothScreen({
 
         {stage.allowAbstain && (
           <button
+            disabled={voteBusy}
             onClick={() => {
               setAbstain(true);
               setChoice(null);
             }}
-            className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card ${
+            className={`flex items-center gap-3.5 w-full p-3.5 rounded-2xl cursor-pointer text-left transition-all bg-card disabled:cursor-not-allowed ${
               abstain ? "border-[1.5px] border-brand shadow-[0_0_0_3px_rgba(27,77,228,.14)]" : "border-[1.5px] border-border-1"
-            }`}
+            } ${voteBusy && !abstain ? "opacity-55" : ""}`}
           >
             <span className="flex-1 text-[15px] font-semibold text-ink">Golput</span>
             <span className={`w-5 h-5 rounded-full flex-none ${abstain ? "border-[6px] border-brand" : "border-[1.5px] border-border-2"}`} />
@@ -896,12 +905,12 @@ function BoothScreen({
         {error && <p className="text-xs text-danger m-0 mb-2 text-center">{error}</p>}
         <button
           onClick={submit}
-          disabled={!canSubmit || isSubmittingVote}
+          disabled={!canSubmit || voteBusy}
           className={`w-full rounded-full py-4 text-[15px] font-semibold border-none transition-colors ${
             canSubmit ? "btn-gradient cursor-pointer disabled:opacity-60" : "bg-border-4 text-fainter cursor-not-allowed"
           }`}
         >
-          <BusyLabel busy={isSubmittingVote} busyText="Mengirim…" spinnerClassName="w-4 h-4">
+          <BusyLabel busy={voteBusy} busyText={voteSent ? "Suara terkirim…" : "Mengirim…"} spinnerClassName="w-4 h-4">
             {canSubmit ? "Kirim suara" : "Pilih kandidat"}
           </BusyLabel>
         </button>
