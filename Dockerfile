@@ -36,6 +36,7 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=build /app/node_modules/prisma ./node_modules/prisma
+COPY --from=build /app/node_modules/.bin ./node_modules/.bin
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/scripts ./scripts
 

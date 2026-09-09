@@ -58,7 +58,7 @@ steps 2–3 (repo + `.env` + host DB reachable from the bridge), before step 4.4
 
 ```bash
 cd /opt/suara
-docker compose run --rm app npx prisma db push --skip-generate
+docker compose run --rm app node node_modules/prisma/build/index.js db push --skip-generate
 ```
 
 Uses `DIRECT_DATABASE_URL` (port 5432) from `.env` — correct, `db push` must not
@@ -204,7 +204,7 @@ docker compose pull
 ### 4.3 [vps] Push schema from inside the container (optional if step 1.1 done)
 
 ```bash
-docker compose run --rm app npx prisma db push --skip-generate
+docker compose run --rm app node node_modules/prisma/build/index.js db push --skip-generate
 ```
 
 ### 4.4 [vps] Start the stack
@@ -259,7 +259,7 @@ git add -A && git commit -m "..." && git push        # CI builds + pushes image
 cd /opt/suara && git pull --ff-only
 export TAG=$(git rev-parse --short=12 HEAD)
 docker compose pull app
-docker compose run --rm app npx prisma db push --skip-generate   # only if schema changed
+docker compose run --rm app node node_modules/prisma/build/index.js db push --skip-generate   # only if schema changed
 docker compose up -d
 docker image prune -f
 ```
