@@ -50,7 +50,13 @@ export default function SendAllTokensButton({
         action={async () => {
           const res = await sendAllTokenEmailsAction(eventId);
           if (res.ok) {
-            setNotice({ kind: "ok", text: `${res.sent ?? 0} email terkirim.` });
+            const queued = "queued" in res ? res.queued : 0;
+            setNotice({
+              kind: "ok",
+              text: queued
+                ? `${queued} email masuk antrean — dikirim di latar belakang.`
+                : `${res.sent ?? 0} email terkirim.`,
+            });
             router.refresh();
             return { ok: true };
           }

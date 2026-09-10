@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { initials } from "@/lib/ids";
 import { pct } from "@/lib/format";
+import { cached, cacheKeys } from "@/lib/cache";
 
 export type ResultRow = {
   id: string;
@@ -13,7 +14,12 @@ export type ResultRow = {
   pct: number;
 };
 
+/** Tier 1: cached in Redis with a short TTL, cleared on every `publish()`. */
 export async function getResultsSnapshot(eventId: string) {
+  return cached(cacheKeys.results(eventId), () => loadResultsSnapshot(eventId));
+}
+
+async function loadResultsSnapshot(eventId: string) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {

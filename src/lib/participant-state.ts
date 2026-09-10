@@ -1,13 +1,41 @@
+import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
+import { cached, cacheKeys } from "@/lib/cache";
+
+/** publicId -> internal event id, cached 5 min so a cache hit on the state
+ *  snapshot doesn't cost a Postgres round-trip just to know the index key. */
+async function eventIdForPublic(publicId: string): Promise<string | null> {
+  return cached(
+    cacheKeys.pubToId(publicId),
+    async () =>
+      (await prisma.event.findUnique({ where: { publicId }, select: { id: true } }))?.id ?? null,
+    { ttl: 300 },
+  );
+}
 
 /**
  * The participant-facing view of an event's live state. Shared by the REST
  * endpoint and the SSE stream so there is one source of truth.
  * Returns `null` when the event does not exist.
+ *
+ * Tier 1: cached in Redis per (publicId, token) with a short TTL, and cleared on
+ * every `publish()` for the event. Falls straight through to the DB without Redis.
  */
 export async function getParticipantState(publicId: string, rawToken?: string | null) {
   const token = rawToken?.trim().toUpperCase() || null;
+  const tokenHash = token
+    ? createHash("sha1").update(token).digest("hex").slice(0, 16)
+    : "anon";
+  const eventId = await eventIdForPublic(publicId);
 
+  return cached(
+    cacheKeys.participantState(publicId, tokenHash),
+    () => loadParticipantState(publicId, token),
+    { indexKey: eventId ? cacheKeys.eventIndex(eventId) : undefined },
+  );
+}
+
+async function loadParticipantState(publicId: string, token: string | null) {
   const event = await prisma.event.findUnique({
     where: { publicId },
     include: {

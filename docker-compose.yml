@@ -3,7 +3,7 @@
 #   app       – Next.js standalone server (image built by CI, pulled from GHCR)
 #   pgbouncer – transaction-mode connection pooler in front of Postgres
 #   db        – PostgreSQL 16 (data in the `pgdata` named volume)
-#   redis     – ephemeral cache for the participant-state snapshot (Phase 2)
+#   redis     – snapshot cache + realtime pub/sub + BullMQ email-queue backend
 #   caddy     – TLS termination + reverse proxy, unbuffered for SSE
 #
 #   app -> pgbouncer:6432 (pooled)  -> db:5432 (Postgres)
@@ -86,19 +86,29 @@ services:
   redis:
     image: redis:7-alpine
     restart: always
+    # Holds the Tier 1 snapshot cache (short TTLs) AND the Tier 3 BullMQ job
+    # data. `noeviction` protects queued jobs — cache writes are best-effort and
+    # simply fall back to a DB recompute if Redis is full. AOF on so a restart
+    # mid-blast doesn't drop the email queue.
     command:
       - redis-server
       - --save
-      - ""
+      - "60"
+      - "1000"
       - --appendonly
-      - "no"
+      - "yes"
       - --maxmemory
-      - "96mb"
+      - "128mb"
       - --maxmemory-policy
-      - allkeys-lru
+      - noeviction
+    volumes:
+      - redisdata:/data
     expose:
       - "6379"
-    mem_limit: 128m
+    # Raise to 320m / --maxmemory 256mb on a 2 GB+ box, especially for events
+    # with many participants and photo-carrying ballots (cached snapshots
+    # include candidate photos).
+    mem_limit: 160m
 
   caddy:
     image: caddy:2-alpine
@@ -118,3 +128,4 @@ volumes:
   caddy_data:
   caddy_config:
   pgdata:
+  redisdata:

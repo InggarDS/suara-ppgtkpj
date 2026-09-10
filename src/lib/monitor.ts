@@ -1,8 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { initials } from "@/lib/ids";
 import { pct, relativeTime } from "@/lib/format";
+import { cached, cacheKeys } from "@/lib/cache";
 
+/** Tier 1: cached in Redis with a short TTL, cleared on every `publish()`. */
 export async function getMonitorSnapshot(eventId: string) {
+  return cached(cacheKeys.monitor(eventId), () => loadMonitorSnapshot(eventId));
+}
+
+async function loadMonitorSnapshot(eventId: string) {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
     include: {
