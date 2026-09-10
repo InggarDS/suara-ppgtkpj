@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import EventHeader from "../event-header";
 import StageRulesPanel from "./stage-rules-panel";
 import AddStageButton from "./add-stage-button";
@@ -18,15 +19,25 @@ const STATUS_LABEL: Record<string, string> = {
   CLOSED: "Closed",
 };
 
-export default async function FlowPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FlowPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ stage?: string }>;
+}) {
   const { id } = await params;
+  const { stage: selectedStageId } = await searchParams;
   const event = await prisma.event.findUnique({
     where: { id },
     include: {
       stages: {
         orderBy: { order: "asc" },
         include: {
-          candidates: { orderBy: { order: "asc" } },
+          candidates: {
+            orderBy: { order: "asc" },
+            include: { _count: { select: { votes: true } } },
+          },
           _count: { select: { votes: true, checkIns: true } },
         },
       },
@@ -36,8 +47,14 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
 
   const accessInactive = event.status !== "ACTIVE";
   const activeStage = event.stages.find((s) => s.status === "CHECK_IN" || s.status === "VOTING");
-  const focusStage = activeStage ?? event.stages.find((s) => s.status === "NOT_STARTED") ?? event.stages[0];
+  const focusStage =
+    event.stages.find((s) => s.id === selectedStageId) ??
+    activeStage ??
+    event.stages.find((s) => s.status === "NOT_STARTED") ??
+    event.stages[0];
   const multiStage = event.stages.length > 1;
+  const focusIndex = focusStage ? event.stages.findIndex((s) => s.id === focusStage.id) : -1;
+  const focusNextStage = focusIndex >= 0 ? event.stages[focusIndex + 1] ?? null : null;
   const registeredParticipants = await prisma.participant.findMany({
     where: { eventId: id, registeredAt: { not: null } },
     select: { id: true, name: true, jemaat: true },
@@ -75,6 +92,7 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                 const live = stage.status === "VOTING" || stage.status === "CHECK_IN";
                 const stageLocked = Boolean(activeStage) && stage.id !== activeStage!.id && stage.status === "NOT_STARTED";
                 const nextStage = event.stages[i + 1];
+                const isFocused = focusStage?.id === stage.id;
                 return (
                   <div key={stage.id}>
                     {i > 0 && (
@@ -86,17 +104,27 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
                     <div
                       className={`bg-card rounded-[20px] px-4.5 py-4 ${
                         live ? "border-[1.5px] border-brand shadow-sm" : "border-[1.5px] border-border-1"
-                      } ${stageLocked ? "opacity-60" : ""}`}
+                      } ${isFocused ? "ring-2 ring-brand/40 ring-offset-2 ring-offset-paper" : ""} ${
+                        stageLocked ? "opacity-60" : ""
+                      }`}
                     >
                       <div className="flex items-center gap-2.5 mb-3 flex-wrap">
-                        <span
-                          className={`font-mono text-[10px] rounded px-1.5 py-1 ${
-                            live ? "bg-brand text-white" : "bg-brand-soft text-brand"
-                          }`}
+                        <Link
+                          href={`?stage=${stage.id}`}
+                          replace
+                          scroll={false}
+                          className="flex items-center gap-2.5 rounded-md -mx-1 px-1 py-0.5 hover:bg-brand-soft/60 transition-colors"
+                          title="Lihat pengaturan stage ini di panel kanan"
                         >
-                          STAGE {stage.order}
-                        </span>
-                        <span className="text-sm font-semibold text-ink">{stage.name}</span>
+                          <span
+                            className={`font-mono text-[10px] rounded px-1.5 py-1 ${
+                              live ? "bg-brand text-white" : "bg-brand-soft text-brand"
+                            }`}
+                          >
+                            STAGE {stage.order}
+                          </span>
+                          <span className="text-sm font-semibold text-ink">{stage.name}</span>
+                        </Link>
                         {stage.resultsOpen && (
                           <span className="font-mono text-[9px] tracking-[.06em] uppercase text-brand bg-brand-soft rounded px-1.5 py-0.5">
                             Result open
@@ -171,7 +199,22 @@ export default async function FlowPage({ params }: { params: Promise<{ id: strin
             {focusStage ? (
               <StageRulesPanel
                 eventId={event.id}
-                stage={focusStage}
+                stage={{
+                  id: focusStage.id,
+                  name: focusStage.name,
+                  status: focusStage.status,
+                  resultsOpen: focusStage.resultsOpen,
+                  allowAbstain: focusStage.allowAbstain,
+                  requireFingerprint: focusStage.requireFingerprint,
+                  promoteCount: focusStage.promoteCount,
+                  _count: focusStage._count,
+                  candidates: focusStage.candidates.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    votes: c._count.votes,
+                  })),
+                }}
+                nextStage={focusNextStage ? { name: focusNextStage.name, status: focusNextStage.status } : null}
                 totalVoters={totalVoters}
                 locked={Boolean(activeStage) && focusStage.id !== activeStage!.id}
                 disabled={accessInactive}

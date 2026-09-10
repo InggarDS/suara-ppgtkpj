@@ -5,6 +5,7 @@ import { getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { revalidateAndPublish } from "@/lib/realtime";
+import { normKey } from "@/lib/normalize";
 
 async function requireSession() {
   const session = await getAdminSession();
@@ -22,13 +23,82 @@ function totalVoters(eventId: string) {
 export type StageRulePatch = Partial<{
   allowAbstain: boolean;
   requireFingerprint: boolean;
+  promoteCount: number;
 }>;
 
 export async function updateStageRulesAction(eventId: string, stageId: string, patch: StageRulePatch) {
   await requireSession();
-  await prisma.stage.update({ where: { id: stageId }, data: patch });
+  const data: StageRulePatch = { ...patch };
+  if (typeof data.promoteCount === "number") {
+    data.promoteCount = Math.max(0, Math.min(999, Math.floor(data.promoteCount) || 0));
+  }
+  await prisma.stage.update({ where: { id: stageId }, data });
   revalidatePath(`/admin/events/${eventId}/flow`);
   return { ok: true };
+}
+
+/**
+ * Promote the top `promoteCount` candidates of a stage (by vote count, ties
+ * broken by ballot order) into the next stage. The manual per-candidate button
+ * still works alongside this; both mark the copy as PROMOTED and dedupe.
+ */
+export async function promoteTopCandidatesAction(eventId: string, stageId: string) {
+  const session = await requireSession();
+
+  const stage = await prisma.stage.findUnique({
+    where: { id: stageId },
+    include: {
+      candidates: { orderBy: { order: "asc" }, include: { _count: { select: { votes: true } } } },
+    },
+  });
+  if (!stage || stage.eventId !== eventId) return { ok: false as const, error: "Stage tidak ditemukan." };
+
+  const n = stage.promoteCount;
+  if (n <= 0) return { ok: false as const, error: 'Atur "kandidat lolos" lebih dari 0 dulu.' };
+
+  const next = await prisma.stage.findFirst({
+    where: { eventId, order: { gt: stage.order } },
+    orderBy: { order: "asc" },
+    include: { candidates: true },
+  });
+  if (!next) return { ok: false as const, error: "Tidak ada stage berikutnya." };
+  if (next.status !== "NOT_STARTED") {
+    return { ok: false as const, error: `"${next.name}" sudah dimulai — kandidat terkunci.` };
+  }
+
+  const ranked = [...stage.candidates]
+    .sort((a, b) => b._count.votes - a._count.votes || a.order - b.order)
+    .slice(0, n);
+  if (ranked.every((c) => c._count.votes === 0)) {
+    return { ok: false as const, error: "Belum ada suara di stage ini." };
+  }
+
+  const existingPids = new Set(next.candidates.map((c) => c.participantId).filter(Boolean) as string[]);
+  const existingNames = new Set(next.candidates.map((c) => normKey(c.name)));
+  const fresh = ranked.filter((c) =>
+    c.participantId ? !existingPids.has(c.participantId) : !existingNames.has(normKey(c.name))
+  );
+  if (!fresh.length) return { ok: false as const, error: "Semua kandidat teratas sudah ada di stage berikutnya." };
+
+  const base = next.candidates.length;
+  await prisma.candidate.createMany({
+    data: fresh.map((c, i) => ({
+      stageId: next.id,
+      name: c.name,
+      note: c.note,
+      photo: c.photo,
+      participantId: c.participantId,
+      order: base + i + 1,
+      selectionSource: "PROMOTED" as const,
+    })),
+  });
+  await logAudit(
+    eventId,
+    `${fresh.length} kandidat teratas "${stage.name}" dipromosikan ke "${next.name}" (aturan: ${n} besar)`,
+    session.name
+  );
+  revalidateEvent(eventId);
+  return { ok: true as const, promoted: fresh.length, skipped: ranked.length - fresh.length };
 }
 
 /** Open a stage for check-in. Only one stage may be active at a time. */

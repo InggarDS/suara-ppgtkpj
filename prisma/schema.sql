@@ -67,6 +67,7 @@ CREATE TABLE "Stage" (
     "resultsOpen" BOOLEAN NOT NULL DEFAULT false,
     "allowAbstain" BOOLEAN NOT NULL DEFAULT false,
     "requireFingerprint" BOOLEAN NOT NULL DEFAULT true,
+    "promoteCount" INTEGER NOT NULL DEFAULT 0,
     "startedAt" TIMESTAMP(3),
     "completedAt" TIMESTAMP(3),
 
