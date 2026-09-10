@@ -21,9 +21,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
   if (!body.success) return NextResponse.json({ ok: false, error: "Input tidak valid." }, { status: 400 });
   const { name, photo, deviceId, deviceLabel } = body.data;
 
-  const event = await prisma.event.findUnique({ where: { publicId } });
+  const event = await prisma.event.findUnique({
+    where: { publicId },
+    include: { stages: { where: { status: "VOTING" }, select: { id: true }, take: 1 } },
+  });
   if (!event) return NextResponse.json({ ok: false, error: "Acara tidak ditemukan." }, { status: 404 });
   if (event.status !== "ACTIVE") return NextResponse.json({ ok: false, error: "Pendaftaran untuk acara ini belum dibuka." }, { status: 403 });
+
+  // Once voting is live, registration (registrasi ulang) is closed to newcomers.
+  // Already-registered participants are handled below and never reach this gate
+  // as "new" — they just re-attach a device.
+  const votingLive = event.stages.length > 0;
+  const REGISTRATION_CLOSED =
+    "Voting telah dimulai dan belum bisa ikut karena belum melakukan registrasi ulang.";
 
   if (event.useCredentials) {
     let credential = await prisma.credential.findFirst({
@@ -54,6 +64,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
     if (participant.registeredAt && participant.deviceId && participant.deviceId !== deviceId) {
       return NextResponse.json({ ok: false, error: "Nama ini sudah terdaftar di perangkat lain." }, { status: 409 });
     }
+    if (!participant.registeredAt && votingLive) {
+      return NextResponse.json({ ok: false, error: REGISTRATION_CLOSED }, { status: 403 });
+    }
 
     await prisma.participant.update({
       where: { id: participant.id },
@@ -82,6 +95,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
 
   if (participant.registeredAt && participant.deviceId && participant.deviceId !== deviceId) {
     return NextResponse.json({ ok: false, error: "Token ini sudah terdaftar di perangkat lain." }, { status: 409 });
+  }
+  if (!participant.registeredAt && votingLive) {
+    return NextResponse.json({ ok: false, error: REGISTRATION_CLOSED }, { status: 403 });
   }
 
   await prisma.participant.update({

@@ -13,6 +13,7 @@ const NAV = [
   { key: "", label: "Overview", icon: "M12 2 2 7l10 5 10-5-10-5ZM2 17l10 5 10-5M2 12l10 5 10-5" },
   { key: "flow", label: "Voting flow", icon: "M5 4v6a3 3 0 0 0 3 3h8M16 9l4 4-4 4" },
   { key: "monitor", label: "Live monitoring", icon: "M4 20V11M10 20V4M16 20v-6M2 20h20" },
+  { key: "status", label: "Status Peserta", icon: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM19 8v6M22 11h-6" },
   { key: "results", label: "Shared screen", icon: "M3 4.5h18v12H3zM9 20.5h6" },
   { key: "tokens", label: "Access & tokens", icon: "M14 8a5 5 0 1 0-4.6 5H11v3h3v-3h1.2A5 5 0 0 0 14 8Z" },
   { key: "vote-data", label: "Management Data Vote", icon: "M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9 2 2 4-4" },

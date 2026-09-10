@@ -93,6 +93,9 @@ model Stage {
   resultsOpen    Boolean     @default(false)
   allowAbstain   Boolean     @default(false)
   requireFingerprint Boolean @default(true)
+  // How many top candidates (by vote count) advance to the next stage when the
+  // admin clicks "promote by rule". 0 = not set / manual promotion only.
+  promoteCount   Int         @default(0)
   startedAt      DateTime?
   completedAt    DateTime?
 

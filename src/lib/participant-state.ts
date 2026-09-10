@@ -41,7 +41,14 @@ async function loadParticipantState(publicId: string, token: string | null) {
     include: {
       stages: {
         orderBy: { order: "asc" },
-        include: { candidates: { orderBy: { order: "asc" } } },
+        include: {
+          candidates: {
+            orderBy: { order: "asc" },
+            // Linked participant is the live source for photo / jemaat, so a
+            // photo uploaded AFTER the person was sent as a candidate still shows.
+            include: { participant: { select: { photo: true, jemaat: true } } },
+          },
+        },
       },
     },
   });
@@ -79,7 +86,16 @@ async function loadParticipantState(publicId: string, token: string | null) {
           allowAbstain: activeStage.allowAbstain,
           candidates:
             phase === "voting"
-              ? activeStage.candidates.map((c) => ({ id: c.id, name: c.name, note: c.note, photo: c.photo }))
+              ? activeStage.candidates.map((c) => {
+                  const jemaat = c.participant?.jemaat ?? null;
+                  return {
+                    id: c.id,
+                    name: c.name,
+                    note: c.note || (jemaat ? `Jemaat ${jemaat}` : ""),
+                    jemaat,
+                    photo: c.photo ?? c.participant?.photo ?? null,
+                  };
+                })
               : [],
         }
       : null,

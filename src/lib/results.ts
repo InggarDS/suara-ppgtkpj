@@ -28,7 +28,7 @@ async function loadResultsSnapshot(eventId: string) {
         include: {
           candidates: {
             orderBy: { order: "asc" },
-            include: { participant: { select: { jemaat: true } } },
+            include: { participant: { select: { jemaat: true, photo: true } } },
           },
           votes: true,
           _count: { select: { checkIns: true } },
@@ -119,7 +119,7 @@ async function loadResultsSnapshot(eventId: string) {
         name: c.name,
         jemaat: c.participant?.jemaat ?? (c.note || null),
         note: c.note || null,
-        photo: c.photo,
+        photo: c.photo ?? c.participant?.photo ?? null,
         votes,
       };
     })

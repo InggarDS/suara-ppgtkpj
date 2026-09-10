@@ -21,7 +21,7 @@ type StateResp = {
     name: string;
     phase: "checkin" | "voting" | null;
     allowAbstain: boolean;
-    candidates: { id: string; name: string; note: string; photo: string | null }[];
+    candidates: { id: string; name: string; note: string; jemaat?: string | null; photo: string | null }[];
   } | null;
   totalStages: number;
   stages: { order: number; name: string; status: string }[];
@@ -70,11 +70,21 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
     setToken(tok); // token change reconnects the stream with the new token
   }
 
-  let screen: "loading" | "register" | "closed" | "waiting" | "checkin" | "checkedin" | "booth" | "done" =
-    "loading";
+  let screen:
+    | "loading"
+    | "register"
+    | "too-late"
+    | "closed"
+    | "waiting"
+    | "checkin"
+    | "checkedin"
+    | "booth"
+    | "done" = "loading";
   if (data) {
     if (data.closed) screen = "closed";
-    else if (!token || data.valid === false) screen = "register";
+    else if (!token || data.valid === false)
+      // Registration (registrasi ulang) closes the moment a stage goes to voting.
+      screen = data.liveStage?.phase === "voting" ? "too-late" : "register";
     else if (data.liveStage && data.votedLiveStage) screen = "done";
     else if (data.liveStage && !data.checkedIn) screen = "checkin";
     else if (data.liveStage && data.checkedIn && data.liveStage.phase === "checkin") screen = "checkedin";
@@ -119,6 +129,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             onBusyChange={setProcessing}
           />
         )}
+        {screen === "too-late" && <TooLateScreen eventName={eventName} publicId={publicId} />}
         {screen === "closed" && <ClosedScreen eventName={eventName} publicId={publicId} />}
         {screen === "waiting" && data && (
           <WaitingScreen
@@ -793,7 +804,14 @@ function BoothScreen({
   const [isSubmittingVote, setSubmittingVote] = useState(false);
   const [voteSent, setVoteSent] = useState(false); // held after success until the stream swaps to the done screen
   const [error, setError] = useState<string | undefined>();
+  const [query, setQuery] = useState("");
   const voteBusy = isSubmittingVote || voteSent;
+
+  const showSearch = stage.candidates.length > 7;
+  const q = query.trim().toLowerCase();
+  const visibleCandidates = q
+    ? stage.candidates.filter((c) => c.name.toLowerCase().includes(q))
+    : stage.candidates;
 
   useEffect(() => {
     onBusyChange?.(voteBusy);
@@ -840,8 +858,32 @@ function BoothScreen({
         <h2 className="m-0 text-[19px] font-semibold tracking-tight text-ink">{stage.name}</h2>
       </div>
 
-      <div className="flex-1 overflow-auto px-6 pt-4 pb-3 flex flex-col gap-2.5">
-        {stage.candidates.map((c) => {
+      {showSearch && (
+        <div className="px-6 pt-3 pb-1 flex-none">
+          <div className="relative">
+            <svg
+              width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8D97C2" strokeWidth="2" strokeLinecap="round"
+              className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              disabled={voteBusy}
+              placeholder={`Cari nama kandidat (${stage.candidates.length})`}
+              className="w-full border border-border-1 rounded-full pl-9 pr-3 py-2.5 text-[13.5px] text-ink bg-card outline-none focus:border-brand"
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-auto px-6 pt-3 pb-3 flex flex-col gap-2.5">
+        {showSearch && visibleCandidates.length === 0 && (
+          <p className="text-[12.5px] text-faint text-center py-4">Tidak ada kandidat yang cocok dengan &quot;{query}&quot;.</p>
+        )}
+        {visibleCandidates.map((c) => {
           const on = choice === c.id;
           return (
             <button
@@ -946,6 +988,29 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
     <div className="flex gap-2.5">
       <span className="text-xs text-faint flex-1">{label}</span>
       <span className={`text-xs text-ink ${mono ? "font-mono" : ""}`}>{value}</span>
+    </div>
+  );
+}
+
+function TooLateScreen({ eventName, publicId }: { eventName: string; publicId: string }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-5 text-center">
+      <div className="w-14 h-14 rounded-full bg-amber-bg flex items-center justify-center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="text-amber-text">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 2" />
+        </svg>
+      </div>
+      <div>
+        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">Pendaftaran sudah ditutup</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[32ch] mx-auto">
+          Voting telah dimulai dan belum bisa ikut karena belum melakukan registrasi ulang.
+        </p>
+      </div>
+      <p className="m-0 text-[12px] leading-relaxed text-faint max-w-[30ch] mx-auto">
+        Silakan hubungi panitia {eventName} jika Anda merasa seharusnya terdaftar.
+      </p>
+      <div className="font-mono text-[11px] text-fainter">{publicId}</div>
     </div>
   );
 }
