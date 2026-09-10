@@ -7,6 +7,7 @@ import { generateToken } from "@/lib/ids";
 import { isEmailConfigured, sendEmails } from "@/lib/email";
 import { buildTokenEmail } from "@/lib/token-email";
 import { ensureCredentialParticipants } from "@/lib/credentials";
+import { enqueueTokenEmails, queueEnabled } from "@/lib/queue";
 import { revalidatePath } from "next/cache";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -177,12 +178,24 @@ export async function sendAllTokenEmailsAction(eventId: string) {
   if (!participants.length) return { ok: false as const, error: "Tidak ada peserta dengan alamat email." };
 
   const link = inviteUrl(event.publicId);
-  const emails = participants.map((p) => {
+  const build = (p: (typeof participants)[number]) => {
     const mail = buildTokenEmail({ eventName: event.name, recipientName: p.name, token: p.token, inviteUrl: link });
     return { ...mail, to: p.email!, toName: p.name ?? undefined };
-  });
+  };
 
-  const report = await sendEmails(emails);
+  // Durable path: hand each email to the background queue and return at once.
+  // The worker updates `tokenSentAt` per message and retries failures.
+  if (queueEnabled()) {
+    const { queued } = await enqueueTokenEmails(
+      participants.map((p) => ({ eventId, participantId: p.id, ...build(p) }))
+    );
+    await logAudit(eventId, `Kirim token massal: ${queued} email masuk antrean`, session.name);
+    revalidatePath(`/admin/events/${eventId}/tokens`);
+    return { ok: true as const, queued, sent: 0, failed: 0 };
+  }
+
+  // Fallback (no Redis): send inline, blocking until Resend responds.
+  const report = await sendEmails(participants.map(build));
   const failedSet = new Set(report.failed.map((f) => f.to));
   const okIds = participants.filter((p) => !failedSet.has(p.email!)).map((p) => p.id);
 
