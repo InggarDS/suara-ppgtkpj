@@ -9,7 +9,15 @@ import { motion, useMotionValue, useTransform, animate } from "framer-motion";
  * rather than a jarring jump. Purely a render of `value`; never mutates or
  * re-fetches anything.
  */
-export function AnimatedNumber({ value, className }: { value: number; className?: string }) {
+export function AnimatedNumber({
+  value,
+  className,
+  style,
+}: {
+  value: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   const motionValue = useMotionValue(value);
   const rounded = useTransform(motionValue, (v) => Math.round(v).toLocaleString("id-ID"));
   const prev = useRef(value);
@@ -21,5 +29,9 @@ export function AnimatedNumber({ value, className }: { value: number; className?
     return () => controls.stop();
   }, [value, motionValue]);
 
-  return <motion.span className={className}>{rounded}</motion.span>;
+  return (
+    <motion.span className={className} style={style}>
+      {rounded}
+    </motion.span>
+  );
 }
