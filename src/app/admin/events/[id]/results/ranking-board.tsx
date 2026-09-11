@@ -8,13 +8,8 @@ import { VotingTable } from "@/components/ui/voting-table";
 
 const MAX_VISIBLE = 7;
 
-const GRADIENT = "linear-gradient(90deg,#1b4de4,#0a1a4f)";
-const GRADIENT_TEXT: React.CSSProperties = {
-  background: GRADIENT,
-  WebkitBackgroundClip: "text",
-  backgroundClip: "text",
-  color: "transparent",
-};
+const HEADER_GRADIENT = "linear-gradient(90deg,#2dd4bf,#0e7490)";
+const ROW_COLS = "44px 1fr 92px 64px";
 
 /**
  * Live ranking for every non-final stage. Candidates with 0 votes are hidden
@@ -58,12 +53,24 @@ export function RankingBoard({ data }: { data: ResultsSnapshot }) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5">
-        <AnimatePresence initial={false}>
-          {visible.map((row, i) => (
-            <RankRow key={row.id} row={row} rank={i + 1} topVotes={topVotes} masked={masked} totalVoters={data.totalVoters} />
-          ))}
-        </AnimatePresence>
+      <div className="flex-1 min-h-0 rounded-2xl border border-white/10 bg-stage-dark-2/70 overflow-hidden flex flex-col">
+        <div
+          className="grid items-center flex-none px-4 py-2.5 font-mono text-[10.5px] font-bold tracking-[.1em] uppercase text-stage-dark"
+          style={{ gridTemplateColumns: ROW_COLS, background: HEADER_GRADIENT, gap: "1rem" }}
+        >
+          <span>#</span>
+          <span>Kandidat</span>
+          <span className="text-right">Suara</span>
+          <span className="text-right">%</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          <AnimatePresence initial={false}>
+            {visible.map((row, i) => (
+              <RankRow key={row.id} row={row} rank={i + 1} topVotes={topVotes} masked={masked} totalVoters={data.totalVoters} />
+            ))}
+          </AnimatePresence>
+        </div>
       </div>
 
       {overflow > 0 && (
@@ -106,6 +113,7 @@ function RankRow({
   const tier = tierOf(rank);
   const pctOfLeader = Math.max(4, Math.round((row.votes / topVotes) * 100));
   const pctOfRegistered = totalVoters > 0 ? Math.round((row.votes / totalVoters) * 100) : 0;
+  const stripe = rank % 2 === 0 ? "bg-white/[.03]" : "bg-transparent";
 
   return (
     <motion.div
@@ -114,54 +122,49 @@ function RankRow({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ layout: { type: "spring", stiffness: 320, damping: 32 }, opacity: { duration: 0.25 } }}
-      className={`flex items-center gap-4 rounded-2xl px-4 py-3 bg-white flex-none ${
-        tier === "leader" ? "border-2 border-[#1b4de4]" : tier === "runner-up" ? "border border-[#b9c8f7]" : "border border-slate-200"
+      className={`grid items-center px-4 py-2.5 border-b border-white/[.06] last:border-b-0 ${stripe} ${
+        tier === "leader" ? "relative" : ""
       }`}
-      style={
-        tier === "leader"
-          ? { boxShadow: "0 8px 28px -8px rgba(27,77,228,.45)" }
-          : tier === "runner-up"
-            ? { boxShadow: "0 4px 16px -8px rgba(27,77,228,.2)" }
-            : undefined
-      }
+      style={{ gridTemplateColumns: ROW_COLS, gap: "1rem" }}
     >
-      {tier === "leader" ? (
-        <span
-          className="font-mono text-[15px] font-bold w-9 h-9 rounded-full text-center flex-none flex items-center justify-center text-white"
-          style={{ background: GRADIENT }}
-        >
-          {rank}
-        </span>
-      ) : (
-        <span className={`font-mono text-[20px] font-bold w-9 text-center flex-none tabular-nums ${tier === "runner-up" ? "text-[#1b4de4]" : "text-slate-400"}`}>
-          {rank}
-        </span>
+      {tier === "leader" && (
+        <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: HEADER_GRADIENT }} />
       )}
 
-      <RowAvatar photo={row.photo} label={row.name} tier={tier} />
+      <span
+        className={`font-mono text-[16px] font-bold tabular-nums ${
+          tier === "leader" ? "text-teal-300" : tier === "runner-up" ? "text-white" : "text-white/50"
+        }`}
+      >
+        {rank}
+      </span>
 
-      <span className="flex-1 min-w-0">
-        <span
-          className={`block text-[19px] font-bold tracking-tight truncate ${masked ? "font-mono tracking-[.02em]" : ""}`}
-          style={GRADIENT_TEXT}
-        >
-          {row.name}
-        </span>
-        <span className="block h-1.5 rounded bg-slate-100 overflow-hidden mt-2 max-w-[320px]">
-          <motion.span
-            className="block h-full rounded"
-            style={{ background: tier === "plain" ? "#8ea3e0" : GRADIENT }}
-            initial={false}
-            animate={{ width: `${pctOfLeader}%` }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          />
+      <span className="flex items-center gap-3 min-w-0">
+        <RowAvatar photo={row.photo} label={row.name} tier={tier} />
+        <span className="min-w-0">
+          <span
+            className={`block text-[15px] font-bold tracking-tight truncate text-white ${masked ? "font-mono tracking-[.02em]" : ""}`}
+          >
+            {row.name}
+          </span>
+          <span className="block h-1 rounded bg-white/10 overflow-hidden mt-1.5 max-w-[220px]">
+            <motion.span
+              className="block h-full rounded"
+              style={{ background: tier === "plain" ? "#5b6b9e" : HEADER_GRADIENT }}
+              initial={false}
+              animate={{ width: `${pctOfLeader}%` }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+          </span>
         </span>
       </span>
 
-      <span className="flex flex-col items-end flex-none">
-        <AnimatedNumber value={row.votes} className="font-mono text-[28px] font-extrabold tabular-nums leading-none" style={GRADIENT_TEXT} />
-        <span className="font-mono text-[10px] text-slate-400 mt-1">{pctOfRegistered}% peserta</span>
-      </span>
+      <AnimatedNumber
+        value={row.votes}
+        className="font-mono text-[19px] font-extrabold tabular-nums leading-none text-right text-white"
+      />
+
+      <span className="font-mono text-[11px] text-white/45 text-right">{pctOfRegistered}%</span>
     </motion.div>
   );
 }
@@ -173,17 +176,17 @@ function RowAvatar({ photo, label, tier }: { photo: string | null; label: string
       <img
         src={photo}
         alt=""
-        className="w-12 h-12 rounded-full object-cover flex-none border-2"
-        style={{ borderColor: tier === "leader" ? "#1b4de4" : tier === "runner-up" ? "#b9c8f7" : "#e2e8f0" }}
+        className="w-8 h-8 rounded-full object-cover flex-none border"
+        style={{ borderColor: tier === "leader" ? "#2dd4bf" : tier === "runner-up" ? "#6C76A0" : "#3a4470" }}
       />
     );
   }
   return (
     <span
-      className={`w-12 h-12 rounded-full flex-none flex items-center justify-center text-[15px] font-bold ${
-        tier === "plain" ? "bg-slate-100 text-slate-500" : "text-white"
+      className={`w-8 h-8 rounded-full flex-none flex items-center justify-center text-[12px] font-bold text-white ${
+        tier === "plain" ? "bg-white/10" : ""
       }`}
-      style={tier !== "plain" ? { background: GRADIENT } : undefined}
+      style={tier !== "plain" ? { background: HEADER_GRADIENT } : undefined}
     >
       {label.slice(0, 1)}
     </span>
