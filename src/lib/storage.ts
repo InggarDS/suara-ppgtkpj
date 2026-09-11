@@ -16,7 +16,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
  * re-upload is never served stale from a CDN/browser cache even though the
  * underlying key is unchanged.
  *
- * Every key is written under R2_IMAGE_FOLDER (default "image") — set it to
+ * Every key is written under R2_IMAGE_FOLDER (default "images") — set it to
  * match an existing folder in the bucket, or "" to write at the bucket root.
  */
 
@@ -30,8 +30,8 @@ const SECRET_ACCESS_KEY = env("R2_SECRET_ACCESS_KEY");
 const BUCKET = env("R2_BUCKET");
 const PUBLIC_BASE = env("R2_PUBLIC_URL")?.replace(/\/+$/, "");
 // Every object lands under this prefix inside the bucket (e.g. the bucket
-// already has an "image" folder) — defaults to "image", override if needed.
-const FOLDER = (env("R2_IMAGE_FOLDER") ?? "image").replace(/^\/+|\/+$/g, "");
+// already has an "images" folder) — defaults to "images", override if needed.
+const FOLDER = (env("R2_IMAGE_FOLDER") ?? "images").replace(/^\/+|\/+$/g, "");
 
 function prefixed(key: string): string {
   return FOLDER ? `${FOLDER}/${key}` : key;
