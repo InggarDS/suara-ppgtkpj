@@ -286,9 +286,48 @@ export TAG=<older-sha> && docker compose up -d
 |---|---|
 | App logs | `docker compose logs -f app` |
 | Restart just the app | `docker compose restart app` |
-| Redis is a cache only | not persisted (`--save ""`); losing it is harmless |
+| Email worker logs | `docker compose logs app \| grep email-worker` |
+| Redis | cache + realtime pub/sub + BullMQ queue; AOF-persisted in the `redisdata` volume, `maxmemory-policy noeviction` |
 | DB backups | host cron: `pg_dump suara \| gzip > /var/backups/suara-$(date +\%F).sql.gz` |
 | Caddy certs | in the `caddy_data` volume; survives `up`/`down` |
 | SSE not streaming | check `flush_interval -1` in `deploy/Caddyfile` |
+| `prisma db push` fails with a permission error | the CLI needs to write into `node_modules` as root: `docker compose run --rm --user root app npx prisma db push --skip-generate` |
 | `prisma db push` fails through PgBouncer | it must use `DIRECT_DATABASE_URL` (port 5432), already wired in `env.example` |
-| Bump app instances later | run `app` with `--scale app=2` behind Caddy + enable Redis pub/sub in `src/lib/realtime.ts` |
+| Bump app instances later | run `app` with `--scale app=2` behind Caddy — Redis pub/sub (`src/lib/realtime.ts`) already fans out across instances |
+
+---
+
+## 8. Enable auto-deploy (optional)
+
+`.github/workflows/deploy.yml` already has a `deploy` job that runs after every successful image build on `main` — it SSHes into the VPS and does the same `git pull` → `docker compose pull` → `prisma db push` → `docker compose up -d` sequence from step 6, automatically. It's gated off by default.
+
+### 8.1 [vps] Create a dedicated deploy key
+
+```bash
+ssh-keygen -t ed25519 -f ~/suara_deploy_key -N "" -C "github-actions-deploy"
+cat ~/suara_deploy_key.pub >> ~/.ssh/authorized_keys
+cat ~/suara_deploy_key          # copy this — it's the GitHub secret, not the VPS's own key
+rm ~/suara_deploy_key ~/suara_deploy_key.pub   # keep only authorized_keys on the VPS
+```
+
+Use the account that owns `/opt/suara` and is in the `docker` group (the one you already SSH in as) — not root.
+
+### 8.2 [GitHub] Add repository secrets
+
+Repo → **Settings → Secrets and variables → Actions → Secrets**:
+
+| Secret | Value |
+|---|---|
+| `VPS_HOST` | the VPS IP or hostname |
+| `VPS_USER` | the SSH user from 8.1 |
+| `VPS_SSH_KEY` | the **private** key printed by `cat ~/suara_deploy_key` above |
+
+No `GHCR_PAT` needed — the deploy job authenticates to GHCR with the workflow's own short-lived token.
+
+### 8.3 [GitHub] Turn it on
+
+**Settings → Secrets and variables → Actions → Variables** → add `ENABLE_SSH_DEPLOY` = `true`.
+
+Next push to `main` (or merged PR) builds the image **and** deploys it — no manual VPS steps. Watch it in the Actions tab; the `deploy` job's SSH output mirrors what you'd type by hand. A schema change still runs safely (`prisma db push` is a no-op when nothing changed); a step failing (e.g. destructive schema change without `--accept-data-loss`) fails the whole workflow loudly instead of silently applying.
+
+**Rollback** still works the same manual way — `export TAG=<older-sha> && docker compose up -d` on the VPS — auto-deploy doesn't add a rollback button.
