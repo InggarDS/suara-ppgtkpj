@@ -25,7 +25,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ publ
           closed = true;
         }
       };
-      const push = async () => send(await getParticipantState(publicId, token));
+      // Same "gone" convention as the REST endpoint — if the event is deleted
+      // after this stream connects, keep pushing { gone: true } instead of a
+      // bare null frame (the participant screen would otherwise just freeze).
+      const push = async () => send((await getParticipantState(publicId, token)) ?? { gone: true });
 
       void push();
       const unsubscribe = subscribe(event.id, () => void push());

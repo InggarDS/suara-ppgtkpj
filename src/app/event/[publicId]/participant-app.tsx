@@ -10,6 +10,9 @@ import { TopProgress } from "@/components/ui/top-progress";
 import { useEventStream } from "@/hooks/use-event-stream";
 
 type StateResp = {
+  /** Event doesn't exist (deleted, or the link was never valid) — every other
+   *  field is absent when this is set. */
+  gone?: boolean;
   eventName: string;
   eventStatus: string;
   bannerImage: string | null;
@@ -72,6 +75,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
 
   let screen:
     | "loading"
+    | "gone"
     | "register"
     | "too-late"
     | "closed"
@@ -81,7 +85,8 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
     | "booth"
     | "done" = "loading";
   if (data) {
-    if (data.closed) screen = "closed";
+    if (data.gone) screen = "gone";
+    else if (data.closed) screen = "closed";
     else if (!token || data.valid === false)
       // Registration (registrasi ulang) closes the moment a stage goes to voting.
       screen = data.liveStage?.phase === "voting" ? "too-late" : "register";
@@ -129,8 +134,9 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
             onBusyChange={setProcessing}
           />
         )}
+        {screen === "gone" && <EventEndedScreen publicId={publicId} />}
         {screen === "too-late" && <TooLateScreen eventName={eventName} publicId={publicId} />}
-        {screen === "closed" && <ClosedScreen eventName={eventName} publicId={publicId} />}
+        {screen === "closed" && <NotOpenScreen eventName={eventName} publicId={publicId} />}
         {screen === "waiting" && data && (
           <WaitingScreen
             eventName={eventName}
@@ -1015,7 +1021,10 @@ function TooLateScreen({ eventName, publicId }: { eventName: string; publicId: s
   );
 }
 
-function ClosedScreen({ eventName, publicId }: { eventName: string; publicId: string }) {
+/** Event exists but access is off (`Event.status !== "ACTIVE"`) — covers both
+ *  "not opened yet" and "closed after being open"; kept as one simple message
+ *  since the participant has no way to tell those apart anyway. */
+function NotOpenScreen({ eventName, publicId }: { eventName: string; publicId: string }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-5 text-center bg-border-5 rounded-b-[26px]">
       <div className="w-14 h-14 rounded-full bg-border-2 flex items-center justify-center">
@@ -1025,10 +1034,34 @@ function ClosedScreen({ eventName, publicId }: { eventName: string; publicId: st
         </svg>
       </div>
       <div>
-        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">Acara ini telah ditutup</h2>
-        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">Pendaftaran dan pemilihan untuk {eventName} sudah tidak dibuka.</p>
+        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">Acara belum dibuka</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">
+          Acara <strong className="text-ink">{eventName}</strong> belum dibuka.
+        </p>
       </div>
-      <div className="font-mono text-[11px] text-fainter">{publicId} · DITUTUP</div>
+      <div className="font-mono text-[11px] text-fainter">{publicId} · BELUM DIBUKA</div>
+    </div>
+  );
+}
+
+/** Event row no longer exists — deleted by an admin, or the link was never
+ *  valid. No event name is available at this point. */
+function EventEndedScreen({ publicId }: { publicId: string }) {
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-5 text-center bg-border-5 rounded-b-[26px]">
+      <div className="w-14 h-14 rounded-full bg-border-2 flex items-center justify-center">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#6C76A0" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M9.5 9.5 14.5 14.5M14.5 9.5 9.5 14.5"></path>
+        </svg>
+      </div>
+      <div>
+        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">Acara telah berakhir</h2>
+        <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[28ch] mx-auto">
+          Acara ini sudah tidak tersedia. Hubungi panitia jika Anda memiliki pertanyaan.
+        </p>
+      </div>
+      <div className="font-mono text-[11px] text-fainter">{publicId} · BERAKHIR</div>
     </div>
   );
 }
