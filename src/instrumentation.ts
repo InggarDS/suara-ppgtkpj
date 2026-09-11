@@ -10,6 +10,12 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   if (process.env.RUN_WORKER === "0") return;
 
-  const { startEmailWorker } = await import("@/lib/email-worker");
-  startEmailWorker();
+  // Never let a worker/Redis init problem take down the web process — the app
+  // is fully functional without the queue (bulk email falls back to inline).
+  try {
+    const { startEmailWorker } = await import("@/lib/email-worker");
+    startEmailWorker();
+  } catch (err) {
+    console.error("[instrumentation] email worker not started:", err instanceof Error ? err.message : err);
+  }
 }
