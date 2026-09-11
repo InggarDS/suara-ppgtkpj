@@ -1,6 +1,7 @@
 import { getAdminSession } from "@/lib/auth";
 import { logoutAction } from "./actions";
 import Link from "next/link";
+import { PpgtLogo } from "@/components/ui/ppgt-logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -11,11 +12,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       {session && (
         <div className="flex items-center gap-4 flex-wrap px-6.5 py-4 border-b border-border-1">
           <Link href="/admin/events" className="flex items-center gap-2.5">
-            <div className="w-[26px] h-[26px] rounded-[10px] bg-brand flex items-center justify-center">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 12.5 9.5 18 20 6.5"></path>
-              </svg>
-            </div>
+            <PpgtLogo size={26} className="rounded-[7px] flex-none" priority />
             <span className="text-sm font-semibold text-ink tracking-tight">Suara</span>
             <span className="text-xs text-faint hidden sm:inline">Suara Kita Untuk Pelayanan</span>
           </Link>
