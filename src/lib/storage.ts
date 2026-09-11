@@ -15,6 +15,9 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
  * orphaned objects. The returned URL carries a `?v=<timestamp>` so a later
  * re-upload is never served stale from a CDN/browser cache even though the
  * underlying key is unchanged.
+ *
+ * Every key is written under R2_IMAGE_FOLDER (default "image") — set it to
+ * match an existing folder in the bucket, or "" to write at the bucket root.
  */
 
 function env(name: string): string | undefined {
@@ -26,6 +29,13 @@ const ACCESS_KEY_ID = env("R2_ACCESS_KEY_ID");
 const SECRET_ACCESS_KEY = env("R2_SECRET_ACCESS_KEY");
 const BUCKET = env("R2_BUCKET");
 const PUBLIC_BASE = env("R2_PUBLIC_URL")?.replace(/\/+$/, "");
+// Every object lands under this prefix inside the bucket (e.g. the bucket
+// already has an "image" folder) — defaults to "image", override if needed.
+const FOLDER = (env("R2_IMAGE_FOLDER") ?? "image").replace(/^\/+|\/+$/g, "");
+
+function prefixed(key: string): string {
+  return FOLDER ? `${FOLDER}/${key}` : key;
+}
 
 export function storageEnabled(): boolean {
   return Boolean(ACCOUNT_ID && ACCESS_KEY_ID && SECRET_ACCESS_KEY && BUCKET && PUBLIC_BASE);
@@ -68,17 +78,18 @@ export async function uploadImage(dataUrl: string, key: string): Promise<string>
   const parsed = parseDataUrl(dataUrl);
   if (!parsed) return dataUrl;
 
+  const fullKey = prefixed(key);
   try {
     await c.send(
       new PutObjectCommand({
         Bucket: BUCKET,
-        Key: key,
+        Key: fullKey,
         Body: parsed.buffer,
         ContentType: parsed.contentType,
         CacheControl: "public, max-age=31536000, immutable",
       })
     );
-    return `${PUBLIC_BASE}/${key}?v=${Date.now()}`;
+    return `${PUBLIC_BASE}/${fullKey}?v=${Date.now()}`;
   } catch (err) {
     console.error("[storage] upload failed, keeping inline image:", err instanceof Error ? err.message : err);
     return dataUrl;
@@ -90,7 +101,7 @@ export async function deleteImage(key: string): Promise<void> {
   const c = client();
   if (!c) return;
   try {
-    await c.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: key }));
+    await c.send(new DeleteObjectCommand({ Bucket: BUCKET, Key: prefixed(key) }));
   } catch {
     /* ignore */
   }
