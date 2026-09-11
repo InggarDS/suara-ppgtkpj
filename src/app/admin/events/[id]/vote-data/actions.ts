@@ -5,6 +5,7 @@ import { getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { publish } from "@/lib/realtime";
 import { namaJemaatKey, normKey } from "@/lib/normalize";
+import { uploadImage } from "@/lib/storage";
 import { revalidatePath } from "next/cache";
 
 async function requireSession() {
@@ -93,7 +94,8 @@ export async function uploadParticipantPhotoAction(
     return { ok: false as const, error: "Peserta tidak ditemukan." };
   }
 
-  await prisma.participant.update({ where: { id: participantId }, data: { photo } });
+  const storedPhoto = await uploadImage(photo, `participants/${eventId}/${participantId}.jpg`);
+  await prisma.participant.update({ where: { id: participantId }, data: { photo: storedPhoto } });
   await logAudit(eventId, `Foto ${participant.name ?? participant.token} diunggah oleh admin`, session.name);
   revalidate(eventId);
   return { ok: true as const };

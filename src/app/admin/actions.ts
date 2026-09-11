@@ -6,6 +6,7 @@ import { ensureCredentialParticipants } from "@/lib/credentials";
 import { destroyAdminSession, getAdminSession } from "@/lib/auth";
 import { logAudit } from "@/lib/audit";
 import { publish } from "@/lib/realtime";
+import { uploadImage, deleteImage } from "@/lib/storage";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -38,7 +39,9 @@ export async function createEventAction(input: CreateEventInput) {
   const eventData = {
     name: input.name.trim(),
     description: input.description.trim(),
-    bannerImage: input.bannerImage || null,
+    // Banner is uploaded to R2 after the event exists (the object key is
+    // keyed by eventId) — see the upload below.
+    bannerImage: null as string | null,
     status: input.openNow ? ("ACTIVE" as const) : ("INACTIVE" as const),
     expectedParticipants: input.expectedParticipants,
     useCredentials: Boolean(input.useCredentials),
@@ -82,6 +85,11 @@ export async function createEventAction(input: CreateEventInput) {
     }
   }
 
+  if (input.bannerImage) {
+    const stored = await uploadImage(input.bannerImage, `banners/${event.id}.jpg`);
+    await prisma.event.update({ where: { id: event.id }, data: { bannerImage: stored } });
+  }
+
   if (input.useCredentials) await ensureCredentialParticipants(event.id);
 
   await logAudit(
@@ -98,7 +106,9 @@ export async function updateBannerAction(eventId: string, bannerImage: string | 
   const session = await getAdminSession();
   if (!session) return { ok: false, error: "Not authenticated" };
 
-  await prisma.event.update({ where: { id: eventId }, data: { bannerImage } });
+  const stored = bannerImage ? await uploadImage(bannerImage, `banners/${eventId}.jpg`) : null;
+  if (!bannerImage) await deleteImage(`banners/${eventId}.jpg`);
+  await prisma.event.update({ where: { id: eventId }, data: { bannerImage: stored } });
   await logAudit(eventId, bannerImage ? "Banner image updated" : "Banner image removed", session.name);
 
   revalidatePath(`/admin/events/${eventId}`);
