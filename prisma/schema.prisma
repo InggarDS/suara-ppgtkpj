@@ -96,6 +96,11 @@ model Stage {
   // How many top candidates (by vote count) advance to the next stage when the
   // admin clicks "promote by rule". 0 = not set / manual promotion only.
   promoteCount   Int         @default(0)
+  // Set every time the stage is (re)opened for check-in. A participant who
+  // registers AFTER this timestamp can't check in / vote for THIS stage —
+  // they're eligible starting the next one. Null (stages opened before this
+  // column existed) means no gate.
+  openedAt       DateTime?
   startedAt      DateTime?
   completedAt    DateTime?
 

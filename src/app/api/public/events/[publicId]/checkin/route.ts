@@ -26,6 +26,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
     return NextResponse.json({ ok: false, error: "Daftar terlebih dahulu." }, { status: 403 });
   }
 
+  // Registered after this stage's check-in window opened — not eligible until
+  // the next stage. `openedAt` is null for stages opened before this column
+  // existed, so those stay ungated.
+  if (stage.openedAt && participant.registeredAt > stage.openedAt) {
+    return NextResponse.json(
+      { ok: false, error: "Maaf anda sudah terlambat melakukan registrasi ulang, harap hubungi admin." },
+      { status: 403 }
+    );
+  }
+
   await prisma.stageCheckIn.upsert({
     where: { stageId_participantId: { stageId: stage.id, participantId: participant.id } },
     create: { stageId: stage.id, participantId: participant.id },
