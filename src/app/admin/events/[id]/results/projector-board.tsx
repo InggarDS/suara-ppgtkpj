@@ -3,6 +3,8 @@
 import { ResultsSnapshot } from "@/lib/results";
 import { QrImage } from "@/components/ui/invite-qr";
 import { VotingTable } from "@/components/ui/voting-table";
+import { RankingBoard } from "./ranking-board";
+import { FinalStageReveal } from "./final-stage-reveal";
 
 export default function ProjectorBoard({
   eventName,
@@ -15,8 +17,6 @@ export default function ProjectorBoard({
   inviteUrl?: string;
   showQr?: boolean;
 }) {
-  const showWinnerReveal = data.isFinalStage && data.phase === "result" && Boolean(data.winnerName);
-
   if (data.votingComplete) {
     return (
       <div className="relative w-full max-w-[980px] flex flex-col items-center gap-8 py-12 animate-rise-in">
@@ -68,27 +68,18 @@ export default function ProjectorBoard({
         <div className="flex-1 flex flex-col items-center justify-center gap-8 py-14">
           <span className="font-mono text-[12px] tracking-[.2em] uppercase text-brand-accent-2">{data.stageName}</span>
           <div className="text-[64px] font-semibold tracking-tight leading-none">Silakan Check In</div>
-          <div className="flex items-center gap-14">
-            <div className="flex flex-col items-center gap-5">
-              <div className="text-[104px] font-semibold tracking-tight leading-none tabular-nums">{data.checkInPct}%</div>
-              <div className="text-lg text-stage-dim font-mono">
-                {data.checkedInCount} / {data.totalVoters} voters checked in
-              </div>
-              <div className="w-[440px] h-3.5 rounded-lg bg-stage-dark-2 overflow-hidden">
-                <div
-                  className="h-full rounded-lg transition-all duration-700"
-                  style={{ width: `${data.checkInPct}%`, background: "linear-gradient(90deg,#3d6df0,#1b4de4)" }}
-                />
-              </div>
+          {/* No QR once a stage is open — joining is done, this is check-in now. */}
+          <div className="flex flex-col items-center gap-5">
+            <div className="text-[104px] font-semibold tracking-tight leading-none tabular-nums">{data.checkInPct}%</div>
+            <div className="text-lg text-stage-dim font-mono">
+              {data.checkedInCount} / {data.totalVoters} voters checked in
             </div>
-            {inviteUrl && showQr && (
-              <div className="flex flex-col items-center gap-3 flex-none">
-                <div className="bg-white rounded-2xl p-3">
-                  <QrImage url={inviteUrl} size={150} />
-                </div>
-                <span className="font-mono text-[11px] text-stage-dimmer uppercase tracking-[.1em]">Scan to join</span>
-              </div>
-            )}
+            <div className="w-[440px] h-3.5 rounded-lg bg-stage-dark-2 overflow-hidden">
+              <div
+                className="h-full rounded-lg transition-all duration-700"
+                style={{ width: `${data.checkInPct}%`, background: "linear-gradient(90deg,#3d6df0,#1b4de4)" }}
+              />
+            </div>
           </div>
           <div className="text-[13px] text-stage-dimmer">Pemungutan suara dimulai setelah semua peserta check-in.</div>
         </div>
@@ -109,8 +100,12 @@ export default function ProjectorBoard({
       />
       {data.stageSequence.length > 1 && <StageSequenceBar stages={data.stageSequence} />}
 
-      {showWinnerReveal ? (
-        <WinnerReveal data={data} />
+      {data.isFinalStage ? (
+        // The final stage gets its own presentation (vertical-bar suspense +
+        // cinematic reveal) — see final-stage-reveal.tsx. Skipping the
+        // stage-name/progress chrome below keeps the reveal moment as the
+        // screen's sole visual focus.
+        <FinalStageReveal data={data} />
       ) : (
         <>
           <div className="flex items-baseline gap-3.5 mb-5 flex-none">
@@ -153,9 +148,7 @@ export default function ProjectorBoard({
             </div>
           )}
 
-          <div className="overflow-y-auto pr-1">
-            <VotingTable rows={data.results} masked={data.phase !== "result"} tone="dark" />
-          </div>
+          <RankingBoard data={data} />
         </>
       )}
     </div>
@@ -216,46 +209,6 @@ function StageSequenceBar({ stages }: { stages: ResultsSnapshot["stageSequence"]
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function WinnerReveal({ data }: { data: ResultsSnapshot }) {
-  const others = data.results.filter((r) => r.id !== data.winnerId && r.id !== "abstain");
-
-  return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-8 py-6 overflow-y-auto animate-celebrate">
-      <div
-        className="font-mono text-[13px] tracking-[.3em] uppercase text-brand-accent-2"
-        style={{ textShadow: "0 0 24px rgba(77,123,245,.55)" }}
-      >
-        Selamat Terpilih
-      </div>
-
-      <div className="flex flex-col items-center gap-4">
-        <div
-          className="relative rounded-full p-1.5"
-          style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 60px -10px rgba(27,77,228,.6)" }}
-        >
-          {data.winnerPhoto ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.winnerPhoto} alt="" className="w-[190px] h-[190px] rounded-full object-cover border-4 border-stage-dark" />
-          ) : (
-            <span className="w-[190px] h-[190px] rounded-full border-4 border-stage-dark bg-stage-dark-3 flex items-center justify-center text-[52px] font-semibold text-stage-dim">
-              {data.winnerName?.slice(0, 1)}
-            </span>
-          )}
-        </div>
-        <div className="text-[46px] font-semibold tracking-tight text-center leading-tight">{data.winnerName}</div>
-        {data.winnerNote && <div className="text-lg text-stage-dim font-mono">{data.winnerNote}</div>}
-      </div>
-
-      {others.length > 0 && (
-        <div className="w-full max-w-[720px] pt-4 border-t border-stage-dark-3">
-          <div className="font-mono text-[10.5px] tracking-[.12em] uppercase text-stage-dimmer mb-3 text-center">Peringkat Lengkap</div>
-          <VotingTable rows={data.results} tone="dark" />
-        </div>
-      )}
     </div>
   );
 }

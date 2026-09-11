@@ -96,6 +96,8 @@ async function loadResultsSnapshot(eventId: string) {
       winnerName: null,
       winnerNote: null,
       winnerPhoto: null,
+      winners: [] as ResultRow[],
+      isTie: false,
     };
   }
 
@@ -148,7 +150,19 @@ async function loadResultsSnapshot(eventId: string) {
     };
   });
 
-  const winner = raw[0] ?? null;
+  // Golput can't "win" — only real candidates are eligible. When two or more
+  // are tied for the top vote count (relevant for the final stage's reveal),
+  // every one of them is a winner, not just whichever sorted first.
+  const candidatePool = raw.filter((r) => r.id !== "abstain");
+  const topVotes = candidatePool[0]?.votes ?? 0;
+  const winners: ResultRow[] =
+    revealed && topVotes > 0
+      ? candidatePool
+          .filter((r) => r.votes === topVotes)
+          .map((r) => ({ ...r, initials: initials(r.name), pct: pct(r.votes, totalVotes || 1) }))
+      : [];
+  const winner = winners[0] ?? null;
+  const isTie = winners.length > 1;
   const isFinalStage = targetStage.order === maxOrder;
 
   return {
@@ -173,10 +187,12 @@ async function loadResultsSnapshot(eventId: string) {
     registered,
     registrationPct: pct(registered, totalVoters || 1),
     results,
-    winnerId: revealed ? winner?.id ?? null : null,
-    winnerName: revealed ? winner?.name ?? null : null,
-    winnerNote: revealed ? winner?.note ?? null : null,
-    winnerPhoto: revealed ? winner?.photo ?? null : null,
+    winnerId: winner?.id ?? null,
+    winnerName: winner?.name ?? null,
+    winnerNote: winner?.note ?? null,
+    winnerPhoto: winner?.photo ?? null,
+    winners,
+    isTie,
   };
 }
 
