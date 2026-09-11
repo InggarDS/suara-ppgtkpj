@@ -256,16 +256,25 @@ undo; the database is already independent of Vercel.
 
 ## 6. Day-to-day: ship a change
 
-```bash
-# [local]
-git add -A && git commit -m "..." && git push        # CI builds + pushes image
-```
+Merging to `main` only **builds** an image (tagged by short sha) — it does not touch production. Deploying is a separate, deliberate step: push a `vX.Y.Z` tag at the commit on `main` you want live.
 
 ```bash
-# [vps]  (or enable ENABLE_SSH_DEPLOY repo variable to automate this)
+# [local]
+git add -A && git commit -m "..." && git push          # CI builds + pushes an untagged-release image
+# ...when ready to actually ship what's on main:
+git tag v1.2.0
+git push origin v1.2.0                                   # THIS triggers the deploy (if ENABLE_SSH_DEPLOY is on)
+```
+
+Tag naming: `vMAJOR.MINOR.PATCH` (e.g. `v1.3.0`). `git tag -l` lists existing tags; `git tag -d v1.2.0 && git push origin :refs/tags/v1.2.0` deletes a mistaken one (only if nothing depends on it yet).
+
+Manual VPS deploy (skip if `ENABLE_SSH_DEPLOY` is on — see step 8):
+
+```bash
+# [vps]
 cd /opt/suara && git pull --ff-only
-export TAG=$(git rev-parse --short=12 HEAD)
-docker image prune -af   # -a, not just -f — every deploy tags a new :<sha>, plain
+export TAG=v1.2.0        # the tag you just pushed (or a short sha for an untagged build)
+docker image prune -af   # -a, not just -f — every deploy tags a new image, plain
                           # prune never reclaims those and the disk fills over time
 docker compose pull app
 # only if the schema changed this release — --user root: the CLI's engine check
@@ -275,10 +284,10 @@ docker compose up -d
 docker image prune -af
 ```
 
-**Rollback to a previous build:**
+**Rollback to a previous release:**
 
 ```bash
-export TAG=<older-sha> && docker compose up -d
+export TAG=v1.1.0 && docker compose up -d
 ```
 
 ---
@@ -303,7 +312,7 @@ export TAG=<older-sha> && docker compose up -d
 
 ## 8. Enable auto-deploy (optional)
 
-`.github/workflows/deploy.yml` already has a `deploy` job that runs after every successful image build on `main` — it SSHes into the VPS and does the same `git pull` → `docker compose pull` → `prisma db push` → `docker compose up -d` sequence from step 6, automatically. It's gated off by default.
+`.github/workflows/deploy.yml` has a `deploy` job that fires **only when you push a `vX.Y.Z` tag** (not on every `main` push) — it SSHes into the VPS and does the same `git pull` → `docker compose pull` → `prisma db push` → `docker compose up -d` sequence from step 6, automatically. It's gated off by default.
 
 ### 8.1 [vps] Create a dedicated deploy key
 
@@ -332,6 +341,6 @@ No `GHCR_PAT` needed — the deploy job authenticates to GHCR with the workflow'
 
 **Settings → Secrets and variables → Actions → Variables** → add `ENABLE_SSH_DEPLOY` = `true`.
 
-Next push to `main` (or merged PR) builds the image **and** deploys it — no manual VPS steps. Watch it in the Actions tab; the `deploy` job's SSH output mirrors what you'd type by hand. A schema change still runs safely (`prisma db push` is a no-op when nothing changed); a step failing (e.g. destructive schema change without `--accept-data-loss`) fails the whole workflow loudly instead of silently applying.
+Merges to `main` still only build (no deploy). The next `vX.Y.Z` tag you push builds **and** deploys it — no manual VPS steps. Watch it in the Actions tab; the `deploy` job's SSH output mirrors what you'd type by hand. A schema change still runs safely (`prisma db push` is a no-op when nothing changed); a step failing (e.g. destructive schema change without `--accept-data-loss`) fails the whole workflow loudly instead of silently applying.
 
-**Rollback** still works the same manual way — `export TAG=<older-sha> && docker compose up -d` on the VPS — auto-deploy doesn't add a rollback button.
+**Rollback** still works the same manual way — `export TAG=<older-tag> && docker compose up -d` on the VPS — auto-deploy doesn't add a rollback button.

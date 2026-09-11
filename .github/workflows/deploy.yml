@@ -1,12 +1,17 @@
 name: Build & deploy
 
+# main pushes: build + push an image only (no deploy) — lets several PRs land
+# without each one hitting production. Deploys are a deliberate act: push a
+# `vX.Y.Z` tag pointing at the commit on main you want live.
+#   git tag v1.2.0 && git push origin v1.2.0
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   workflow_dispatch:
 
 concurrency:
-  group: deploy
+  group: deploy-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -18,14 +23,42 @@ jobs:
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
       image: ${{ steps.meta.outputs.image }}
+      is_release: ${{ steps.meta.outputs.is_release }}
     steps:
       - uses: actions/checkout@v4
 
       - id: meta
-        # GHCR requires an all-lowercase repository path; owner may be mixed-case
+        # GHCR requires an all-lowercase repository path; owner may be mixed-case.
+        # A tag push (refs/tags/v1.2.0) is tagged with that version; a plain
+        # main push is tagged with its short sha and never touches `:latest`
+        # (latest = latest RELEASED version, not latest merged commit).
         run: |
-          echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
           echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - id: tags
+        # $'\n' keeps this one bash statement (a literal YAML line break here
+        # would fight the block scalar's indentation rules) — avoids relying
+        # on multi-line quoting inside the workflow file.
+        run: |
+          IMAGE="${{ steps.meta.outputs.image }}"
+          TAG="${{ steps.meta.outputs.tag }}"
+          if [ "${{ steps.meta.outputs.is_release }}" = "true" ]; then
+            TAGS="$IMAGE:$TAG"$'\n'"$IMAGE:latest"
+          else
+            TAGS="$IMAGE:$TAG"
+          fi
+          {
+            echo "tags<<EOF"
+            echo "$TAGS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -39,19 +72,18 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
-            ${{ steps.meta.outputs.image }}:latest
+          tags: ${{ steps.tags.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # Enable by adding the three VPS_* repository secrets and setting the
-    # ENABLE_SSH_DEPLOY repository variable to "true". Until then the build
-    # job still publishes the image and you deploy by hand on the VPS.
-    if: ${{ vars.ENABLE_SSH_DEPLOY == 'true' }}
+    # Only a version-tag push deploys. Enable by adding the three VPS_*
+    # repository secrets and setting ENABLE_SSH_DEPLOY to "true"; until then
+    # (or for a plain main push) the build job still publishes the image and
+    # you deploy by hand on the VPS.
+    if: ${{ needs.build.outputs.is_release == 'true' && vars.ENABLE_SSH_DEPLOY == 'true' }}
     permissions:
       packages: read
     steps:
@@ -67,7 +99,7 @@ jobs:
             git pull --ff-only
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             export TAG=${{ needs.build.outputs.tag }}
-            # `-a`: every previous deploy tags a new :<sha>, so a plain prune
+            # `-a`: every previous deploy tags a new image, so a plain prune
             # (dangling layers only) never reclaims them — they pile up until
             # the disk fills mid-pull. Safe: an image backing a running
             # container is never removed, tagged or not.
