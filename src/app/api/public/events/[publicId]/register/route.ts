@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { publish } from "@/lib/realtime";
 import { ensureCredentialParticipants } from "@/lib/credentials";
+import { uploadImage } from "@/lib/storage";
 import { z } from "zod";
 
 export const maxDuration = 60;
@@ -68,10 +69,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
       return NextResponse.json({ ok: false, error: REGISTRATION_CLOSED }, { status: 403 });
     }
 
+    const storedPhoto = photo
+      ? await uploadImage(photo, `participants/${event.id}/${participant.id}.jpg`)
+      : participant.photo;
+
     await prisma.participant.update({
       where: { id: participant.id },
       data: {
-        photo: photo ?? participant.photo,
+        photo: storedPhoto,
         deviceId,
         deviceLabel: deviceLabel ?? participant.deviceLabel,
         registeredAt: participant.registeredAt ?? new Date(),
@@ -100,12 +105,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pub
     return NextResponse.json({ ok: false, error: REGISTRATION_CLOSED }, { status: 403 });
   }
 
+  const storedPhoto = photo
+    ? await uploadImage(photo, `participants/${event.id}/${participant.id}.jpg`)
+    : participant.photo;
+
   await prisma.participant.update({
     where: { id: participant.id },
     data: {
       name: name.trim(),
       jemaat,
-      photo: photo ?? participant.photo,
+      photo: storedPhoto,
       deviceId,
       deviceLabel: deviceLabel ?? participant.deviceLabel,
       registeredAt: participant.registeredAt ?? new Date(),
