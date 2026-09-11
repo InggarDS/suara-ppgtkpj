@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ResultRow, ResultsSnapshot } from "@/lib/results";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { VotingTable } from "@/components/ui/voting-table";
-import { hasWebGL } from "@/components/three/has-webgl";
-import { WebglErrorBoundary } from "@/components/three/webgl-error-boundary";
-import type { PodiumEntry } from "@/components/three/podium-scene";
-
-// Pulls in three.js + @react-three/fiber — kept out of every other route's
-// bundle. Never runs server-side (WebGL needs a real browser).
-const Podium3D = dynamic(() => import("@/components/three/podium-scene"), { ssr: false });
 
 type Phase = "bars" | "transition" | "suspense" | "revealed";
 const TRANSITION_MS = 700;
@@ -278,45 +270,45 @@ const HEADLINE_STYLE: React.CSSProperties = {
   color: "transparent",
 };
 
-function buildPodiumPlaces(data: ResultsSnapshot): PodiumEntry[] {
-  return data.results
-    .filter((r) => r.id !== "abstain" && r.votes > 0)
-    .slice(0, 3)
-    .map((r) => ({ id: r.id, name: r.name, note: r.note, photo: r.photo, votes: r.votes }));
+/** Kahoot-style winner reveal for a clear (non-tied) winner: a spotlight on
+ *  the winner alone plus a confetti burst — no podium blocks for 2nd/3rd. */
+function WinnerPodiumOrFallback({ data }: { data: ResultsSnapshot }) {
+  return (
+    <div className="w-full relative">
+      <Confetti />
+      <SingleWinnerReveal data={data} />
+    </div>
+  );
 }
 
-/** The 3D podium for a clear (non-tied) winner — confetti, spotlight, the
- *  works. Only attempted when the browser actually reports WebGL support;
- *  otherwise (and if the 3D scene throws at runtime) falls back to the flat
- *  2D reveal so a live event never ends up staring at a black rectangle. */
-function WinnerPodiumOrFallback({ data }: { data: ResultsSnapshot }) {
-  const [webgl, setWebgl] = useState(false);
-  useEffect(() => {
-    // One-time client-only capability read, same pattern as the
-    // device-id/localStorage read in the participant app.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setWebgl(hasWebGL());
-  }, []);
-  const places = useMemo(() => buildPodiumPlaces(data), [data]);
-
-  if (!webgl) return <SingleWinnerReveal data={data} />;
+/** A one-shot confetti burst of small falling rectangles — pure CSS/Framer,
+ *  no canvas or extra dependency. Fixed random-ish spread computed once. */
+function Confetti() {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        left: `${(i * 37) % 100}%`,
+        delay: (i % 10) * 0.08,
+        duration: 2.4 + (i % 5) * 0.3,
+        rotate: (i * 53) % 360,
+        color: ["#ffe27a", "#4d7bf5", "#7ea1ff", "#e3a366", "#ffffff"][i % 5],
+      })),
+    []
+  );
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full">
-      <div className="w-full max-w-[900px] h-[520px] relative mx-auto">
-        <WebglErrorBoundary fallback={<SingleWinnerReveal data={data} />}>
-          <Podium3D places={places} />
-        </WebglErrorBoundary>
-      </div>
-      <motion.div
-        className="text-[28px] font-bold tracking-[.08em] uppercase"
-        style={HEADLINE_STYLE}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 2.4, duration: 0.5 }}
-      >
-        Selamat Terpilih
-      </motion.div>
+    <div className="absolute inset-x-0 top-0 h-full pointer-events-none overflow-hidden z-10">
+      {pieces.map((c) => (
+        <motion.span
+          key={c.id}
+          className="absolute top-0 w-2 h-3 rounded-[2px]"
+          style={{ left: c.left, background: c.color }}
+          initial={{ y: -20, opacity: 0, rotate: 0 }}
+          animate={{ y: "110%", opacity: [0, 1, 1, 0], rotate: c.rotate }}
+          transition={{ delay: c.delay, duration: c.duration, ease: "easeIn" }}
+        />
+      ))}
     </div>
   );
 }
@@ -325,17 +317,25 @@ function SingleWinnerReveal({ data }: { data: ResultsSnapshot }) {
   return (
     <div className="flex flex-col items-center gap-4 relative">
       <motion.div
-        className="relative rounded-full p-1.5"
-        style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 70px -8px rgba(27,77,228,.7)" }}
+        className="relative p-1.5"
+        style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 70px -8px rgba(27,77,228,.7)", borderRadius: 5 }}
         initial={{ opacity: 0, scale: 0.5, rotateY: 90 }}
         animate={{ opacity: 1, scale: 1, rotateY: 0 }}
         transition={{ delay: 0.5, duration: 0.7, ease: "easeOut" }}
       >
         {data.winnerPhoto ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={data.winnerPhoto} alt="" className="w-[190px] h-[190px] rounded-full object-cover border-4 border-stage-dark" />
+          <img
+            src={data.winnerPhoto}
+            alt=""
+            className="w-[280px] h-[280px] object-cover border-4 border-stage-dark"
+            style={{ borderRadius: 5 }}
+          />
         ) : (
-          <span className="w-[190px] h-[190px] rounded-full border-4 border-stage-dark bg-stage-dark-3 flex items-center justify-center text-[52px] font-semibold text-stage-dim">
+          <span
+            className="w-[280px] h-[280px] border-4 border-stage-dark bg-stage-dark-3 flex items-center justify-center text-[80px] font-semibold text-stage-dim"
+            style={{ borderRadius: 5 }}
+          >
             {data.winnerName?.slice(0, 1)}
           </span>
         )}
