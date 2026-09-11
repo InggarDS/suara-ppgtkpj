@@ -1,18 +1,5 @@
-import Image from "next/image";
+import { PpgtLogo } from "@/components/ui/ppgt-logo";
 import LoginForm from "./login-form";
-
-function PpgtLogo({ size = 40, className = "" }: { size?: number; className?: string }) {
-  return (
-    <Image
-      src="/ppgt-logo.png"
-      alt="Logo PPGT"
-      width={size}
-      height={size}
-      priority
-      className={className}
-    />
-  );
-}
 
 export default function LoginPage() {
   return (
@@ -32,7 +19,7 @@ export default function LoginPage() {
         <div className="relative flex flex-col gap-5">
           <span className="mb-4 flex items-center gap-3">
             <span className="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow-sm">
-              <PpgtLogo size={36} />
+              <PpgtLogo size={36} priority />
             </span>
             <span className="text-lg font-semibold tracking-tight text-white">Suara PPGT KPJ</span>
           </span>
@@ -53,7 +40,7 @@ export default function LoginPage() {
       <div className="flex flex-1 items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8 flex flex-col items-center gap-2.5">
-            <PpgtLogo size={56} />
+            <PpgtLogo size={56} priority />
             <span className="text-sm font-semibold text-ink tracking-tight">Suara</span>
           </div>
           <h2 className="text-2xl font-semibold text-ink mb-1.5 tracking-tight text-center lg:text-left">

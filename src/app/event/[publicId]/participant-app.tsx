@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { compressImage } from "@/lib/compress-image";
 import { initials } from "@/lib/ids";
 import { parseDeviceLabel } from "@/lib/device";
+import { PpgtLogo } from "@/components/ui/ppgt-logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Spinner, BusyLabel } from "@/components/ui/spinner";
 import { TopProgress } from "@/components/ui/top-progress";
@@ -103,11 +104,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
       <div className="elevated relative w-full max-w-[420px] bg-paper rounded-[34px] border border-border-1 min-h-[600px] flex flex-col overflow-hidden">
         <TopProgress active={processing || screen === "loading"} />
         <div className="flex items-center gap-2 px-6 pt-5 pb-1">
-          <div className="w-[22px] h-[22px] rounded-[9px] bg-brand flex items-center justify-center">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12.5 9.5 18 20 6.5"></path>
-            </svg>
-          </div>
+          <PpgtLogo size={22} className="rounded-[6px] flex-none" priority />
           <span className="text-[13px] font-semibold text-ink">Suara</span>
           <span className="flex-1" />
           <ThemeToggle />
