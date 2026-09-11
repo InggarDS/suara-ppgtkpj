@@ -1,14 +1,23 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ResultRow, ResultsSnapshot } from "@/lib/results";
 import { AnimatedNumber } from "@/components/ui/animated-number";
 import { VotingTable } from "@/components/ui/voting-table";
+import { hasWebGL } from "@/components/three/has-webgl";
+import { WebglErrorBoundary } from "@/components/three/webgl-error-boundary";
+import type { PodiumEntry } from "@/components/three/podium-scene";
+
+// Pulls in three.js + @react-three/fiber — kept out of every other route's
+// bundle. Never runs server-side (WebGL needs a real browser).
+const Podium3D = dynamic(() => import("@/components/three/podium-scene"), { ssr: false });
 
 type Phase = "bars" | "transition" | "suspense" | "revealed";
 const TRANSITION_MS = 700;
-const SUSPENSE_MS = 3000;
+const COUNTDOWN_FROM = 3;
+const SUSPENSE_MS = COUNTDOWN_FROM * 1000;
 
 /**
  * The final stage gets its own presentation: a live vertical-bar tally while
@@ -103,14 +112,8 @@ export function FinalStageReveal({ data }: { data: ResultsSnapshot }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <motion.span
-              className="w-4 h-4 rounded-full bg-brand-accent-2"
-              style={{ boxShadow: "0 0 40px 10px rgba(77,123,245,.5)" }}
-              animate={{ scale: [1, 1.6, 1], opacity: [1, 0.4, 1] }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-            />
             <div className="font-mono text-[13px] tracking-[.3em] uppercase text-stage-dimmer">Mengumumkan Pemenang</div>
-            <div className="text-[34px] font-semibold text-stage-dim tracking-tight">Mohon tunggu…</div>
+            <Countdown from={COUNTDOWN_FROM} />
           </motion.div>
         )}
 
@@ -125,6 +128,34 @@ function StageLabel() {
     <div className="text-center mb-2 flex-none">
       <div className="font-mono text-[11px] tracking-[.25em] uppercase text-stage-dimmer">Stage Final · Live</div>
     </div>
+  );
+}
+
+/** 3 -> 2 -> 1, one full second each — purely presentational, timed to land
+ *  inside the parent's own SUSPENSE_MS window (it doesn't drive the phase
+ *  advance itself, the parent's timer does that independently). */
+function Countdown({ from }: { from: number }) {
+  const [n, setN] = useState(from);
+  useEffect(() => {
+    if (n <= 1) return;
+    const t = setTimeout(() => setN((v) => v - 1), 1000);
+    return () => clearTimeout(t);
+  }, [n]);
+
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={n}
+        className="text-[120px] font-black tabular-nums leading-none text-white"
+        style={{ textShadow: "0 0 50px rgba(77,123,245,.75), 0 0 100px rgba(77,123,245,.4)" }}
+        initial={{ scale: 0.4, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 1.4, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 260, damping: 18 }}
+      >
+        {n}
+      </motion.div>
+    </AnimatePresence>
   );
 }
 
@@ -221,7 +252,7 @@ function RevealedWinner({ data }: { data: ResultsSnapshot }) {
         {data.isTie ? "Hasil Seri" : "Pengumuman Pemenang"}
       </motion.div>
 
-      {data.isTie ? <TieReveal winners={data.winners} /> : <SingleWinnerReveal data={data} />}
+      {data.isTie ? <TieReveal winners={data.winners} /> : <WinnerPodiumOrFallback data={data} />}
 
       {others.length > 0 && (
         <motion.div
@@ -246,6 +277,49 @@ const HEADLINE_STYLE: React.CSSProperties = {
   backgroundClip: "text",
   color: "transparent",
 };
+
+function buildPodiumPlaces(data: ResultsSnapshot): PodiumEntry[] {
+  return data.results
+    .filter((r) => r.id !== "abstain" && r.votes > 0)
+    .slice(0, 3)
+    .map((r) => ({ id: r.id, name: r.name, note: r.note, photo: r.photo, votes: r.votes }));
+}
+
+/** The 3D podium for a clear (non-tied) winner — confetti, spotlight, the
+ *  works. Only attempted when the browser actually reports WebGL support;
+ *  otherwise (and if the 3D scene throws at runtime) falls back to the flat
+ *  2D reveal so a live event never ends up staring at a black rectangle. */
+function WinnerPodiumOrFallback({ data }: { data: ResultsSnapshot }) {
+  const [webgl, setWebgl] = useState(false);
+  useEffect(() => {
+    // One-time client-only capability read, same pattern as the
+    // device-id/localStorage read in the participant app.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setWebgl(hasWebGL());
+  }, []);
+  const places = useMemo(() => buildPodiumPlaces(data), [data]);
+
+  if (!webgl) return <SingleWinnerReveal data={data} />;
+
+  return (
+    <div className="flex flex-col items-center gap-3 w-full">
+      <div className="w-full max-w-[900px] h-[520px] relative mx-auto">
+        <WebglErrorBoundary fallback={<SingleWinnerReveal data={data} />}>
+          <Podium3D places={places} />
+        </WebglErrorBoundary>
+      </div>
+      <motion.div
+        className="text-[28px] font-bold tracking-[.08em] uppercase"
+        style={HEADLINE_STYLE}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 2.4, duration: 0.5 }}
+      >
+        Selamat Terpilih
+      </motion.div>
+    </div>
+  );
+}
 
 function SingleWinnerReveal({ data }: { data: ResultsSnapshot }) {
   return (
