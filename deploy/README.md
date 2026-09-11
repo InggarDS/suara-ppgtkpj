@@ -265,11 +265,14 @@ git add -A && git commit -m "..." && git push        # CI builds + pushes image
 # [vps]  (or enable ENABLE_SSH_DEPLOY repo variable to automate this)
 cd /opt/suara && git pull --ff-only
 export TAG=$(git rev-parse --short=12 HEAD)
+docker image prune -af   # -a, not just -f — every deploy tags a new :<sha>, plain
+                          # prune never reclaims those and the disk fills over time
 docker compose pull app
-# only if the schema changed this release — the image carries the full Prisma CLI:
-docker compose run --rm app npx prisma db push --skip-generate
+# only if the schema changed this release — --user root: the CLI's engine check
+# needs to write into node_modules, which the non-root "node" user can't do:
+docker compose run --rm --user root app npx prisma db push --skip-generate
 docker compose up -d
-docker image prune -f
+docker image prune -af
 ```
 
 **Rollback to a previous build:**
@@ -292,6 +295,7 @@ export TAG=<older-sha> && docker compose up -d
 | Caddy certs | in the `caddy_data` volume; survives `up`/`down` |
 | SSE not streaming | check `flush_interval -1` in `deploy/Caddyfile` |
 | `prisma db push` fails with a permission error | the CLI needs to write into `node_modules` as root: `docker compose run --rm --user root app npx prisma db push --skip-generate` |
+| Deploy fails with "no space left on device" | old `:<sha>` images piling up on a small disk — `df -h /`, then `docker image prune -af` (the `-a`, not `docker image prune -f`, is what actually reclaims them; both the workflow and step 6 above already prune this way after every deploy) |
 | `prisma db push` fails through PgBouncer | it must use `DIRECT_DATABASE_URL` (port 5432), already wired in `env.example` |
 | Bump app instances later | run `app` with `--scale app=2` behind Caddy — Redis pub/sub (`src/lib/realtime.ts`) already fans out across instances |
 

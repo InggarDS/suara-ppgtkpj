@@ -67,10 +67,15 @@ jobs:
             git pull --ff-only
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             export TAG=${{ needs.build.outputs.tag }}
+            # `-a`: every previous deploy tags a new :<sha>, so a plain prune
+            # (dangling layers only) never reclaims them — they pile up until
+            # the disk fills mid-pull. Safe: an image backing a running
+            # container is never removed, tagged or not.
+            docker image prune -af
             docker compose pull app
             # --user root: the CLI's own engine check needs to write into
             # node_modules, which the app image's non-root "node" user can't do.
             # Safe no-op when the schema hasn't changed since the last deploy.
             docker compose run --rm --user root app npx prisma db push --skip-generate
             docker compose up -d
-            docker image prune -f
+            docker image prune -af
