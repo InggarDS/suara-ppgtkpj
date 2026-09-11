@@ -8,6 +8,14 @@ import { VotingTable } from "@/components/ui/voting-table";
 
 const MAX_VISIBLE = 7;
 
+const GRADIENT = "linear-gradient(90deg,#1b4de4,#0a1a4f)";
+const GRADIENT_TEXT: React.CSSProperties = {
+  background: GRADIENT,
+  WebkitBackgroundClip: "text",
+  backgroundClip: "text",
+  color: "transparent",
+};
+
 /**
  * Live ranking for every non-final stage. Candidates with 0 votes are hidden
  * entirely, the rest are ranked by vote count, capped at 7 on the main board
@@ -74,6 +82,14 @@ export function RankingBoard({ data }: { data: ResultsSnapshot }) {
   );
 }
 
+/** Rank tier drives how strongly a row is highlighted — the leader is the
+ *  most visually prominent, easing off toward the bottom of the board. */
+function tierOf(rank: number): "leader" | "runner-up" | "plain" {
+  if (rank === 1) return "leader";
+  if (rank <= 3) return "runner-up";
+  return "plain";
+}
+
 function RankRow({
   row,
   rank,
@@ -87,7 +103,7 @@ function RankRow({
   masked: boolean;
   totalVoters: number;
 }) {
-  const isLeader = rank === 1;
+  const tier = tierOf(rank);
   const pctOfLeader = Math.max(4, Math.round((row.votes / topVotes) * 100));
   const pctOfRegistered = totalVoters > 0 ? Math.round((row.votes / totalVoters) * 100) : 0;
 
@@ -98,33 +114,43 @@ function RankRow({
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ layout: { type: "spring", stiffness: 320, damping: 32 }, opacity: { duration: 0.25 } }}
-      className={`flex items-center gap-4 rounded-2xl px-4 py-3 border flex-none ${
-        isLeader ? "border-brand-accent-2 bg-white/[.06]" : "border-stage-dark-3 bg-stage-dark-2/40"
+      className={`flex items-center gap-4 rounded-2xl px-4 py-3 bg-white flex-none ${
+        tier === "leader" ? "border-2 border-[#1b4de4]" : tier === "runner-up" ? "border border-[#b9c8f7]" : "border border-slate-200"
       }`}
-      style={isLeader ? { boxShadow: "0 0 34px -12px rgba(77,123,245,.55)" } : undefined}
+      style={
+        tier === "leader"
+          ? { boxShadow: "0 8px 28px -8px rgba(27,77,228,.45)" }
+          : tier === "runner-up"
+            ? { boxShadow: "0 4px 16px -8px rgba(27,77,228,.2)" }
+            : undefined
+      }
     >
-      <span
-        className={`font-mono text-[20px] font-bold w-9 text-center flex-none tabular-nums ${
-          isLeader ? "text-brand-accent-2" : "text-stage-dimmer"
-        }`}
-      >
-        {rank}
-      </span>
+      {tier === "leader" ? (
+        <span
+          className="font-mono text-[15px] font-bold w-9 h-9 rounded-full text-center flex-none flex items-center justify-center text-white"
+          style={{ background: GRADIENT }}
+        >
+          {rank}
+        </span>
+      ) : (
+        <span className={`font-mono text-[20px] font-bold w-9 text-center flex-none tabular-nums ${tier === "runner-up" ? "text-[#1b4de4]" : "text-slate-400"}`}>
+          {rank}
+        </span>
+      )}
 
-      <RowAvatar photo={row.photo} label={row.name} isLeader={isLeader} />
+      <RowAvatar photo={row.photo} label={row.name} tier={tier} />
 
       <span className="flex-1 min-w-0">
         <span
-          className={`block text-[19px] font-semibold tracking-tight truncate ${
-            masked ? "font-mono tracking-[.02em]" : ""
-          } ${isLeader ? "text-white" : "text-stage-dim"}`}
+          className={`block text-[19px] font-bold tracking-tight truncate ${masked ? "font-mono tracking-[.02em]" : ""}`}
+          style={GRADIENT_TEXT}
         >
           {row.name}
         </span>
-        <span className="block h-1.5 rounded bg-stage-dark-2 overflow-hidden mt-2 max-w-[320px]">
+        <span className="block h-1.5 rounded bg-slate-100 overflow-hidden mt-2 max-w-[320px]">
           <motion.span
             className="block h-full rounded"
-            style={{ background: isLeader ? "linear-gradient(90deg,#3d6df0,#1b4de4)" : "#4a5a99" }}
+            style={{ background: tier === "plain" ? "#8ea3e0" : GRADIENT }}
             initial={false}
             animate={{ width: `${pctOfLeader}%` }}
             transition={{ duration: 0.6, ease: "easeOut" }}
@@ -133,32 +159,31 @@ function RankRow({
       </span>
 
       <span className="flex flex-col items-end flex-none">
-        <AnimatedNumber
-          value={row.votes}
-          className={`font-mono text-[28px] font-bold tabular-nums leading-none ${isLeader ? "text-brand-accent-2" : "text-white"}`}
-        />
-        <span className="font-mono text-[10px] text-stage-dimmer mt-1">{pctOfRegistered}% peserta</span>
+        <AnimatedNumber value={row.votes} className="font-mono text-[28px] font-extrabold tabular-nums leading-none" style={GRADIENT_TEXT} />
+        <span className="font-mono text-[10px] text-slate-400 mt-1">{pctOfRegistered}% peserta</span>
       </span>
     </motion.div>
   );
 }
 
-function RowAvatar({ photo, label, isLeader }: { photo: string | null; label: string; isLeader: boolean }) {
+function RowAvatar({ photo, label, tier }: { photo: string | null; label: string; tier: "leader" | "runner-up" | "plain" }) {
   if (photo) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         src={photo}
         alt=""
-        className={`w-12 h-12 rounded-full object-cover flex-none border-2 ${isLeader ? "border-brand-accent-2" : "border-stage-dark-4"}`}
+        className="w-12 h-12 rounded-full object-cover flex-none border-2"
+        style={{ borderColor: tier === "leader" ? "#1b4de4" : tier === "runner-up" ? "#b9c8f7" : "#e2e8f0" }}
       />
     );
   }
   return (
     <span
-      className={`w-12 h-12 rounded-full flex-none flex items-center justify-center text-[15px] font-semibold ${
-        isLeader ? "bg-brand-accent-2/20 text-brand-accent-2" : "bg-stage-dark-3 text-stage-dim"
+      className={`w-12 h-12 rounded-full flex-none flex items-center justify-center text-[15px] font-bold ${
+        tier === "plain" ? "bg-slate-100 text-slate-500" : "text-white"
       }`}
+      style={tier !== "plain" ? { background: GRADIENT } : undefined}
     >
       {label.slice(0, 1)}
     </span>
@@ -175,7 +200,7 @@ function SeeMoreOverlay({ rows, onClose }: { rows: ResultRow[]; onClose: () => v
       onClick={onClose}
     >
       <motion.div
-        className="w-full max-w-[720px] max-h-[80vh] overflow-y-auto bg-stage-dark-2 border border-stage-dark-4 rounded-2xl p-6"
+        className="w-full max-w-[720px] max-h-[80vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl p-6"
         initial={{ opacity: 0, scale: 0.96, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.96 }}
@@ -183,14 +208,14 @@ function SeeMoreOverlay({ rows, onClose }: { rows: ResultRow[]; onClose: () => v
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <div className="font-mono text-[11px] tracking-[.12em] uppercase text-stage-dimmer">
+          <div className="font-mono text-[11px] tracking-[.12em] uppercase text-slate-400">
             Semua Kandidat · {rows.length}
           </div>
-          <button onClick={onClose} className="font-mono text-[11px] uppercase tracking-[.08em] text-stage-dim hover:text-white cursor-pointer">
+          <button onClick={onClose} className="font-mono text-[11px] uppercase tracking-[.08em] text-slate-400 hover:text-ink cursor-pointer">
             Tutup ✕
           </button>
         </div>
-        <VotingTable rows={rows} tone="dark" />
+        <VotingTable rows={rows} tone="light" />
       </motion.div>
     </motion.div>
   );

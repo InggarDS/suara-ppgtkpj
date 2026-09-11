@@ -75,7 +75,7 @@ export function FinalStageReveal({ data }: { data: ResultsSnapshot }) {
             exit={{ opacity: 0 }}
           >
             <StageLabel />
-            <HorizontalBars rows={candidatePool} totalVoters={data.totalVoters} />
+            <VerticalBars rows={candidatePool} totalVoters={data.totalVoters} />
           </motion.div>
         )}
 
@@ -89,7 +89,7 @@ export function FinalStageReveal({ data }: { data: ResultsSnapshot }) {
             transition={{ duration: TRANSITION_MS / 1000, ease: "easeInOut" }}
           >
             <StageLabel />
-            <HorizontalBars rows={candidatePool} totalVoters={data.totalVoters} />
+            <VerticalBars rows={candidatePool} totalVoters={data.totalVoters} />
           </motion.div>
         )}
 
@@ -129,68 +129,56 @@ function StageLabel() {
 }
 
 /**
- * Horizontal, proportional bars — one row per final-stage candidate, ranked
- * top to bottom, bar length relative to the current leader. Still masked
- * (identity hidden) like every other pre-reveal view; only the live tally
- * and ranking position are shown, matching how every other stage behaves
- * before its result is opened.
+ * Vertical bars, one column per final-stage candidate, height proportional to
+ * the current leader. Still masked (identity hidden) like every other
+ * pre-reveal view — only the live tally and ranking position show. Column
+ * color intensity tiers with rank so the leading candidate(s) read as
+ * visually "hotter" than the rest, without revealing who they are.
  */
-function HorizontalBars({ rows, totalVoters }: { rows: ResultRow[]; totalVoters: number }) {
+function VerticalBars({ rows, totalVoters }: { rows: ResultRow[]; totalVoters: number }) {
   const ranked = useMemo(() => [...rows].sort((a, b) => b.votes - a.votes), [rows]);
   const top = Math.max(1, ranked[0]?.votes ?? 0);
 
   return (
-    <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5 max-w-[680px] w-full mx-auto">
+    <div className="flex-1 flex items-end justify-center gap-5 pb-4 px-4 flex-wrap">
       {ranked.map((r, i) => {
         const isLeader = i === 0;
-        const pctOfLeader = Math.max(4, Math.round((r.votes / top) * 100));
+        const isRunnerUp = i > 0 && i < 3;
+        const h = Math.max(4, Math.round((r.votes / top) * 100));
         const pctOfRegistered = totalVoters > 0 ? Math.round((r.votes / totalVoters) * 100) : 0;
         return (
-          <div
-            key={r.id}
-            className={`flex items-center gap-4 rounded-2xl px-4 py-3 border flex-none ${
-              isLeader ? "border-brand-accent-2 bg-white/[.06]" : "border-stage-dark-3 bg-stage-dark-2/40"
-            }`}
-            style={isLeader ? { boxShadow: "0 0 34px -12px rgba(77,123,245,.55)" } : undefined}
-          >
-            <span
-              className={`font-mono text-[18px] font-bold w-8 text-center flex-none tabular-nums ${
-                isLeader ? "text-brand-accent-2" : "text-stage-dimmer"
+          <div key={r.id} className="flex flex-col items-center gap-3 w-[110px] flex-none">
+            <AnimatedNumber
+              value={r.votes}
+              className={`font-mono text-[22px] font-bold tabular-nums ${isLeader ? "text-brand-accent-2" : "text-white"}`}
+            />
+            <span className="font-mono text-[10px] text-stage-dimmer -mt-2">{pctOfRegistered}% peserta</span>
+            <div
+              className={`w-full h-[260px] flex items-end bg-stage-dark-2/40 rounded-t-xl overflow-hidden border border-b-0 ${
+                isLeader ? "border-brand-accent-2" : "border-stage-dark-3"
               }`}
+              style={isLeader ? { boxShadow: "0 0 30px -10px rgba(77,123,245,.6)" } : undefined}
             >
-              {i + 1}
-            </span>
-            <span
-              className={`w-10 h-10 rounded-full flex-none flex items-center justify-center text-[13px] font-semibold ${
-                isLeader ? "bg-brand-accent-2/20 text-brand-accent-2" : "bg-stage-dark-3 text-stage-dim"
-              }`}
-            >
-              {r.name.slice(0, 1)}
-            </span>
-            <span className="flex-1 min-w-0">
-              <span
-                className={`block text-[16px] font-mono tracking-[.02em] font-semibold truncate ${
-                  isLeader ? "text-white" : "text-stage-dim"
-                }`}
-              >
-                {r.name}
-              </span>
-              <span className="block h-1.5 rounded bg-stage-dark-2 overflow-hidden mt-1.5 max-w-[280px]">
-                <motion.span
-                  className="block h-full rounded"
-                  style={{ background: isLeader ? "linear-gradient(90deg,#3d6df0,#1b4de4)" : "#4a5a99" }}
-                  initial={false}
-                  animate={{ width: `${pctOfLeader}%` }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                />
-              </span>
-            </span>
-            <span className="flex flex-col items-end flex-none">
-              <AnimatedNumber
-                value={r.votes}
-                className={`font-mono text-[22px] font-bold tabular-nums leading-none ${isLeader ? "text-brand-accent-2" : "text-white"}`}
+              <motion.div
+                className="w-full rounded-t-xl"
+                style={{
+                  background: isLeader
+                    ? "linear-gradient(180deg,#7ea1ff,#1b4de4)"
+                    : isRunnerUp
+                      ? "linear-gradient(180deg,#5a78d0,#2c4590)"
+                      : "linear-gradient(180deg,#3c4a75,#232d54)",
+                }}
+                initial={{ height: 0 }}
+                animate={{ height: `${h}%` }}
+                transition={{ duration: 0.8, ease: "easeOut" }}
               />
-              <span className="font-mono text-[10px] text-stage-dimmer mt-1">{pctOfRegistered}% peserta</span>
+            </div>
+            <span
+              className={`font-mono text-[11px] tracking-[.06em] uppercase text-center truncate w-full ${
+                isLeader ? "text-white" : "text-stage-dim"
+              }`}
+            >
+              {r.name}
             </span>
           </div>
         );
