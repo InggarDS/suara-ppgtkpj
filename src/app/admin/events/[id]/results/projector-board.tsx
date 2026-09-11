@@ -221,7 +221,8 @@ function StageSequenceBar({ stages }: { stages: ResultsSnapshot["stageSequence"]
 }
 
 function WinnerReveal({ data }: { data: ResultsSnapshot }) {
-  const others = data.results.filter((r) => r.id !== data.winnerId && r.id !== "abstain");
+  const winnerIds = new Set(data.winners.map((w) => w.id));
+  const others = data.results.filter((r) => r.id !== "abstain" && !winnerIds.has(r.id));
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center gap-8 py-6 overflow-y-auto animate-celebrate">
@@ -229,26 +230,58 @@ function WinnerReveal({ data }: { data: ResultsSnapshot }) {
         className="font-mono text-[13px] tracking-[.3em] uppercase text-brand-accent-2"
         style={{ textShadow: "0 0 24px rgba(77,123,245,.55)" }}
       >
-        Selamat Terpilih
+        {data.isTie ? "Hasil Seri" : "Selamat Terpilih"}
       </div>
 
-      <div className="flex flex-col items-center gap-4">
-        <div
-          className="relative rounded-full p-1.5"
-          style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 60px -10px rgba(27,77,228,.6)" }}
-        >
-          {data.winnerPhoto ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={data.winnerPhoto} alt="" className="w-[190px] h-[190px] rounded-full object-cover border-4 border-stage-dark" />
-          ) : (
-            <span className="w-[190px] h-[190px] rounded-full border-4 border-stage-dark bg-stage-dark-3 flex items-center justify-center text-[52px] font-semibold text-stage-dim">
-              {data.winnerName?.slice(0, 1)}
-            </span>
-          )}
+      {data.isTie ? (
+        <div className="flex flex-col items-center gap-6">
+          <div className="text-center">
+            <div className="text-[64px] font-semibold tracking-tight leading-none">{data.winners.length} Kandidat</div>
+            <div className="text-lg text-stage-dim font-mono mt-2">
+              unggul dengan {data.winners[0]?.votes ?? 0} suara yang sama
+            </div>
+          </div>
+          <div className="flex flex-wrap items-start justify-center gap-8 max-w-[860px]">
+            {data.winners.map((w) => (
+              <div key={w.id} className="flex flex-col items-center gap-3">
+                <div
+                  className="relative rounded-full p-1"
+                  style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 40px -12px rgba(27,77,228,.6)" }}
+                >
+                  {w.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={w.photo} alt="" className="w-[130px] h-[130px] rounded-full object-cover border-4 border-stage-dark" />
+                  ) : (
+                    <span className="w-[130px] h-[130px] rounded-full border-4 border-stage-dark bg-stage-dark-3 flex items-center justify-center text-[34px] font-semibold text-stage-dim">
+                      {w.name.slice(0, 1)}
+                    </span>
+                  )}
+                </div>
+                <div className="text-xl font-semibold tracking-tight text-center max-w-[180px]">{w.name}</div>
+                {w.note && <div className="text-sm text-stage-dim font-mono text-center">{w.note}</div>}
+              </div>
+            ))}
+          </div>
         </div>
-        <div className="text-[46px] font-semibold tracking-tight text-center leading-tight">{data.winnerName}</div>
-        {data.winnerNote && <div className="text-lg text-stage-dim font-mono">{data.winnerNote}</div>}
-      </div>
+      ) : (
+        <div className="flex flex-col items-center gap-4">
+          <div
+            className="relative rounded-full p-1.5"
+            style={{ background: "linear-gradient(135deg,#3d6df0,#1230a8)", boxShadow: "0 0 60px -10px rgba(27,77,228,.6)" }}
+          >
+            {data.winnerPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={data.winnerPhoto} alt="" className="w-[190px] h-[190px] rounded-full object-cover border-4 border-stage-dark" />
+            ) : (
+              <span className="w-[190px] h-[190px] rounded-full border-4 border-stage-dark bg-stage-dark-3 flex items-center justify-center text-[52px] font-semibold text-stage-dim">
+                {data.winnerName?.slice(0, 1)}
+              </span>
+            )}
+          </div>
+          <div className="text-[46px] font-semibold tracking-tight text-center leading-tight">{data.winnerName}</div>
+          {data.winnerNote && <div className="text-lg text-stage-dim font-mono">{data.winnerNote}</div>}
+        </div>
+      )}
 
       {others.length > 0 && (
         <div className="w-full max-w-[720px] pt-4 border-t border-stage-dark-3">

@@ -190,8 +190,12 @@ export async function restartVotingAction(eventId: string, stageId: string) {
     prisma.vote.deleteMany({ where: { stageId } }),
     prisma.stage.update({
       where: { id: stageId },
-      data: { status: "VOTING", startedAt: new Date(), completedAt: null },
+      // resultsOpen: false — if the result/winner had already been revealed
+      // before the restart, candidate identities must go back to hidden for
+      // the fresh voting round instead of staying shown on the shared screen.
+      data: { status: "VOTING", startedAt: new Date(), completedAt: null, resultsOpen: false },
     }),
+    prisma.event.update({ where: { id: eventId }, data: { resultsRevealed: false } }),
   ]);
   await logAudit(eventId, `Voting restarted for "${stage.name}" — all votes cleared`, session.name);
   revalidateEvent(eventId);
