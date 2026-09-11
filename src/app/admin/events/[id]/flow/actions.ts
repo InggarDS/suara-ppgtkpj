@@ -116,7 +116,9 @@ export async function openStageAction(eventId: string, stageId: string) {
     prisma.stageCheckIn.deleteMany({ where: { stageId } }),
     prisma.stage.update({
       where: { id: stageId },
-      data: { status: "CHECK_IN", startedAt: null, completedAt: null, resultsOpen: false },
+      // openedAt marks the start of this check-in window — anyone who
+      // registers after it must wait for the next stage to open.
+      data: { status: "CHECK_IN", startedAt: null, completedAt: null, resultsOpen: false, openedAt: new Date() },
     }),
     prisma.event.update({ where: { id: eventId }, data: { resultsRevealed: false } }),
   ]);

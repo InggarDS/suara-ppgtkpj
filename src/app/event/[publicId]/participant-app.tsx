@@ -37,6 +37,9 @@ type StateResp = {
   token?: string;
   votedLiveStage?: boolean;
   checkedIn?: boolean;
+  /** Registered after the live stage's check-in window opened — can't check
+   *  in / vote for this stage, only the next one. */
+  lateForActiveStage?: boolean;
 };
 
 function getDeviceId() {
@@ -78,7 +81,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
     | "loading"
     | "gone"
     | "register"
-    | "too-late"
+    | "late-for-stage"
     | "closed"
     | "waiting"
     | "checkin"
@@ -88,10 +91,12 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
   if (data) {
     if (data.gone) screen = "gone";
     else if (data.closed) screen = "closed";
-    else if (!token || data.valid === false)
-      // Registration (registrasi ulang) closes the moment a stage goes to voting.
-      screen = data.liveStage?.phase === "voting" ? "too-late" : "register";
+    // Registration (registrasi ulang) is always open, even mid-stage.
+    else if (!token || data.valid === false) screen = "register";
     else if (data.liveStage && data.votedLiveStage) screen = "done";
+    // Registered after the live stage opened — blocked from THIS stage's
+    // check-in, must wait for the next one.
+    else if (data.liveStage && !data.checkedIn && data.lateForActiveStage) screen = "late-for-stage";
     else if (data.liveStage && !data.checkedIn) screen = "checkin";
     else if (data.liveStage && data.checkedIn && data.liveStage.phase === "checkin") screen = "checkedin";
     else if (data.liveStage && data.checkedIn && data.liveStage.phase === "voting") screen = "booth";
@@ -132,7 +137,7 @@ export default function ParticipantApp({ publicId, eventName }: { publicId: stri
           />
         )}
         {screen === "gone" && <EventEndedScreen publicId={publicId} />}
-        {screen === "too-late" && <TooLateScreen eventName={eventName} publicId={publicId} />}
+        {screen === "late-for-stage" && <LateForStageScreen publicId={publicId} />}
         {screen === "closed" && <NotOpenScreen eventName={eventName} publicId={publicId} />}
         {screen === "waiting" && data && (
           <WaitingScreen
@@ -995,7 +1000,9 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
   );
 }
 
-function TooLateScreen({ eventName, publicId }: { eventName: string; publicId: string }) {
+/** Registered, but after the live stage's check-in window had already opened
+ *  — not eligible for this stage, only the next one. */
+function LateForStageScreen({ publicId }: { publicId: string }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6.5 py-6.5 gap-5 text-center">
       <div className="w-14 h-14 rounded-full bg-amber-bg flex items-center justify-center">
@@ -1005,14 +1012,11 @@ function TooLateScreen({ eventName, publicId }: { eventName: string; publicId: s
         </svg>
       </div>
       <div>
-        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">Pendaftaran sudah ditutup</h2>
+        <h2 className="m-0 mb-2 text-xl font-semibold tracking-tight text-ink">Belum bisa ikut stage ini</h2>
         <p className="m-0 text-[13.5px] leading-relaxed text-body max-w-[32ch] mx-auto">
-          Voting telah dimulai dan belum bisa ikut karena belum melakukan registrasi ulang.
+          Maaf anda sudah terlambat melakukan registrasi ulang, harap hubungi admin.
         </p>
       </div>
-      <p className="m-0 text-[12px] leading-relaxed text-faint max-w-[30ch] mx-auto">
-        Silakan hubungi panitia {eventName} jika Anda merasa seharusnya terdaftar.
-      </p>
       <div className="font-mono text-[11px] text-fainter">{publicId}</div>
     </div>
   );

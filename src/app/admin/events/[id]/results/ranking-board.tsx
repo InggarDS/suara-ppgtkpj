@@ -53,7 +53,7 @@ export function RankingBoard({ data }: { data: ResultsSnapshot }) {
       <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-2.5">
         <AnimatePresence initial={false}>
           {visible.map((row, i) => (
-            <RankRow key={row.id} row={row} rank={i + 1} topVotes={topVotes} masked={masked} />
+            <RankRow key={row.id} row={row} rank={i + 1} topVotes={topVotes} masked={masked} totalVoters={data.totalVoters} />
           ))}
         </AnimatePresence>
       </div>
@@ -79,19 +79,21 @@ function RankRow({
   rank,
   topVotes,
   masked,
+  totalVoters,
 }: {
   row: ResultRow;
   rank: number;
   topVotes: number;
   masked: boolean;
+  totalVoters: number;
 }) {
   const isLeader = rank === 1;
   const pctOfLeader = Math.max(4, Math.round((row.votes / topVotes) * 100));
+  const pctOfRegistered = totalVoters > 0 ? Math.round((row.votes / totalVoters) * 100) : 0;
 
   return (
     <motion.div
       layout
-      layoutId={row.id}
       initial={{ opacity: 0, y: 14, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
@@ -130,10 +132,13 @@ function RankRow({
         </span>
       </span>
 
-      <AnimatedNumber
-        value={row.votes}
-        className={`font-mono text-[28px] font-bold tabular-nums flex-none ${isLeader ? "text-brand-accent-2" : "text-white"}`}
-      />
+      <span className="flex flex-col items-end flex-none">
+        <AnimatedNumber
+          value={row.votes}
+          className={`font-mono text-[28px] font-bold tabular-nums leading-none ${isLeader ? "text-brand-accent-2" : "text-white"}`}
+        />
+        <span className="font-mono text-[10px] text-stage-dimmer mt-1">{pctOfRegistered}% peserta</span>
+      </span>
     </motion.div>
   );
 }

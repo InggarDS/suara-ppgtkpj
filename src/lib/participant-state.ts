@@ -117,6 +117,13 @@ async function loadParticipantState(publicId: string, token: string | null) {
         })
       )
     : false;
+  // Registered after this stage's check-in window opened -> not eligible for
+  // THIS stage, must wait for the next one. Mirrors the checkin route's gate
+  // so the UI shows the right screen instead of a check-in prompt the API
+  // would reject anyway.
+  const lateForActiveStage = Boolean(
+    activeStage?.openedAt && participant.registeredAt && participant.registeredAt > activeStage.openedAt
+  );
 
   return {
     ...base,
@@ -126,5 +133,6 @@ async function loadParticipantState(publicId: string, token: string | null) {
     token: participant.token,
     votedLiveStage,
     checkedIn,
+    lateForActiveStage,
   };
 }

@@ -68,6 +68,7 @@ CREATE TABLE "Stage" (
     "allowAbstain" BOOLEAN NOT NULL DEFAULT false,
     "requireFingerprint" BOOLEAN NOT NULL DEFAULT true,
     "promoteCount" INTEGER NOT NULL DEFAULT 0,
+    "openedAt" TIMESTAMP(3),
     "startedAt" TIMESTAMP(3),
     "completedAt" TIMESTAMP(3),
 
@@ -208,4 +209,14 @@ ALTER TABLE "Vote" ADD CONSTRAINT "Vote_candidateId_fkey" FOREIGN KEY ("candidat
 
 -- AddForeignKey
 ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+┌─────────────────────────────────────────────────────────┐
+│  Update available 6.19.3 -> 8.0.0-rc.13                 │
+│                                                         │
+│  This is a major update - please follow the guide at    │
+│  https://pris.ly/d/major-version-upgrade                │
+│                                                         │
+│  Run the following to update                            │
+│    npm i --save-dev prisma@latest                       │
+│    npm i @prisma/client@latest                          │
+└─────────────────────────────────────────────────────────┘
 
