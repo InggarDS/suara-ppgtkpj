@@ -68,27 +68,18 @@ export default function ProjectorBoard({
         <div className="flex-1 flex flex-col items-center justify-center gap-8 py-14">
           <span className="font-mono text-[12px] tracking-[.2em] uppercase text-brand-accent-2">{data.stageName}</span>
           <div className="text-[64px] font-semibold tracking-tight leading-none">Silakan Check In</div>
-          <div className="flex items-center gap-14">
-            <div className="flex flex-col items-center gap-5">
-              <div className="text-[104px] font-semibold tracking-tight leading-none tabular-nums">{data.checkInPct}%</div>
-              <div className="text-lg text-stage-dim font-mono">
-                {data.checkedInCount} / {data.totalVoters} voters checked in
-              </div>
-              <div className="w-[440px] h-3.5 rounded-lg bg-stage-dark-2 overflow-hidden">
-                <div
-                  className="h-full rounded-lg transition-all duration-700"
-                  style={{ width: `${data.checkInPct}%`, background: "linear-gradient(90deg,#3d6df0,#1b4de4)" }}
-                />
-              </div>
+          {/* No QR once a stage is open — joining is done, this is check-in now. */}
+          <div className="flex flex-col items-center gap-5">
+            <div className="text-[104px] font-semibold tracking-tight leading-none tabular-nums">{data.checkInPct}%</div>
+            <div className="text-lg text-stage-dim font-mono">
+              {data.checkedInCount} / {data.totalVoters} voters checked in
             </div>
-            {inviteUrl && showQr && (
-              <div className="flex flex-col items-center gap-3 flex-none">
-                <div className="bg-white rounded-2xl p-3">
-                  <QrImage url={inviteUrl} size={150} />
-                </div>
-                <span className="font-mono text-[11px] text-stage-dimmer uppercase tracking-[.1em]">Scan to join</span>
-              </div>
-            )}
+            <div className="w-[440px] h-3.5 rounded-lg bg-stage-dark-2 overflow-hidden">
+              <div
+                className="h-full rounded-lg transition-all duration-700"
+                style={{ width: `${data.checkInPct}%`, background: "linear-gradient(90deg,#3d6df0,#1b4de4)" }}
+              />
+            </div>
           </div>
           <div className="text-[13px] text-stage-dimmer">Pemungutan suara dimulai setelah semua peserta check-in.</div>
         </div>
