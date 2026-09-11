@@ -48,9 +48,12 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    # Enable by adding the four VPS_* repository secrets. Until then the
-    # build job still publishes the image and you deploy by hand on the VPS.
+    # Enable by adding the three VPS_* repository secrets and setting the
+    # ENABLE_SSH_DEPLOY repository variable to "true". Until then the build
+    # job still publishes the image and you deploy by hand on the VPS.
     if: ${{ vars.ENABLE_SSH_DEPLOY == 'true' }}
+    permissions:
+      packages: read
     steps:
       - name: SSH deploy
         uses: appleboy/ssh-action@v1
@@ -62,9 +65,12 @@ jobs:
             set -e
             cd /opt/suara
             git pull --ff-only
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             export TAG=${{ needs.build.outputs.tag }}
             docker compose pull app
-            docker compose run --rm app npx prisma db push --skip-generate
+            # --user root: the CLI's own engine check needs to write into
+            # node_modules, which the app image's non-root "node" user can't do.
+            # Safe no-op when the schema hasn't changed since the last deploy.
+            docker compose run --rm --user root app npx prisma db push --skip-generate
             docker compose up -d
             docker image prune -f
