@@ -14,7 +14,8 @@ import { bullConnection, redisEnabled } from "@/lib/redis";
  * send inline instead.
  */
 
-export const EMAIL_QUEUE = "suara:email";
+// BullMQ forbids ":" in a queue name (it is the internal Redis key separator).
+export const EMAIL_QUEUE = "suara-email";
 
 export type TokenEmailJob = {
   eventId: string;
@@ -31,18 +32,24 @@ const g = globalThis as G;
 
 export function emailQueue(): Queue | null {
   if (g.__suaraEmailQueue === undefined) {
-    const connection = bullConnection();
-    g.__suaraEmailQueue = connection
-      ? new Queue(EMAIL_QUEUE, {
-          connection,
-          defaultJobOptions: {
-            attempts: 4,
-            backoff: { type: "exponential", delay: 5_000 },
-            removeOnComplete: 500,
-            removeOnFail: 1_000,
-          },
-        })
-      : null;
+    try {
+      const connection = bullConnection();
+      g.__suaraEmailQueue = connection
+        ? new Queue(EMAIL_QUEUE, {
+            connection,
+            defaultJobOptions: {
+              attempts: 4,
+              backoff: { type: "exponential", delay: 5_000 },
+              removeOnComplete: 500,
+              removeOnFail: 1_000,
+            },
+          })
+        : null;
+    } catch (err) {
+      // Never let queue construction break a caller — degrade to inline send.
+      console.error("[queue] email queue unavailable:", err instanceof Error ? err.message : err);
+      g.__suaraEmailQueue = null;
+    }
   }
   return g.__suaraEmailQueue;
 }
