@@ -220,7 +220,7 @@ function RevealedWinner({ data }: { data: ResultsSnapshot }) {
 
   return (
     <motion.div
-      className="flex-1 flex flex-col items-center justify-center gap-8 py-6 overflow-y-auto relative"
+      className="flex-1 flex flex-col items-center justify-center gap-8 py-6 overflow-y-auto no-scrollbar relative"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
@@ -271,44 +271,11 @@ const HEADLINE_STYLE: React.CSSProperties = {
 };
 
 /** Kahoot-style winner reveal for a clear (non-tied) winner: a spotlight on
- *  the winner alone plus a confetti burst — no podium blocks for 2nd/3rd. */
+ *  the winner alone — no podium blocks for 2nd/3rd. */
 function WinnerPodiumOrFallback({ data }: { data: ResultsSnapshot }) {
   return (
     <div className="w-full relative">
-      <Confetti />
       <SingleWinnerReveal data={data} />
-    </div>
-  );
-}
-
-/** A one-shot confetti burst of small falling rectangles — pure CSS/Framer,
- *  no canvas or extra dependency. Fixed random-ish spread computed once. */
-function Confetti() {
-  const pieces = useMemo(
-    () =>
-      Array.from({ length: 28 }, (_, i) => ({
-        id: i,
-        left: `${(i * 37) % 100}%`,
-        delay: (i % 10) * 0.08,
-        duration: 2.4 + (i % 5) * 0.3,
-        rotate: (i * 53) % 360,
-        color: ["#ffe27a", "#4d7bf5", "#7ea1ff", "#e3a366", "#ffffff"][i % 5],
-      })),
-    []
-  );
-
-  return (
-    <div className="absolute inset-x-0 top-0 h-full pointer-events-none overflow-hidden z-10">
-      {pieces.map((c) => (
-        <motion.span
-          key={c.id}
-          className="absolute top-0 w-2 h-3 rounded-[2px]"
-          style={{ left: c.left, background: c.color }}
-          initial={{ y: -20, opacity: 0, rotate: 0 }}
-          animate={{ y: "110%", opacity: [0, 1, 1, 0], rotate: c.rotate }}
-          transition={{ delay: c.delay, duration: c.duration, ease: "easeIn" }}
-        />
-      ))}
     </div>
   );
 }
