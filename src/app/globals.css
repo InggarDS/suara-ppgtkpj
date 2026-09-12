@@ -214,6 +214,15 @@
   scrollbar-color: var(--color-border-2) transparent;
 }
 
+/* fully hidden scrollbar for surfaces (e.g. the final-stage reveal) that
+   still need to scroll but must never show a scrollbar affordance. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   background:
     radial-gradient(1100px 600px at 100% -10%, rgba(27, 77, 228, 0.12), transparent 55%),
