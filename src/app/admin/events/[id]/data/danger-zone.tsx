@@ -16,7 +16,7 @@ export default function DangerZone({ eventId }: { eventId: string }) {
     },
     full: {
       title: "Permanently delete this event's data?",
-      body: "All votes, all participant records and their uploaded photos will be erased, and every later stage's candidate list (auto-selected or added during the run) is cleared back to just Stage 1. This cannot be undone — export the audit log first.",
+      body: "All votes, all participant records and their uploaded photos will be erased, every later stage's candidate list (auto-selected or added during the run) is cleared back to just Stage 1, and any Stage 1 candidate whose name came from a participant/credential record is removed too. This cannot be undone — export the audit log first.",
       word: "DELETE",
       cta: "Delete everything",
     },
