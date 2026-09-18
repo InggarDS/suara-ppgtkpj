@@ -513,7 +513,7 @@ function RegisterScreen({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="cth. Inggar Saputra"
+            placeholder="Nama Lengkap"
             className={`w-full border rounded-[20px] px-3.5 py-3.5 text-[15px] text-ink bg-card outline-none focus:border-brand ${
               useCredentials && effectiveCredentialMatch === "not-found" ? "border-danger" : "border-border-1"
             }`}

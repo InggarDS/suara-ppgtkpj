@@ -34,9 +34,16 @@ export async function fullResetAction(eventId: string) {
   await prisma.$transaction([
     prisma.vote.deleteMany({ where: { stage: { eventId } } }),
     prisma.stageCheckIn.deleteMany({ where: { stage: { eventId } } }),
-    // Stage 1's candidate list is the admin's original ballot; every later stage's list
-    // was populated during the run (promoted or added live), so it goes with the reset.
-    prisma.candidate.deleteMany({ where: { stageId: { in: laterStageIds } } }),
+    // Every later stage's list was populated during the run (promoted or added live), so it
+    // goes with the reset. On Stage 1, any candidate whose name/photo was pulled in from a
+    // participant/credential record (participantId set) also goes — it's re-derived data, not
+    // part of the admin's original blank ballot — while manually-typed Stage 1 candidates stay.
+    prisma.candidate.deleteMany({
+      where: {
+        stage: { eventId },
+        OR: [{ stageId: { in: laterStageIds } }, { participantId: { not: null } }],
+      },
+    }),
     prisma.candidate.updateMany({ where: { stage: { eventId } }, data: { photo: null } }),
     prisma.participant.deleteMany({ where: { eventId } }),
     prisma.stage.updateMany({
@@ -47,7 +54,7 @@ export async function fullResetAction(eventId: string) {
   ]);
   await logAudit(
     eventId,
-    "Full reset: all votes, participants, photos, and later-stage candidate lists deleted",
+    "Full reset: all votes, participants, photos, later-stage candidate lists, and participant-linked candidates deleted",
     session.name
   );
 
