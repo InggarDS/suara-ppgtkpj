@@ -161,6 +161,20 @@ export async function sendTokenEmailAction(eventId: string, participantId: strin
 }
 
 export async function sendAllTokenEmailsAction(eventId: string) {
+  return sendTokenEmailsAction(eventId, null);
+}
+
+export async function sendSelectedTokenEmailsAction(eventId: string, participantIds: string[]) {
+  const ids = [...new Set(participantIds)].filter(Boolean);
+  if (!ids.length) return { ok: false as const, error: "Tidak ada peserta yang dipilih." };
+  return sendTokenEmailsAction(eventId, ids);
+}
+
+/**
+ * Sends the personal-token email to every participant with an email address —
+ * or, when `participantIds` is given, only to the selected ones among them.
+ */
+async function sendTokenEmailsAction(eventId: string, participantIds: string[] | null) {
   const session = await getAdminSession();
   if (!session) return { ok: false as const, error: "Not authenticated" };
   if (!isEmailConfigured()) return { ok: false as const, error: "Layanan email belum dikonfigurasi di server." };
@@ -172,16 +186,28 @@ export async function sendAllTokenEmailsAction(eventId: string) {
     select: { name: true, publicId: true },
   });
   const participants = await prisma.participant.findMany({
-    where: { eventId, email: { not: null } },
+    where: {
+      eventId,
+      email: { not: null },
+      ...(participantIds ? { id: { in: participantIds } } : {}),
+    },
     select: { id: true, name: true, token: true, email: true },
   });
-  if (!participants.length) return { ok: false as const, error: "Tidak ada peserta dengan alamat email." };
+  if (!participants.length) {
+    return {
+      ok: false as const,
+      error: participantIds
+        ? "Tidak ada peserta terpilih yang memiliki alamat email."
+        : "Tidak ada peserta dengan alamat email.",
+    };
+  }
 
   const link = inviteUrl(event.publicId);
   const build = (p: (typeof participants)[number]) => {
     const mail = buildTokenEmail({ eventName: event.name, recipientName: p.name, token: p.token, inviteUrl: link });
     return { ...mail, to: p.email!, toName: p.name ?? undefined };
   };
+  const scopeLabel = participantIds ? `${participants.length} peserta terpilih` : "semua peserta";
 
   // Durable path: hand each email to the background queue and return at once.
   // The worker updates `tokenSentAt` per message and retries failures.
@@ -189,7 +215,7 @@ export async function sendAllTokenEmailsAction(eventId: string) {
     const { queued } = await enqueueTokenEmails(
       participants.map((p) => ({ eventId, participantId: p.id, ...build(p) }))
     );
-    await logAudit(eventId, `Kirim token massal: ${queued} email masuk antrean`, session.name);
+    await logAudit(eventId, `Kirim token ke ${scopeLabel}: ${queued} email masuk antrean`, session.name);
     revalidatePath(`/admin/events/${eventId}/tokens`);
     return { ok: true as const, queued, sent: 0, failed: 0 };
   }
@@ -204,7 +230,7 @@ export async function sendAllTokenEmailsAction(eventId: string) {
   }
   await logAudit(
     eventId,
-    `Kirim token massal: ${report.sent} terkirim${report.failed.length ? `, ${report.failed.length} gagal` : ""}`,
+    `Kirim token ke ${scopeLabel}: ${report.sent} terkirim${report.failed.length ? `, ${report.failed.length} gagal` : ""}`,
     session.name
   );
   revalidatePath(`/admin/events/${eventId}/tokens`);
