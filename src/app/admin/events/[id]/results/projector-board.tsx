@@ -3,7 +3,7 @@
 import { ResultsSnapshot } from "@/lib/results";
 import { QrImage } from "@/components/ui/invite-qr";
 import { VotingTable } from "@/components/ui/voting-table";
-import { RankingBoard } from "./ranking-board";
+import { HorizontalVotingChart } from "./horizontal-voting-chart";
 import { FinalStageReveal } from "./final-stage-reveal";
 
 export default function ProjectorBoard({
@@ -66,7 +66,7 @@ export default function ProjectorBoard({
         <Header eventName={eventName} data={data} rightText={`Check-in · ${data.checkedInCount} / ${data.totalVoters}`} />
         {data.stageSequence.length > 1 && <StageSequenceBar stages={data.stageSequence} />}
         <div className="flex-1 flex flex-col items-center justify-center gap-8 py-14">
-          <span className="font-mono text-[12px] tracking-[.2em] uppercase text-brand-accent-2">{data.stageName}</span>
+          <span className="font-mono text-[12px] tracking-[.2em] uppercase text-brand-accent-3">{data.stageName}</span>
           <div className="text-[64px] font-semibold tracking-tight leading-none">Silakan Check In</div>
           {/* No QR once a stage is open — joining is done, this is check-in now. */}
           <div className="flex flex-col items-center gap-5">
@@ -88,7 +88,7 @@ export default function ProjectorBoard({
   }
 
   return (
-    <div className="relative w-full max-w-[980px] flex flex-col" style={{ maxHeight: "min(940px, 86vh)" }}>
+    <div className="relative w-full max-w-[1680px] flex flex-col" style={{ maxHeight: "min(1020px, 92vh)" }}>
       <Header
         eventName={eventName}
         data={data}
@@ -108,47 +108,57 @@ export default function ProjectorBoard({
         <FinalStageReveal data={data} />
       ) : (
         <>
-          <div className="flex items-baseline gap-3.5 mb-5 flex-none">
-            <h2 className="m-0 text-[30px] font-semibold tracking-tight">{data.stageName ?? "No stage"}</h2>
-            {data.phase === "voting" && (
-              <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-brand-accent-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse-dot" />
-                Voting Progress
-              </span>
-            )}
-            {data.phase === "result" && (
-              <span className="font-mono text-[11px] tracking-[.1em] uppercase text-brand-accent-2">Hasil Resmi</span>
-            )}
-            <span className="flex-1" />
-            {data.phase === "voting" && (
-              <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-2.5 py-1.5 flex-none">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
-                  <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path>
-                </svg>
-                Identitas dikunci
-              </span>
-            )}
-          </div>
+          {/* Large centered "presentation dashboard" title — the chart below is
+              the dominant element, this block stays compact by design. */}
+          <div className="flex flex-col items-center text-center gap-2 mb-5 flex-none">
+            <div className="flex items-center gap-3 flex-wrap justify-center">
+              {data.phase === "voting" && (
+                <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-brand-accent-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-accent animate-pulse-dot" />
+                  Voting Progress
+                </span>
+              )}
+              {data.phase === "result" && (
+                <span className="font-mono text-[11px] tracking-[.1em] uppercase text-brand-accent-3">Hasil Resmi</span>
+              )}
+              {data.phase === "voting" && (
+                <span className="flex items-center gap-1.5 font-mono text-[11px] tracking-[.1em] uppercase text-stage-dim border border-stage-dark-4 rounded-md px-2.5 py-1.5">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
+                    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path>
+                  </svg>
+                  Identitas dikunci
+                </span>
+              )}
+            </div>
 
-          {data.phase === "voting" && (
-            <div className="flex items-end gap-4 mb-5 flex-none">
-              <div className="text-[72px] font-semibold tracking-tight leading-none tabular-nums">{data.votingPct}%</div>
-              <div className="flex-1 pb-3">
-                <div className="text-[13px] text-stage-dim font-mono mb-2">
-                  {data.votedCount} / {data.totalVoters} voters
+            <h2
+              className="m-0 font-bold tracking-tight leading-none"
+              style={{ fontSize: "clamp(28px,2.6vw,48px)" }}
+            >
+              {data.stageName ?? "No stage"}
+            </h2>
+
+            {data.phase === "voting" && (
+              <>
+                <div className="flex items-center gap-2.5 font-mono text-stage-dim">
+                  <span className="text-[14px]">
+                    {data.votedCount} / {data.totalVoters} voters
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-stage-dim/50" />
+                  <span className="text-[14px] font-semibold text-brand-accent-3 tabular-nums">{data.votingPct}%</span>
                 </div>
-                <div className="w-full h-3 rounded-lg bg-stage-dark-2 overflow-hidden">
+                <div className="w-full max-w-[380px] h-1.5 rounded-full bg-stage-dark-2 overflow-hidden">
                   <div
-                    className="h-full rounded-lg transition-all duration-700"
+                    className="h-full rounded-full transition-all duration-700"
                     style={{ width: `${data.votingPct}%`, background: "linear-gradient(90deg,#3d6df0,#1b4de4)" }}
                   />
                 </div>
-              </div>
-            </div>
-          )}
+              </>
+            )}
+          </div>
 
-          <RankingBoard data={data} />
+          <HorizontalVotingChart data={data} />
         </>
       )}
     </div>
@@ -161,7 +171,7 @@ function Header({ eventName, data, rightText }: { eventName: string; data: Resul
       <span className="font-mono text-[11px] tracking-[.12em] text-stage-dimmer uppercase">{eventName}</span>
       {data.isFinalStage && (
         <span
-          className="font-mono text-[10px] tracking-[.12em] uppercase text-brand-accent-2 rounded-md px-2 py-0.5"
+          className="font-mono text-[10px] tracking-[.12em] uppercase text-brand-accent-3 rounded-md px-2 py-0.5"
           style={{ border: "1px solid rgba(77,123,245,.45)" }}
         >
           Final
@@ -190,7 +200,7 @@ function StageSequenceBar({ stages }: { stages: ResultsSnapshot["stageSequence"]
             <span
               className={`flex items-center gap-1.5 font-mono text-[10.5px] tracking-[.08em] uppercase rounded-full px-2.5 py-1.5 border ${
                 state === "live"
-                  ? "border-brand-accent-2 text-brand-accent-2"
+                  ? "border-brand-accent-3 text-brand-accent-3"
                   : state === "done"
                     ? "border-stage-dark-4 text-stage-dim"
                     : "border-stage-dark-3 text-stage-dimmer"

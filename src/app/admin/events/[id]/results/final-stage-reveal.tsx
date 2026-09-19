@@ -158,54 +158,68 @@ function Countdown({ from }: { from: number }) {
  * color intensity tiers with rank so the leading candidate(s) read as
  * visually "hotter" than the rest, without revealing who they are.
  */
+const BAR_COL_WIDTH = 150; // px — minimum column width, keeps names/counts readable even with many candidates
+const BAR_COL_GAP = 36; // px — minimum gap between bars
+
 function VerticalBars({ rows, totalVoters }: { rows: ResultRow[]; totalVoters: number }) {
   const ranked = useMemo(() => [...rows].sort((a, b) => b.votes - a.votes), [rows]);
   const top = Math.max(1, ranked[0]?.votes ?? 0);
 
   return (
-    <div className="flex-1 flex items-end justify-center gap-5 pb-4 px-4 flex-wrap">
-      {ranked.map((r, i) => {
-        const isLeader = i === 0;
-        const isRunnerUp = i > 0 && i < 3;
-        const h = Math.max(4, Math.round((r.votes / top) * 100));
-        const pctOfRegistered = totalVoters > 0 ? Math.round((r.votes / totalVoters) * 100) : 0;
-        return (
-          <div key={r.id} className="flex flex-col items-center gap-3 w-[110px] flex-none">
-            <AnimatedNumber
-              value={r.votes}
-              className={`font-mono text-[22px] font-bold tabular-nums ${isLeader ? "text-brand-accent-2" : "text-white"}`}
-            />
-            <span className="font-mono text-[10px] text-stage-dimmer -mt-2">{pctOfRegistered}% peserta</span>
+    // Fixed-width columns + horizontal scroll (never shrink/wrap) so a large
+    // field of candidates stays readable instead of being squeezed to fit.
+    <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden no-scrollbar">
+      <div className="h-full w-max mx-auto flex items-end px-6" style={{ gap: BAR_COL_GAP }}>
+        {ranked.map((r, i) => {
+          const isLeader = i === 0;
+          const isRunnerUp = i > 0 && i < 3;
+          const h = Math.max(4, Math.round((r.votes / top) * 100));
+          const pctOfRegistered = totalVoters > 0 ? Math.round((r.votes / totalVoters) * 100) : 0;
+          return (
             <div
-              className={`w-full h-[260px] flex items-end bg-stage-dark-2/40 rounded-t-xl overflow-hidden border border-b-0 ${
-                isLeader ? "border-brand-accent-2" : "border-stage-dark-3"
-              }`}
-              style={isLeader ? { boxShadow: "0 0 30px -10px rgba(77,123,245,.6)" } : undefined}
+              key={r.id}
+              className="flex flex-col items-center justify-end h-full gap-3.5 flex-none"
+              style={{ width: BAR_COL_WIDTH }}
             >
-              <motion.div
-                className="w-full rounded-t-xl"
-                style={{
-                  background: isLeader
-                    ? "linear-gradient(180deg,#7ea1ff,#1b4de4)"
-                    : isRunnerUp
-                      ? "linear-gradient(180deg,#5a78d0,#2c4590)"
-                      : "linear-gradient(180deg,#3c4a75,#232d54)",
-                }}
-                initial={{ height: 0 }}
-                animate={{ height: `${h}%` }}
-                transition={{ duration: 0.8, ease: "easeOut" }}
+              <AnimatedNumber
+                value={r.votes}
+                className={`font-mono font-bold tabular-nums ${isLeader ? "text-brand-accent-3" : "text-white"}`}
+                style={{ fontSize: "clamp(20px,2.2vw,36px)" }}
               />
+              <span className="font-mono text-[11px] text-stage-dimmer -mt-2">{pctOfRegistered}% peserta</span>
+              <div
+                className={`w-full flex items-end bg-stage-dark-2/40 rounded-t-2xl overflow-hidden border border-b-0 ${
+                  isLeader ? "border-brand-accent-3" : "border-stage-dark-3"
+                }`}
+                style={{ height: "clamp(220px,36vh,420px)", boxShadow: isLeader ? "0 0 30px -10px rgba(77,123,245,.6)" : undefined }}
+              >
+                <motion.div
+                  className="w-full rounded-t-2xl"
+                  style={{
+                    background: isLeader
+                      ? "linear-gradient(180deg,#7ea1ff,#1b4de4)"
+                      : isRunnerUp
+                        ? "linear-gradient(180deg,#5a78d0,#2c4590)"
+                        : "linear-gradient(180deg,#3c4a75,#232d54)",
+                  }}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${h}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+              <span
+                className={`font-mono tracking-[.05em] uppercase text-center truncate w-full ${
+                  isLeader ? "text-white" : "text-stage-dim"
+                }`}
+                style={{ fontSize: "clamp(12px,1.1vw,16px)" }}
+                title={r.name}
+              >
+                {r.name}
+              </span>
             </div>
-            <span
-              className={`font-mono text-[11px] tracking-[.06em] uppercase text-center truncate w-full ${
-                isLeader ? "text-white" : "text-stage-dim"
-              }`}
-            >
-              {r.name}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -235,7 +249,7 @@ function RevealedWinner({ data }: { data: ResultsSnapshot }) {
       />
 
       <motion.div
-        className="font-mono text-[13px] tracking-[.3em] uppercase text-brand-accent-2 relative"
+        className="font-mono text-[13px] tracking-[.3em] uppercase text-brand-accent-3 relative"
         style={{ textShadow: "0 0 24px rgba(77,123,245,.55)" }}
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}

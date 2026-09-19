@@ -210,7 +210,7 @@ export default function ParticipantsPanel({
             router.refresh();
             return { ok: true };
           }
-          if (typeof res.sent === "number" && res.sent > 0) {
+          if ("sent" in res && typeof res.sent === "number" && res.sent > 0) {
             setNotice({ kind: "err", text: `${res.sent} terkirim, ${res.failed ?? 0} gagal.` });
             router.refresh();
           }
