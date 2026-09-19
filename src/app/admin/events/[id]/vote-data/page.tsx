@@ -4,6 +4,7 @@ import EventHeader from "../event-header";
 import VoteDataRealtime from "./vote-data-realtime";
 import VoteDataView, { type VoteRow } from "./vote-data-view";
 import UploadCandidatesPanel from "./upload-candidates-panel";
+import UploadCandidatesDirectPanel from "./upload-candidates-direct-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,7 @@ export default async function VoteDataPage({ params }: { params: Promise<{ id: s
         <div className="flex flex-col gap-6">
           <VoteDataView eventId={event.id} rows={rows} editableStages={editableStages} />
           <UploadCandidatesPanel eventId={event.id} />
+          <UploadCandidatesDirectPanel eventId={event.id} editableStages={editableStages} />
         </div>
       </div>
     </>
