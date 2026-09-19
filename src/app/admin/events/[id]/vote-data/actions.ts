@@ -361,3 +361,73 @@ export async function sendComparedAsCandidatesAction(
   revalidate(eventId);
   return { ok: true as const, added: fresh.length, skipped: sources.length - fresh.length };
 }
+
+/* -------------------------------------------------------------------------- */
+/* Upload candidate file → create candidates directly (no credential compare) */
+/* -------------------------------------------------------------------------- */
+
+export type DirectCandidateRow = { name: string; jemaat: string };
+
+/**
+ * Adds an "additional" candidate list straight from an uploaded file — unlike
+ * `sendComparedAsCandidatesAction`, this never checks the file against
+ * credential/participant records: the file itself is the source of truth.
+ * Candidates created this way have no `participantId` (not tied to any
+ * registered voter), matching a manually-typed candidate.
+ */
+export async function uploadCandidatesDirectAction(
+  eventId: string,
+  rows: DirectCandidateRow[],
+  stageId: string
+) {
+  const session = await requireSession();
+  if (!session) return { ok: false as const, error: "Not authenticated" };
+
+  const stage = await prisma.stage.findUnique({
+    where: { id: stageId },
+    include: { candidates: true },
+  });
+  if (!stage || stage.eventId !== eventId) return { ok: false as const, error: "Stage tidak ditemukan." };
+  if (stage.status !== "NOT_STARTED") {
+    return { ok: false as const, error: "Kandidat terkunci setelah stage dimulai." };
+  }
+
+  const clean = rows
+    .map((r) => ({ name: (r.name ?? "").replace(/\s+/g, " ").trim(), jemaat: (r.jemaat ?? "").replace(/\s+/g, " ").trim() }))
+    .filter((r) => r.name.length > 0);
+  if (!clean.length) return { ok: false as const, error: "File tidak berisi baris yang valid." };
+
+  // Dedup within the file itself, and against candidates already on this stage.
+  const existingNames = new Set(stage.candidates.map((c) => `${normKey(c.name)}||${normKey(c.note)}`));
+  const seen = new Set<string>();
+  const fresh: { name: string; jemaat: string }[] = [];
+  for (const r of clean) {
+    const noteKey = r.jemaat ? `jemaat ${normKey(r.jemaat)}` : "";
+    const key = `${normKey(r.name)}||${noteKey}`;
+    if (seen.has(key) || existingNames.has(key)) continue;
+    seen.add(key);
+    fresh.push(r);
+  }
+  const skipped = clean.length - fresh.length;
+  if (!fresh.length) return { ok: false as const, error: "Semua baris sudah menjadi kandidat di stage ini." };
+
+  const base = stage.candidates.length;
+  await prisma.candidate.createMany({
+    data: fresh.map((r, i) => ({
+      stageId,
+      name: r.name,
+      note: r.jemaat ? `Jemaat ${r.jemaat}` : "",
+      photo: null,
+      participantId: null,
+      order: base + i + 1,
+      selectionSource: "MANUAL" as const,
+    })),
+  });
+  await logAudit(
+    eventId,
+    `${fresh.length} kandidat tambahan diunggah langsung (tanpa cek kredensial) ke "${stage.name}"`,
+    session.name
+  );
+  revalidate(eventId);
+  return { ok: true as const, added: fresh.length, skipped };
+}
